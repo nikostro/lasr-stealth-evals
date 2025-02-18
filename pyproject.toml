@@ -14,7 +14,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = []
+dev = [
+    "pre-commit>=4.1.0",
+]
 
 [tool.ruff]
 line-length = 88
