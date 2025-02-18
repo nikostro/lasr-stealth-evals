@@ -12,6 +12,5 @@
   "python.languageServer": "Pylance",
   "editor.rulers": [
     88
-  ],
-  "python.dataScience.useNotebookEditor": true
+  ]
 }
