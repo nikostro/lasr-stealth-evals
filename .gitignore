@@ -75,6 +75,7 @@ coverage.xml
 *.sql
 *.sqlite
 *.db
+logs
 
 # Environment variables
 .env
