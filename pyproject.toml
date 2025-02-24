@@ -19,6 +19,7 @@ build-backend = "hatchling.build"
 dev = [
     "ipykernel>=6.29.5",
     "pre-commit>=4.1.0",
+    "pyright>=1.1.394",
     "python-dotenv>=1.0.1",
 ]
 
