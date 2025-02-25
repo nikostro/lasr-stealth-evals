@@ -35,11 +35,8 @@ def record_to_sample(record: dict[str, str | bool]) -> Sample:
     )
 
 
-# %% Import dataset
 email_dataset = hf_dataset("FDMI/stealth-speedrun", split="train", sample_fields=record_to_sample)
 
-
-# %% Check dataset
 for r in email_dataset:
     print(r.input)
     print(r.target)
