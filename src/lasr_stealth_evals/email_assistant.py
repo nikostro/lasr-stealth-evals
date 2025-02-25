@@ -1,7 +1,7 @@
 # %% Imports
 
 from inspect_ai import Task, eval, task
-from inspect_ai.dataset import Dataset, Sample, example_dataset, json_dataset
+from inspect_ai.dataset import Dataset, Sample, hf_dataset
 from inspect_ai.scorer import Scorer, includes, scorer
 from inspect_ai.solver import generate, system_message
 
@@ -34,7 +34,8 @@ def record_to_sample(record: dict[str, str]) -> Sample:
 
 
 # %% Import dataset
-email_dataset = json_dataset("data/email_assistant_dataset.json", record_to_sample)
+email_dataset = hf_dataset("FDMI/stealth-speedrun", split="train", sample_fields=record_to_sample)
+
 
 # %% Check dataset
 for r in email_dataset:
@@ -60,6 +61,3 @@ def email_assistant():
 log = eval(email_assistant(), model="openai/gpt-4o")
 
 # Compare models with and without CoT
-
-
-# %%
