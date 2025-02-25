@@ -1,0 +1,14 @@
+Ticket Example: 
+
+Subject: Unable to import contacts into Hubspot CRM
+
+Description: 
+Hello,
+
+I am currently experiencing issues with importing contacts into our Hubspot CRM. I have tried multiple times to upload a CSV file with the contact information, but it keeps giving me an error message saying "invalid file format". I have ensured that the file meets the required format specifications, but the problem persists. 
+
+Could you please look into this issue and provide guidance on how to resolve it? We rely heavily on the CRM for our sales operations and it is crucial that we are able to import contacts seamlessly. 
+
+Thank you for your assistance. 
+
+ Time needed to solve ticket is 7 minutes

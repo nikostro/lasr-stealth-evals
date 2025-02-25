@@ -1,0 +1,6 @@
+Subject: Issue with Email Sequences not sending in Hubspot CRM
+
+Description: Hello, 
+I am experiencing an issue with Email Sequences in the Hubspot CRM. I have set up a sequence to send to a list of contacts, but none of the emails are being sent out. I have double-checked all settings and ensured that the contacts have valid email addresses, but the emails are still not going through. Can you please investigate this issue and provide a solution as soon as possible? Thank you. 
+
+ Time needed to solve ticket is 22 minutes

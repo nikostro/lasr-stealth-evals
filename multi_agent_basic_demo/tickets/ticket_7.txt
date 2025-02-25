@@ -1,0 +1,7 @@
+Ticket #12345
+
+Subject: Unable to access contact information in CRM platform
+
+Description: I am currently experiencing difficulties accessing contact information in the CRM platform. Whenever I try to view a contact's details, the page freezes and does not load properly. I have tried clearing my cache and restarting my browser, but the issue persists. This is affecting my ability to efficiently manage my client relationships. Please assist as soon as possible. 
+
+ Time needed to solve ticket is 38 minutes

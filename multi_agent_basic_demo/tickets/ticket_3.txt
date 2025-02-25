@@ -1,0 +1,10 @@
+Ticket Title: Unable to access my contacts in Hubspot
+
+Description: 
+Hello,
+
+I am having trouble accessing my contacts in Hubspot. Whenever I try to view my contact list, the page either loads very slowly or doesn't load at all. This is causing a major inconvenience as I rely heavily on this feature to communicate with my clients. 
+
+I have tried refreshing the page and logging out and back in, but the issue persists. Can you please look into this and provide a solution as soon as possible? Thank you. 
+
+ Time needed to solve ticket is 31 minutes

@@ -1,0 +1,9 @@
+Subject: Issue with creating email templates
+
+Description:
+Hi Hubspot support,
+
+I am having trouble creating email templates in the platform. Whenever I try to save a new template, it gives me an error message saying that there was a problem saving the template. I have tried multiple times and have even cleared my cache, but the issue still persists. Can you please help me troubleshoot this issue?
+
+Thank you.
+ Time needed to solve ticket is 12 minutes
