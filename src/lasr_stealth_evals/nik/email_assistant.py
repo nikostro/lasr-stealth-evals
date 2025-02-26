@@ -58,7 +58,7 @@ def email_assistant():
 
 
 # %%
-log = eval(email_assistant(), model="openai/gpt-4o")
+log = eval(email_assistant(), model="openai/gpt-4o", limit=10)
 
 # Compare models with and without CoT
 
