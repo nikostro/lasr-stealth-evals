@@ -16,10 +16,7 @@ def secretary():
     return Task(
         dataset=eval_dataset,
         solver=[system_message(SYSTEM_MESSAGE), generate()],
-        # Discerning whether the correct security guidance was provided by the model might
-        #  prove difficult using only text matching algorithms.
-        # Here we use a model to read the response and assess the quality of the answer.
-        # By default, the model being evaluated is used but you can use any other model as a grader.
+        # checks if the output contains the target word:
         scorer=includes(),
     )
 
