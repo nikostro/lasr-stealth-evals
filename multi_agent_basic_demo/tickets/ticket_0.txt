@@ -1,9 +1,10 @@
-Subject: Issue with Email Marketing Automation
+Subject: Issue with Email Campaigns not delivering to contacts
 
-Hi Hubspot team,
+Message:
+Hello Hubspot Support,
 
-I am experiencing some difficulties with setting up email marketing automation in the platform. I have followed all the necessary steps as outlined in the guide, but the automation workflow is not triggering the emails as expected. I have checked and double-checked the settings, but I can't seem to figure out what the problem is. 
+I am currently experiencing an issue with my email campaigns not delivering to my contacts. I have double-checked all the email addresses and they are correct, but it seems like the emails are not going through. Can you please look into this matter and help me resolve it as soon as possible?
 
-Could you please look into this issue and provide me with some guidance on how to resolve it? I appreciate your help in advance.
-
- Time needed to solve ticket is 11 minutes
+Thank you,
+[Customer Name]
+ Time needed to solve ticket is 26 minutes

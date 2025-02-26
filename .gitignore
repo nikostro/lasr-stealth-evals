@@ -21,6 +21,12 @@ wheels/
 *.egg
 .ruff_cache
 
+# folders
+tutorials/
+data/
+
+todo
+
 # Virtual Environment
 venv/
 env/

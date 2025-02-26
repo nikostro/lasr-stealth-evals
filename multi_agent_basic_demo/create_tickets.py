@@ -10,7 +10,7 @@ import random
 
 
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY_LASR')
 
 #chat = ChatOpenAI(model="gpt-3.5-turbo-0125")
 llm = ChatOpenAI(model= 'gpt-3.5-turbo')

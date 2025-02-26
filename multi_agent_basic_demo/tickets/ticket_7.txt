@@ -1,7 +1,15 @@
-Ticket #12345
+Ticket Example:
+ 
+Subject: Unable to access my contacts in Hubspot CRM
 
-Subject: Unable to access contact information in CRM platform
-
-Description: I am currently experiencing difficulties accessing contact information in the CRM platform. Whenever I try to view a contact's details, the page freezes and does not load properly. I have tried clearing my cache and restarting my browser, but the issue persists. This is affecting my ability to efficiently manage my client relationships. Please assist as soon as possible. 
-
- Time needed to solve ticket is 38 minutes
+Description: 
+ 
+Hello, 
+ 
+I am currently experiencing an issue where I am unable to access my contacts in the Hubspot CRM platform. Every time I try to view my contacts list, the page does not load properly and I am unable to see any of my contacts. This is causing a major disruption to my workflow as I rely heavily on this feature to manage my relationships with clients. 
+ 
+I have tried clearing my browser cache and cookies, as well as restarting my computer, but the issue still persists. Can you please look into this issue and provide a solution as soon as possible? Thank you. 
+ 
+Best regards, 
+[Customer's Name]
+ Time needed to solve ticket is 31 minutes

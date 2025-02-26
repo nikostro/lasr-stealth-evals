@@ -1,9 +1,8 @@
-Subject: Issue with Email Marketing Campaign
+Ticket Example:
+Subject: Unable to access contact information in CRM
 
-Hello Hubspot support team,
+Description: 
+I am having trouble accessing contact information in our CRM. Whenever I try to view a contact's profile, the page doesn't load properly and the information is not displayed correctly. This is hindering my ability to effectively communicate with our clients and leads. Can someone from the support team please look into this issue and provide a solution as soon as possible? Thank you. 
 
-I am experiencing some technical difficulties with my email marketing campaign on your platform. I am unable to schedule my emails and it seems like the system is not saving changes I make to the email template. This is impacting my ability to reach out to my customers effectively.
-
-I have tried troubleshooting on my end, but the issue persists. I would greatly appreciate it if you could look into this matter and provide guidance on how to resolve it. Thank you for your help.
-
- Time needed to solve ticket is 37 minutes
+Priority: High
+ Time needed to solve ticket is 34 minutes

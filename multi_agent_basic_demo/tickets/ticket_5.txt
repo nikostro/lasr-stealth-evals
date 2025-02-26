@@ -1,5 +1,10 @@
-Ticket number: 12345
-Customer Name: John Smith
-Issue: Unable to access reporting dashboard on CRM platform
-Description: When trying to access the reporting dashboard on my CRM platform, I am receiving an error message stating "Internal Server Error". I have tried refreshing the page and logging out and back in, but the issue persists. I rely on these reports for tracking sales performance and need this issue resolved quickly. Thank you.
- Time needed to solve ticket is 34 minutes
+Subject: Issue with Email Templates
+
+Description: 
+
+Hello,
+
+I am writing to report an issue with the email templates feature in Hubspot. Whenever I try to edit an existing template or create a new one, I am unable to save my changes. The system keeps showing an error message saying "Unable to save changes, please try again later." This has been going on for a few days now and it's impacting our workflow. Can you please look into this issue and provide a resolution as soon as possible? Thank you. 
+
+Ticket ID: HS-123456789
+ Time needed to solve ticket is 28 minutes

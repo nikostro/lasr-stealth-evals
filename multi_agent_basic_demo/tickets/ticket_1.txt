@@ -1,6 +1,6 @@
-Subject: Issue with Email Sequences not sending in Hubspot CRM
+Ticket Title: Unable to Import Contacts into Hubspot CRM
 
-Description: Hello, 
-I am experiencing an issue with Email Sequences in the Hubspot CRM. I have set up a sequence to send to a list of contacts, but none of the emails are being sent out. I have double-checked all settings and ensured that the contacts have valid email addresses, but the emails are still not going through. Can you please investigate this issue and provide a solution as soon as possible? Thank you. 
-
- Time needed to solve ticket is 22 minutes
+Ticket Description: 
+Hello,
+I am trying to import a list of contacts into our Hubspot CRM, but I keep receiving an error message saying "The file type is not supported." I have tried different file formats (CSV, Excel) and made sure that the file size is within the limits, but the issue persists. Can you please assist me in resolving this issue as soon as possible? Thank you.
+ Time needed to solve ticket is 14 minutes

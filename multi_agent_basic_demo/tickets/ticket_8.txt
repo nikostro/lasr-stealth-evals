@@ -1,9 +1,14 @@
-Subject: Issue with creating email templates
+Subject: Issue with Email Templates not Loading in CRM
 
-Description:
-Hi Hubspot support,
+Description: 
+Hello,
 
-I am having trouble creating email templates in the platform. Whenever I try to save a new template, it gives me an error message saying that there was a problem saving the template. I have tried multiple times and have even cleared my cache, but the issue still persists. Can you please help me troubleshoot this issue?
+I am experiencing an issue with the email templates in our CRM platform. When I try to access the templates to send a marketing email, they are not loading properly or showing up at all. This is hindering our ability to efficiently send out emails to our clients.
 
-Thank you.
- Time needed to solve ticket is 12 minutes
+I have tried refreshing the page and logging out and back in, but the issue persists. Can you please look into this and provide a solution as soon as possible?
+
+Thank you for your help.
+
+Best,
+[Client Name]
+ Time needed to solve ticket is 7 minutes

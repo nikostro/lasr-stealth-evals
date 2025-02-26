@@ -1,5 +1,14 @@
-Ticket ID: 12345
-Customer Name: Jane Doe
-Company Name: ABC Corp
-Description of Issue: I am having trouble setting up email campaigns in the platform. When I try to create a new campaign, the system does not allow me to choose the desired email list to send it to. I have checked my settings and permissions, but I still can't figure out what the problem is. Please help me resolve this issue as soon as possible so I can continue with my marketing efforts. Thank you.
- Time needed to solve ticket is 17 minutes
+Ticket Title: Unable to Sync Email with Hubspot CRM
+
+Ticket Description: 
+Hello Hubspot Support Team,
+
+I am facing an issue with syncing my emails to Hubspot CRM. I have tried multiple times to connect my email account to the CRM but it keeps showing an error message. Due to this, I am unable to track my email interactions and the data is not getting updated in the CRM.
+
+I have already checked my email settings and have tried reconnecting it, but the issue persists. It is crucial for me to have this functionality working as it helps me keep track of my communication with clients.
+
+Please assist me in resolving this issue as soon as possible. Thank you.
+
+Best regards,
+[Customer Name]
+ Time needed to solve ticket is 33 minutes

@@ -1,10 +1,13 @@
-Subject: Issue with Email Automation Feature
+Ticket Example:
+Subject: Issue with Email Campaign Performance
 
-Description: Hello, 
+Description: 
+Hello,
 
-I am experiencing some issues with the email automation feature in my Hubspot account. I have set up several email sequences but they are not triggering as scheduled. I have checked all the settings and they seem to be correct. Can someone please assist me with resolving this issue as soon as possible? 
+I am experiencing issues with tracking the performance of my email campaigns on the Hubspot platform. I have sent out multiple email campaigns to different segments of our audience, but I am unable to see accurate open and click-through rates for each campaign. This makes it difficult for me to evaluate the success of our email marketing efforts and make necessary adjustments.
 
-Thank you. 
+I have tried refreshing the page, clearing my cache, and logging in from a different browser, but the issue persists. Please look into this issue as soon as possible and provide a solution. Thank you. 
 
-Customer ID: #12345
- Time needed to solve ticket is 37 minutes
+Sincerely,
+[Client Name]
+ Time needed to solve ticket is 30 minutes
