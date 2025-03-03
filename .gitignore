@@ -86,3 +86,4 @@ logs
 local_settings.py
 
 notebooks/data
+plots

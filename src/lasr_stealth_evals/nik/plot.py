@@ -1,51 +1,77 @@
 # %%
+import json
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
 
-# %% VISUALIZATION 1: Grouped Bar Chart
-# Convert boolean inputs to string labels for visualization
-def get_label(value: bool, prefix: str) -> str:
-    return f"{'True' if value else 'False'}"
-
-
-# Assuming input_data is your JSON object with format:
-# [{"model": str, "hint": bool, "context": bool, "accuracy": float}, ...]
-def create_visualization(input_data: list[dict[str, bool | float]]):
-    # Convert the data to DataFrame
-    df = pd.DataFrame(input_data)
+def create_visualization(input_data: list[dict[str, dict[str, str | bool | float]]], metric: str = "precision"):
+    df = pd.DataFrame(
+        [
+            {
+                "model": item["config"]["model"],
+                "hint": item["config"]["hint"],
+                "context": item["config"]["context"],
+                metric: item["results"][metric],
+            }
+            for item in input_data
+        ]
+    )
 
     # Convert boolean values to readable labels
-    df["Hint"] = df["hint"].apply(lambda x: get_label(x, "Hint"))
-    df["Context"] = df["context"].apply(lambda x: get_label(x, "Context"))
+    df["Hint"] = df["hint"].astype(str)
+    df["Context"] = df["context"].astype(str)
     df["Model"] = df["model"]
 
     # Create the visualization
     plt.figure(figsize=(12, 6))
     sns.set_style("whitegrid")
 
+    # Ensure the plots directory exists
+    os.makedirs("plots", exist_ok=True)
+
+    # Custom color palette: using a more visually distinct and appealing scheme
+    custom_palette = {"False": "#1f77b4", "True": "#ff7f0e"}  # Blue for True, Orange for False
+
     ax = sns.catplot(
-        data=df, kind="bar", x="Context", y="accuracy", hue="Hint", col="Model", palette="viridis", height=5, aspect=0.8
+        data=df,
+        kind="bar",
+        x="Context",
+        y=metric,
+        hue="Hint",
+        col="Model",
+        palette=custom_palette,
+        height=5,
+        aspect=0.8,
+        order=["False", "True"],  # Set the order of x-axis categories: False first, then True
+        hue_order=["False", "True"],  # Set the order of hint values in the legend
     )
 
     ax.set_titles("{col_name}")
-    ax.set_axis_labels("Context", "Accuracy")
-    ax.add_legend(title="Hint")
+    ax.set_axis_labels("Context", metric.capitalize())
+
+    # Move the legend to the top left corner
+    ax.figure.legends.clear()  # Clear existing legends
+    for axes in ax.axes.flat:
+        axes.legend(title="Hint", loc="upper left", frameon=True)
+
     plt.tight_layout()
-    plt.savefig("grouped_bar_chart.png", dpi=300)
+    plt.savefig(f"plots1/chart_{metric}.png", dpi=300)
 
     return ax
 
 
-# Example usage:
-input_data = [
-    {"model": "Model A", "hint": True, "context": True, "accuracy": 0.78},
-    {"model": "Model A", "hint": False, "context": True, "accuracy": 0.82},
-    {"model": "Model B", "hint": True, "context": True, "accuracy": 0.78},
-    {"model": "Model B", "hint": False, "context": True, "accuracy": 0.82},
-]
-create_visualization(input_data)
+# Load data from metrics.json
+with open("plots/metrics1.json", "r") as f:
+    data = json.load(f)
+
+
+# Plot accuracy by default
+for metric in ["precision", "recall", "avoidance", "accuracy"]:
+    create_visualization(data, metric)
+
 
 # %%
