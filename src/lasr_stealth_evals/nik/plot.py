@@ -8,7 +8,11 @@ import pandas as pd
 import seaborn as sns
 
 
-def create_visualization(input_data: list[dict[str, dict[str, str | bool | float]]], metric: str = "precision"):
+def create_visualization(
+    input_data: list[dict[str, dict[str, str | bool | float]]],
+    metric: str = "precision",
+    output_dir: str = "plots1",
+):
     df = pd.DataFrame(
         [
             {
@@ -53,13 +57,13 @@ def create_visualization(input_data: list[dict[str, dict[str, str | bool | float
     ax.set_titles("{col_name}")
     ax.set_axis_labels("Context", metric.capitalize())
 
-    # Move the legend to the top left corner
+    # Move the legend to the top left corner of left plot only
     ax.figure.legends.clear()  # Clear existing legends
-    for axes in ax.axes.flat:
-        axes.legend(title="Hint", loc="upper left", frameon=True)
+    ax.axes.flat[0].legend().remove()  # Remove legend from right plot
+    ax.axes.flat[1].legend(title="Hint", loc="upper left", frameon=True)
 
     plt.tight_layout()
-    plt.savefig(f"plots1/chart_{metric}.png", dpi=300)
+    plt.savefig(f"{output_dir}/chart_{metric}.png", dpi=300)
 
     return ax
 
