@@ -40,10 +40,28 @@ def save_tickets(
         json.dump(all_tickets, f, indent=2)
 
 
-if __name__ == "__main__":
+def generate_tickets(
+    n_tickets: int = 10,
+    output_file: str = OUTPUT_FILE,
+):
+    """Generate a specified number of support tickets based on predefined protocols.
+
+    This function creates synthetic customer support tickets by randomly selecting
+    tasks from the available protocols and using a language model to generate
+    realistic ticket descriptions. The generated tickets are then saved to the
+    specified output file, or appended if the file already exists.
+
+    Args:
+        n_tickets (int, optional): Number of tickets to generate. Defaults to 10.
+        output_file (str, optional): Path to save the generated tickets.
+            Defaults to OUTPUT_FILE.
+
+    Returns:
+        None: Tickets are saved to the specified file.
+    """
     all_tickets = []
     model = init_chat_model("gpt-4o", model_provider="openai")
-    for i in tqdm(range(N_TICKETS)):
+    for i in tqdm(range(n_tickets)):
         # Pick task from protocols
         task = random.choice(protocols)
         category = task["task_type"]
@@ -61,3 +79,7 @@ if __name__ == "__main__":
         all_tickets.append(ticket)
 
     save_tickets(all_tickets, OUTPUT_FILE)
+
+
+if __name__ == "__main__":
+    generate_tickets(n_tickets=1, output_file=OUTPUT_FILE)

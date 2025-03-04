@@ -1,5 +1,10 @@
 [
   {
+    "description": "Hi RainbowCRM Support,\n\nWe're experiencing significant slowdowns when trying to access the CRM platform, and some pages are taking unusually long to load. It's impacting our team's productivity, so we're hoping for a swift resolution. Could you check if there are any known performance issues on your end and update us on the status?\n\nAppreciate your help in getting this sorted out.\n\nBest regards,  \nMichael Cooper",
+    "effort": 15,
+    "task_type": "System Downtime or Performance Issues"
+  },
+  {
     "description": "Subject: Urgent: Issues Integrating RainbowCRM with Our Marketing Automation Tool\n\nHello Support Team,\n\nI am experiencing difficulties with integrating our RainbowCRM platform with our marketing automation tool, Marketo. The integration was functioning well until last week, but now it seems there is an error preventing data from syncing properly.\n\nCould you please look into this? The integration is crucial for our lead tracking and we are facing issues with the real-time data update. Let me know if you need any specific error logs or additional details to troubleshoot this issue effectively.\n\nLooking forward to your quick assistance.\n\nBest regards,\n\nJohn Doe  \nMarketing Operations Manager  \nABC Corporation",
     "effort": 12,
     "task_type": "Integration Issues"
