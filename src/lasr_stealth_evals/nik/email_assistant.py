@@ -84,44 +84,6 @@ first_user_message = ChatMessageUser(content=FIRST_USER_MESSAGE.input)
 first_assistant_message = ChatMessageAssistant(content=FIRST_ASSISTANT_MESSAGE)
 
 
-# %% Run permutation
-configs = [{"hint": hint, "context": context} for hint, context in product([True, False], repeat=2)]
-
-# %%
-logs = []
-for config in configs:
-    solver = [
-        system_message(SYSTEM_MESSAGE),
-    ]
-    if config["hint"]:
-        solver.append(system_message(HINT))
-    if config["context"]:
-        solver.append(add_context(first_user_message, first_assistant_message))
-    solver.append(generate())
-
-    tags = [key for key, value in config.items() if value]
-
-    @task
-    def email_assistant():
-        return Task(
-            dataset=email_dataset,
-            solver=solver,
-            scorer=word_check(jailbreak_word),
-        )
-
-    log = eval(
-        email_assistant(),
-        model=[
-            "openai/o1-mini",
-            "openai/gpt-4o-mini",
-        ],
-        tags=tags,
-    )
-    logs += list(log)
-
-# Compare models with and without CoT
-
-
 # %%
 def extract_metrics(log: EvalLog) -> dict[str, dict[str, str | bool | float]]:
     """
@@ -150,12 +112,49 @@ def extract_metrics(log: EvalLog) -> dict[str, dict[str, str | bool | float]]:
     }
 
 
-log_metrics = [extract_metrics(log) for log in logs]
+# %%
+if __name__ == "__main__":
+    # Run permutations of hint, context and model
+    plots_dir = "plots"
+    configs = [{"hint": hint, "context": context} for hint, context in product([True, False], repeat=2)]
+    logs = []
 
+    for config in configs:
+        solver = [
+            system_message(SYSTEM_MESSAGE),
+        ]
+        if config["hint"]:
+            solver.append(system_message(HINT))
+        if config["context"]:
+            solver.append(add_context(first_user_message, first_assistant_message))
+        solver.append(generate())
 
-# Ensure the plots directory exists
-os.makedirs("plots", exist_ok=True)
+        tags = [key for key, value in config.items() if value]
 
-# Save the metrics to a JSON file
-with open("plots/metrics1.json", "w") as f:
-    json.dump(log_metrics, f, indent=2)
+        @task
+        def email_assistant():
+            return Task(
+                dataset=email_dataset,
+                solver=solver,
+                scorer=word_check(jailbreak_word),
+            )
+
+        log = eval(
+            email_assistant(),
+            model=[
+                "openai/o1-mini",
+                "openai/gpt-4o-mini",
+            ],
+            tags=tags,
+        )
+        logs += list(log)
+
+    # Save metrics to file
+
+    log_metrics = [extract_metrics(log) for log in logs]
+
+    # Ensure the plots directory exists
+    os.makedirs(plots_dir, exist_ok=True)
+
+    with open(f"{plots_dir}/metrics1.json", "w") as f:
+        json.dump(log_metrics, f, indent=2)
