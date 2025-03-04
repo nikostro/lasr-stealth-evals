@@ -8,10 +8,10 @@ import pandas as pd
 import seaborn as sns
 
 
-def create_visualization(
+def plot_metrics(
     input_data: list[dict[str, dict[str, str | bool | float]]],
     metric: str = "precision",
-    output_dir: str = "plots1",
+    output_dir: str = "plots",
 ):
     df = pd.DataFrame(
         [
@@ -75,7 +75,7 @@ with open("plots/metrics1.json", "r") as f:
 
 # Plot accuracy by default
 for metric in ["precision", "recall", "avoidance", "accuracy"]:
-    create_visualization(data, metric)
+    plot_metrics(data, metric)
 
 
 # %%
