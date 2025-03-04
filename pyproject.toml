@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "datasets>=3.3.2",
     "inspect-ai>=0.3.66",
     "openai>=1.64.0",
 ]
@@ -20,9 +21,12 @@ build-backend = "hatchling.build"
 dev = [
     "ipykernel>=6.29.5",
     "ipywidgets>=8.1.5",
+    "matplotlib>=3.10.0",
+    "plotly>=6.0.0",
     "pre-commit>=4.1.0",
     "pyright>=1.1.394",
     "python-dotenv>=1.0.1",
+    "seaborn>=0.13.2",
 ]
 
 [tool.ruff]

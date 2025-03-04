@@ -84,3 +84,6 @@ logs
 
 # Local development settings
 local_settings.py
+
+notebooks/data
+plots
