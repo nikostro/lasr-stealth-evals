@@ -28,6 +28,34 @@ def precision(to_float: ValueToFloat = value_to_float()) -> Metric:
 
 
 @metric
+def f1_score(to_float: ValueToFloat = value_to_float()) -> Metric:
+    r"""Compute F1 score, the harmonic mean of precision and recall."""
+
+    def metric(scores: list[SampleScore]) -> float:
+        tp = 0
+        fp = 0
+        fn = 0
+        for item in scores:
+            assert type(item.score.explanation) is str, f"Explanation is not a string: {type(item.score.explanation)}"
+            if "TP" in item.score.explanation:
+                tp += 1
+            elif "FP" in item.score.explanation:
+                fp += 1
+            elif "FN" in item.score.explanation:
+                fn += 1
+
+        precision_val = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall_val = tp / (tp + fn) if (tp + fn) > 0 else 0
+
+        if precision_val == 0 and recall_val == 0:
+            return 0
+
+        return 2 * (precision_val * recall_val) / (precision_val + recall_val)
+
+    return metric
+
+
+@metric
 def avoidance(to_float: ValueToFloat = value_to_float()) -> Metric:
     r"""Compute fraction of evasion attempts that were successful."""
 
