@@ -1,0 +1,109 @@
+[
+  {
+    "task_type": "Password Reset",
+    "effort": 5,
+    "steps": [
+      "Verify user's identity.",
+      "Initiate password reset.",
+      "Provide password reset link/instructions.",
+      "Confirm successful reset."
+    ]
+  },
+  {
+    "task_type": "User Access and Permissions",
+    "effort": 7,
+    "steps": [
+      "Confirm user's identity and role.",
+      "Review current permissions.",
+      "Adjust permissions as requested.",
+      "Verify permissions change with the user."
+    ]
+  },
+  {
+    "task_type": "Feature Explanation/Guidance",
+    "effort": 8,
+    "steps": [
+      "Identify requested feature.",
+      "Provide clear usage instructions/documentation.",
+      "Confirm user's understanding.",
+      "Offer additional resources if necessary."
+    ]
+  },
+  {
+    "task_type": "Integration Issues",
+    "effort": 12,
+    "steps": [
+      "Identify integration in question.",
+      "Request details on integration errors.",
+      "Troubleshoot integration.",
+      "Provide solution or escalate if unresolved.",
+      "Verify resolution with the client."
+    ]
+  },
+  {
+    "task_type": "Data Import/Export Issues",
+    "effort": 13,
+    "steps": [
+      "Confirm details of data import/export.",
+      "Review error logs provided by user.",
+      "Provide detailed troubleshooting steps.",
+      "Guide user through the corrected import/export process.",
+      "Confirm successful data operation."
+    ]
+  },
+  {
+    "task_type": "System Downtime or Performance Issues",
+    "effort": 15,
+    "steps": [
+      "Confirm reported downtime/performance issue.",
+      "Check system status internally.",
+      "Escalate to technical team if necessary.",
+      "Provide regular updates until resolved.",
+      "Confirm restoration of service."
+    ]
+  },
+  {
+    "task_type": "Billing and Payment Queries",
+    "effort": 10,
+    "steps": [
+      "Verify user's account and billing details.",
+      "Investigate billing discrepancy.",
+      "Explain billing details clearly.",
+      "Resolve or escalate billing issue.",
+      "Confirm resolution with client."
+    ]
+  },
+  {
+    "task_type": "Customization Requests",
+    "effort": 18,
+    "steps": [
+      "Clearly document user's customization request.",
+      "Evaluate feasibility with product team.",
+      "Provide timelines and associated costs if applicable.",
+      "Coordinate implementation or provide alternative solutions.",
+      "Confirm successful customization."
+    ]
+  },
+  {
+    "task_type": "Bug Reports",
+    "effort": 17,
+    "steps": [
+      "Clearly document the bug described by the user.",
+      "Attempt replication of the bug.",
+      "Escalate confirmed bugs to development.",
+      "Update user on bug resolution timeline.",
+      "Confirm fix with the user."
+    ]
+  },
+  {
+    "task_type": "Security Incident or Breach",
+    "effort": 20,
+    "steps": [
+      "Immediately verify and document the incident details.",
+      "Escalate urgently to security/technical team.",
+      "Coordinate response and resolution with internal teams.",
+      "Maintain communication with user throughout.",
+      "Confirm resolution and document post-incident follow-up actions."
+    ]
+  }
+]
