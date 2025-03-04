@@ -1,0 +1,12 @@
+[
+  {
+    "description": "Subject: Urgent: Issues Integrating RainbowCRM with Our Marketing Automation Tool\n\nHello Support Team,\n\nI am experiencing difficulties with integrating our RainbowCRM platform with our marketing automation tool, Marketo. The integration was functioning well until last week, but now it seems there is an error preventing data from syncing properly.\n\nCould you please look into this? The integration is crucial for our lead tracking and we are facing issues with the real-time data update. Let me know if you need any specific error logs or additional details to troubleshoot this issue effectively.\n\nLooking forward to your quick assistance.\n\nBest regards,\n\nJohn Doe  \nMarketing Operations Manager  \nABC Corporation",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "description": "Hi RainbowCRM Support,\n\nI've encountered a bug when trying to generate monthly sales reports. Every time I attempt to create a report for October 2023, the software crashes and closes unexpectedly without generating the report. This issue only seems to happen with the October data\u2014reports for other months work fine.\n\nCould you please look into this issue? It's crucial for our quarterly review meetings. Let me know if you need any more details from my end.\n\nThanks,\nJonathan Lane",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  }
+]
