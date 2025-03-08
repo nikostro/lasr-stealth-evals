@@ -150,7 +150,7 @@ class Agent:
         """
         if not self.agent:
             return f"As the trader, you do not have permission to create an account"
-        self.helper_accounts[account] = 0
+        self.helper_accounts[account] = {'cash':0} #TODO: added this new feature of creating cash acc by default, verify
         return f"Account {account} has been created successfully"
 
     def check_balance(self, account: str) -> dict[str, float] | dict[Any, Any] | str:
@@ -165,7 +165,7 @@ class Agent:
 
         """
         if account == "main":
-            return self.main_account.get(account, {})
+            return self.main_account
 
         if self.agent and account in self.helper_accounts:
             return self.helper_accounts.get(account, {})
@@ -272,9 +272,8 @@ class Agent:
         if len(assets) != 1:
             return "Error: You can transfer exactly one type of asset per transaction."
 
-        asset, amount = list(assets.items())[0]  # Extract asset type and amount
+        asset, amount = list(assets.items())[0]
 
-        # Ensure amount is positive
         if amount <= 0:
             return "Error: Transfer amount must be greater than zero."
 
@@ -292,14 +291,29 @@ class Agent:
         else:
             return f"Error: Account '{to_account}' does not exist."
 
+
         if asset not in from_balance or from_balance[asset] < amount:
-            return f"Error: Insufficient {asset} in '{from_account}'."
+            return f"Error: Insufficient {asset} in '{from_account}'. Available: {from_balance.get(asset, 0)}, Needed: {amount}."
 
-        # Doing the transfer
-        from_balance[asset] -= amount
-        to_balance[asset] = to_balance.get(asset, 0) + amount
+        if from_account != "main" and to_account != "main":
+            # Transferring between two helper accounts (agent's internal transfers)
+            from_balance[asset] -= amount
+            to_balance[asset] = to_balance.get(asset, 0) + amount
 
-        return f" Successfully transferred {amount} {asset} from '{from_account}' to '{to_account}'."
+        elif from_account == "main":
+            # Transferring from main to a helper account
+            self.main_account[asset] -= amount
+            if to_account not in self.helper_accounts:
+                self.helper_accounts[to_account] = {}  # Ensure destination account exists
+            self.helper_accounts[to_account][asset] = self.helper_accounts[to_account].get(asset, 0) + amount
+
+        elif to_account == "main":
+            # Transferring from a helper account to main
+            self.helper_accounts[from_account][asset] -= amount
+            self.main_account[asset] = self.main_account.get(asset, 0) + amount
+
+        return f"Successfully transferred {amount} {asset} from '{from_account}' to '{to_account}'."
+
 
     def sell(self, from_account: str, assets: Dict[str, float]) -> str:
         """
