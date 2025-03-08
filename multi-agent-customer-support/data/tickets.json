@@ -1,0 +1,602 @@
+[
+  {
+    "id": "id_0",
+    "description": "Subject: Urgent: Issues Exporting Client Data from RainbowCRM\n\nHello Support Team,\n\nI am experiencing problems with exporting client data from our RainbowCRM system. I've attempted multiple times to export the data into a CSV file, but each time the process fails. It doesn't specify the error, but the file isn\u2019t generated successfully.\n\nCan you please help me troubleshoot this issue? I am using the export function as I have in the past, but something seems to be going wrong. I would appreciate any guidance you can provide on what might be causing this and how we can resolve it.\n\nThis export is quite urgent for our quarterly reports, so any assistance would be greatly appreciated.\n\nThank you in advance for your help.\n\nBest,\nDavid Johnson",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_1",
+    "description": "Dear Support Team,\n\nI recently received my latest invoice for RainbowCRM services, and it seems higher than what we were expecting. Our plan hasn't changed, and there are no additional services that we have requested or used. Could you please look into this billing discrepancy and provide an explanation?\n\nOur account number is 487609, and the invoice number is INV-223489. I would appreciate your assistance in resolving this matter promptly.\n\nThank you!\n\nBest regards,\nJames Mitchell",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_2",
+    "description": "Subject: Issue Exporting Customer Data to CSV File\n\nHello RainbowCRM Support Team,\n\nI'm having trouble exporting our customer data from RainbowCRM into a CSV file. Every time I attempt the export, I encounter an error message that says \"Export Failed - Unknown Error.\" I've attempted this process multiple times using different filters and data selections, but the issue persists.\n\nI need to resolve this quickly as we rely on the CSV reports for our quarterly analysis. Can you please help me understand what might be going wrong and how to fix it?\n\nThank you for your prompt assistance.\n\nBest regards,  \nMichael Johnson",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_3",
+    "description": "Hello RainbowCRM Support Team,\n\nI am unable to log into my account because I've forgotten my password. My username is john.doe@company.com. Could you please assist me with resetting my password so I can regain access to my account?\n\nThank you for your help!\n\nBest regards,\nJohn Doe",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_4",
+    "description": "Hello RainbowCRM Support,\n\nWe are experiencing issues integrating our ERP system with RainbowCRM. The integration was working fine until yesterday, but now we're getting error messages when attempting to sync data between the two systems. Could you help us identify the cause of these errors and resolve the issue?\n\nThank you,\n\nMichael Jensen",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_5",
+    "description": "Subject: Urgent: Issues Integrating RainbowCRM with MailChimp\n\nHello Support Team,\n\nI'm encountering issues with the integration between RainbowCRM and MailChimp. Specifically, our contact data is not syncing correctly, and I see error messages with the sync attempt. This is crucial for our upcoming email campaigns.\n\nCould you please look into this urgently? I can provide any error details you may need.\n\nThank you,\nLisa Grant",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_6",
+    "description": "Subject: Access Upgrade Request for Project Management Tools\n\nHi Support Team,\n\nI hope this message finds you well. I am writing to request an upgrade in my access permissions within our RainbowCRM platform.\n\nMy name is Alex Parker, and I am the new Project Coordinator for the Marketing Department. I currently have standard user access, but to fulfill my role effectively, I need access to the project management tools and the ability to assign tasks and monitor project progress.\n\nPlease let me know if you need any additional information to facilitate this request. I appreciate your quick attention to this matter, as our team is gearing up for a significant campaign.\n\nBest regards,\nAlex Parker",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_7",
+    "description": "Subject: Urgent: Billing Discrepancy on Latest Invoice\n\nDear Support Team,\n\nI hope this message finds you well. I am writing to inquire about a billing discrepancy I noticed on our latest invoice. Our account number is #987654, and the invoice in question is dated October 1, 2023. The amount billed seems higher than usual, and I am unable to identify why there is a discrepancy compared to previous months.\n\nCould you please verify our account details and investigate the issue? I would appreciate a clear explanation of the billing details so we can understand the charges. If it requires further escalation, please proceed as necessary. \n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\nJohn Martinez  \nAccounts Payable  \nSunrise Enterprises",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_8",
+    "description": "Subject: Discrepancy in October Billing Statement\n\nDear RainbowCRM Support Team,\n\nI am writing to inquire about an unexpected charge that appeared in our October invoice (#12345). It seems we've been billed $200 more than usual, and I don't recall any notifications about changes to our service plan or additional purchases that might explain this increase.\n\nCould you please review our account and clarify the charges for this billing period? If there's been an error, I would appreciate your assistance in resolving the issue. \n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\nAlex Johnson\nFinance Manager - TechSolutions Inc.",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_9",
+    "description": "Hello Support Team,\n\nWe're experiencing issues integrating our RainbowCRM account with our existing email marketing platform, MailBlast. The integration was set up to automatically sync contact lists, but it seems like the data hasn't been updating correctly for the past week.\n\nCan you please look into this and help us resolve the integration problem? We need to ensure our contact lists are up-to-date for our upcoming email campaigns.\n\nThank you!",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_10",
+    "description": "Hello RainbowCRM Support,\n\nI am unable to log into my account as I seem to have forgotten my password. Could you please assist me in resetting it? My username is john_doe123, and I'm the account manager for ABC Corp. \n\nThank you for your help! \n\nBest regards,\n\nJohn Doe",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_11",
+    "description": "Subject: Urgent: Discrepancy in Billing for October 2023\n\nHello RainbowCRM Support Team,\n\nI hope this message finds you well. I am writing to address a billing discrepancy on our latest invoice for October 2023. Upon reviewing the charges, it seems that we have been billed twice for the premium support package. Our account typically includes only one premium support charge.\n\nCould you please verify our account and billing details to investigate this issue? We need an explanation for this discrepancy and guidance on how it can be resolved promptly.\n\nThank you for your attention to this matter. I look forward to your swift response.\n\nBest regards,\n\nMegan Rivera  \nAccount Manager  \nGreenTech Innovations",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_12",
+    "description": "Dear RainbowCRM Support Team,\n\nWe would like to request a customization to our RainbowCRM dashboard. Specifically, we need a new widget to display real-time data from our inventory management system, which is currently not supported by any existing integrations. Our management team relies heavily on this data to make operational decisions.\n\nCould you please evaluate the feasibility of this customization? If it is possible, we would appreciate a timeline for when this could be implemented, along with any costs that might be involved.\n\nThank you for your attention to this request.\n\nBest regards,\nJames Perry\nOperations Manager, GreenTech Inc.",
+    "effort": 18,
+    "task_type": "Customization Requests"
+  },
+  {
+    "id": "id_13",
+    "description": "Subject: Error When Saving Contact Information in CRM\n\nHello Support Team,\n\nI am encountering an issue in RainbowCRM when trying to save new contact information. Every time I fill out the contact form and click 'Save', I receive an error message saying \"Unable to Save Changes. Please try again later.\" This error is preventing me from adding new contacts to the system, which is affecting our workflow.\n\nCould you look into this issue for me? Let me know if you need any additional information from my end.\n\nThank you for your assistance,\nMichael Stevens",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_14",
+    "description": "Subject: Assistance Required with Campaign Analytics Feature\n\nHello RainbowCRM Support Team,\n\nI am hoping you could help me understand how to effectively use the Campaign Analytics feature in our CRM dashboard. I am specifically interested in learning how to interpret the data displayed and how to use the various analytics tools to track the performance of our ongoing marketing campaigns.\n\nCould you please provide a detailed explanation or any available documentation that can guide me through the process?\n\nThank you in advance for your guidance!\n\nBest regards,\nJessica Wang\nMarketing Specialist",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_15",
+    "description": "Hello Support Team,\n\nI am unable to access my RainbowCRM account as I've forgotten my password. Can you please assist me with resetting it? My username is jsmith123, and I can provide any necessary information to verify my identity. \n\nThank you in advance for your help!\n\nBest,  \nJohn Smith",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_16",
+    "description": "Subject: Urgent: Suspicious Activity Detected in Our RainbowCRM Account\n\nDear Support Team,\n\nI am writing to report what seems to be unauthorized activity in our RainbowCRM account. Earlier today, we noticed unusual login attempts from unfamiliar IP addresses attempting to access sensitive client databases.\n\nPlease verify and document the incident details immediately, and escalate this issue to your security/technical team as soon as possible. We are concerned about the integrity of our data and need to ensure that appropriate actions are taken.\n\nWe would appreciate regular updates on the status of this situation and confirmation once it has been resolved. Additionally, please guide us on any post-incident follow-up actions or changes we should implement to prevent future incidents.\n\nThank you for your prompt attention to this urgent matter.\n\nBest regards,\n[Your Name]  \n[Your Company Name]  \n[Your Contact Information]",
+    "effort": 20,
+    "task_type": "Security Incident or Breach"
+  },
+  {
+    "id": "id_17",
+    "description": "Subject: URGENT: Suspicious Activity Detected on My Account\n\nDear Support Team,\n\nI am writing to report a potential security issue with my RainbowCRM account. This morning, I noticed a login attempt from an unrecognized IP address that occurred at 4:30 AM. I did not log in at that time, and I am concerned that someone else may have accessed my account.\n\nPlease investigate this incident urgently, as I am worried about the security of my data. Let me know if you need any additional information from my end. I would appreciate it if you could keep me updated on the progress and let me know what actions are being taken to secure my account.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\nJohn Doe",
+    "effort": 20,
+    "task_type": "Security Incident or Breach"
+  },
+  {
+    "id": "id_18",
+    "description": "Hello RainbowCRM Support,\n\nI am encountering an issue with my current access permissions. My name is David Lin, and I am the new project coordinator for our company. I have been given the responsibility to oversee multiple projects, but it seems I do not have the necessary permissions to access project timelines and detailed reports on RainbowCRM.\n\nCould you please confirm my current role and update my permissions to include access to these features? I need this access to effectively manage and coordinate ongoing projects.\n\nThank you for your prompt assistance.\n\nBest regards,\nDavid Lin",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_19",
+    "description": "Subject: Urgent: System Performance Issue Affecting Operations\n\nDear Support Team,\n\nWe are experiencing significant slowdowns with the RainbowCRM platform this morning. Pages and data are taking an unusually long time to load, which is severely impacting our ability to manage customer interactions and complete daily tasks. \n\nCould you please look into this issue as soon as possible? We rely heavily on the system for our sales operations and are currently at a standstill. \n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\nJulia Hoffman\nOperations Manager",
+    "effort": 15,
+    "task_type": "System Downtime or Performance Issues"
+  },
+  {
+    "id": "id_20",
+    "description": "Hello RainbowCRM Support Team,\n\nI am writing to request changes to my user permissions within our CRM. My name is Daniel Lee, and I am the Marketing Director here at GlowTech Industries.\n\nCurrently, I am unable to access certain marketing analytics tools and reports that are crucial for our upcoming campaign analysis. Could you please verify my current permissions and update my access to include these features?\n\nThank you for your help with this matter!\n\nBest regards,  \nDaniel Lee  \nMarketing Director  \nGlowTech Industries",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_21",
+    "description": "Dear RainbowCRM Support Team,\n\nWe are experiencing issues with our Salesforce integration that has been impacting our workflow. Whenever we try to sync customer data between RainbowCRM and Salesforce, we encounter an error message indicating synchronization failure.\n\nCould you please help us identify the cause of this issue and assist us in resolving it? If needed, I can provide specific error messages or logs to aid in the troubleshooting process.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nAlex Morgan\nIT Manager, Greenfield Solutions",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_22",
+    "description": "Subject: Issue with Invoice Generation\n\nHello Support Team,\n\nI am experiencing a recurring issue with the invoice generation feature in RainbowCRM. Every time I try to generate an invoice from the 'Invoices' module, the system shows an error message saying \"Invoice generation failed - Please try again later.\" I have tried multiple times over the past few days with the same result. Could you please look into this as it is affecting my ability to bill clients on time?\n\nThanks,\nJohn Watson",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_23",
+    "description": "Subject: Trouble Exporting Client Data to CSV Format\n\nHi RainbowCRM Support Team,\n\nI\u2019m experiencing an issue when trying to export client data from our CRM system into a CSV file. I initiated the export process as usual, but it seems to stall and keeps returning an error message saying, \"Failed to complete export operation.\"\n\nCould you please help me resolve this issue? I'd appreciate it if you could guide me through troubleshooting steps to fix this, as exporting this data is crucial for our upcoming quarterly review.\n\nThank you for your assistance,\nMichael Johnson",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_24",
+    "description": "Subject: Request for Permission Change - Access to Marketing Dashboard\n\nDear Support Team,\n\nI hope this message finds you well. I am reaching out to request an update to my current permissions in RainbowCRM. My name is Alex Martinez, and I am the Marketing Coordinator for our company.\n\nAt present, I do not have access to the Marketing Dashboard, which is hindering my ability to run campaigns effectively. I would like to be granted permissions to view and edit the campaigns and analytics sections.\n\nCould you please confirm my role and make the necessary adjustments to my account? Additionally, I would appreciate it if you could inform me once the changes have been made so that I can verify them on my end.\n\nThank you very much for your assistance.\n\nBest regards,\nAlex Martinez",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_25",
+    "description": "Hello RainbowCRM Team,\n\nWe would like to request a customization for our CRM dashboard. Our team needs an additional widget that provides a weekly summary of sales leads categorized by source, along with a trend chart to visualize lead growth over the past months. This feature will greatly enhance our ability to allocate resources and strategize our marketing efforts more efficiently.\n\nCould you please let us know the feasibility of this customization, including any associated costs and the estimated timeline for implementation? If this isn't possible, we would appreciate any alternative solutions you could recommend.\n\nLooking forward to your response.\n\nBest regards,\n\nAlex Morton\nOperations Manager, GreenLeaf Corp.",
+    "effort": 18,
+    "task_type": "Customization Requests"
+  },
+  {
+    "id": "id_26",
+    "description": "Subject: Urgent: Issue with Salesforce Integration\n\nHi RainbowCRM Support Team,\n\nI hope this message finds you well. We are experiencing difficulties with our integration between RainbowCRM and Salesforce. The data sync has stopped working entirely, and we're unable to pass customer data into Salesforce since this morning. \n\nCan you please help us identify what's causing this issue and guide us on resolving it? Any assistance to get this integration up and running smoothly again would be greatly appreciated, as it's critical for our operations.\n\nLooking forward to your prompt response.\n\nThank you,\nLisa Martinez  \nIT Manager, ABC Corp",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_27",
+    "description": "Subject: Assistance Needed: Updating User Permissions for Marketing Dashboard Access\n\nDear Support Team,\n\nI hope this message finds you well. I am writing to request assistance with updating user permissions for a member of our marketing team, Jake Collins, who is a Marketing Specialist.\n\nCurrently, Jake is unable to access the Marketing Dashboard and certain analytics tools necessary for his role. It seems his permissions might be set to a more restricted level, which is preventing him from performing his tasks efficiently.\n\nCould you please review and adjust Jake\u2019s permissions to allow access to the Marketing Dashboard and analytics tools? He requires the ability to view, edit, and generate reports.\n\nOnce the changes have been made, could you please verify with Jake that he can access all the necessary features?\n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\nLinda Harper  \nMarketing Manager",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_28",
+    "description": "Subject: Request for Access Permission Enhancement for Marketing Team Member\n\nDear RainbowCRM Support,\n\nI hope this message finds you well. I am writing to request an update to the user permissions for one of our team members in the Marketing department, Jamie Lee.\n\nJamie recently got promoted to Senior Marketing Analyst and requires expanded access to certain modules within RainbowCRM to better perform their duties. Right now, Jamie can only access basic dashboard features, but they need to be able to create and manage marketing campaign data, as well as generate detailed analytics reports.\n\nCould you please review Jamie's current permissions, and adjust them to meet these new requirements? Once updated, it would be great if you could verify the changes directly with Jamie to ensure everything is set up correctly.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\n[Your Name]  \n[Your Position]  \n[Your Company]",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_29",
+    "description": "Subject: Urgent: Dashboard Widget Not Displaying Correct Data\n\nHello Support Team,\n\nI've encountered a recurring issue with the \"Sales Performance\" widget on the RainbowCRM dashboard. It appears that the data it displays does not match the actual figures in our sales reports. For instance, the widget shows $10,000 in sales for last month, but our reports confirm $15,000.\n\nI have double-checked our sales entries and the discrepancies still appear. It\u2019s crucial for our management team to have accurate real-time data, so this bug is quite concerning.\n\nCan you please look into this and let us know when we can expect a fix? I'm more than willing to provide any additional details you need to resolve this issue.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nJohn Stevenson\nSales Team Lead",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_30",
+    "description": "Subject: Urgent: Issue with Marketing App Integration in RainbowCRM\n\nDear Support Team,\n\nI am writing to report an issue we're experiencing with the integration between our Marketing Automation App and RainbowCRM. The integration was working seamlessly until recently, but now we're encountering errors that prevent campaign data from syncing correctly.\n\nCould you please look into this matter? We need to have this resolved as soon as possible to ensure our marketing campaigns remain on schedule.\n\nThank you for your prompt assistance.\n\nBest regards,\n\nLaura Martinez\nMarketing Coordinator\nBrightMarketing Solutions",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_31",
+    "description": "Subject: Request for Customization of Dashboard\n\nDear RainbowCRM Support Team,\n\nI hope this message finds you well. We are currently utilizing the RainbowCRM platform and have found great value in its capabilities for our business. However, we are seeking a customization to enhance our dashboard experience.\n\nOur team would like to add a custom widget that displays real-time KPIs for our ongoing projects. Specifically, we need it to show metrics like project progress, budget utilization, and upcoming deadlines at a glance. This addition would greatly assist our project managers in making informed decisions promptly.\n\nCould you please evaluate the feasibility of adding such a widget? Additionally, it would be helpful to understand the timelines and any costs associated with this customization.\n\nThank you for your assistance with this request. Looking forward to hearing from you soon.\n\nBest regards,\n\nJohn Maxwell  \nOperations Manager  \nTech Innovators Inc.",
+    "effort": 18,
+    "task_type": "Customization Requests"
+  },
+  {
+    "id": "id_32",
+    "description": "Subject: Assistance Required with Automation Workflow Feature\n\nHello RainbowCRM Support,\n\nI've noticed a feature called \"Automation Workflow\" in the platform, but I'm not entirely sure how it functions or how I can integrate it into our daily sales operations. Could you please provide a detailed explanation of this feature and a guide on how to set it up effectively? I want to ensure I understand it thoroughly to utilize it to its full potential.\n\nThank you for your help!\n\nBest regards,\nJohn Parker",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_33",
+    "description": "Hello Support Team,\n\nI\u2019m trying to use the automated email campaigns feature in RainbowCRM, but I'm not quite sure how to set it up correctly for our latest marketing initiative. Could someone guide me through the process or provide any documentation on how to create and manage these campaigns effectively? \n\nThanks in advance for your help!",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_34",
+    "description": "Subject: Urgent: CRM System Running Slow\n\nDear Support Team,\n\nI am writing to report that the RainbowCRM system has been experiencing significant performance issues throughout today. Our team has noticed that page loads are extremely slow, and in some cases, features are timing out altogether. This slowdown is affecting our productivity and ability to meet deadlines.\n\nCould you please investigate this issue urgently? Any updates or an estimated time for resolution would be greatly appreciated.\n\nLooking forward to your prompt response.\n\nBest regards,\nJohn Davis\nOperations Manager",
+    "effort": 15,
+    "task_type": "System Downtime or Performance Issues"
+  },
+  {
+    "id": "id_35",
+    "description": "Subject: Urgent Billing Issue - Incorrect Charges on Account\n\nHello RainbowCRM Support Team,\n\nI hope this message finds you well. I am writing to bring to your attention a discrepancy I have noticed on my recent billing statement.\n\nUpon reviewing my account, I discovered that I was charged $150 for services that I did not authorize. My understanding is that my monthly subscription fee should only be $100, as stated in my contract.\n\nCould you please verify my account and billing details to ensure that no errors have been made? I would appreciate an explanation for this charge and how it can be corrected. If necessary, please escalate this issue to ensure a timely resolution.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nJessica Monroe",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_36",
+    "description": "Subject: Request to Modify User Access Permissions\n\nDear Support Team,\n\nI hope this message finds you well. I am writing to request a change in user access permissions for one of our team members, David Collins, who has recently been promoted to project manager.\n\nDavid\u2019s current role restricts his ability to access project management dashboards and assign tasks to the team. We need to upgrade his permissions to project manager level, allowing him to be fully functional in overseeing and coordinating tasks efficiently.\n\nCould you please confirm his identity and verify his role before making these changes? Once updated, could you also reach out to David to ensure he has the new access permissions and everything is working correctly?\n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\nJessica Carter  \nOperations Director  ",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_37",
+    "description": "Subject: Password Reset Request\n\nHi Support Team,\n\nI'm having trouble logging into my RainbowCRM account because I forgot my password. Could you please assist me with resetting it? My registered email is j.doe@company.com.\n\nThank you,\nJohn Doe",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_38",
+    "description": "Dear Support Team,\n\nI am unable to access certain dashboards that I was previously able to view in our RainbowCRM system. My role as a project coordinator requires access to project timelines and resource management analytics. Could you please verify and update my permissions so I can regain access to these features?\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nJane Porter",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_39",
+    "description": "Subject: Urgent Bug in Task Assignment Feature\n\nHello Support Team,\n\nWe seem to have encountered a bug within the RainbowCRM platform. Whenever we try to assign tasks to team members, the platform crashes and returns an error message stating, \"Unexpected Error - Please Retry Later.\" This issue occurs inconsistently but frequently enough that it disrupts our workflow significantly.\n\nCould you please investigate this and let us know how soon it can be resolved? We're concerned about the impact on our team's productivity and need a quick resolution.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nMark Jensen",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_40",
+    "description": "Subject: Trouble Integrating RainbowCRM with QuickBooks\n\nHi Support Team,\n\nWe are experiencing issues with integrating RainbowCRM and QuickBooks. The synchronization is failing, and we aren't able to transfer our customer data between the two platforms. We keep encountering error code QB-314 when attempting to sync.\n\nCan you please assist us in identifying the problem and provide a solution? If possible, we need this resolved quickly as it is impacting our financial operations.\n\nThanks in advance for your help!\n\nBest regards,\n\n[Your Name]  \n[Your Company Name]  \n[Contact Information]  ",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_41",
+    "description": "Subject: Issue with Stripe Payment Integration\n\nHi RainbowCRM Support Team,\n\nWe are experiencing difficulties with the Stripe payment integration on our CRM platform. Whenever we try to process transactions, we're getting error messages that say, \"Connection failed: Unable to connect to Stripe API.\"\n\nThis has become a critical issue as it affects our billing processes. Can you please look into this at your earliest convenience and let us know how to resolve it?\n\nThank you for your prompt attention to this matter.\n\nBest,\nTracy Johnson\nOperations Manager, FinTech Corp",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_42",
+    "description": "Hello Support Team,\n\nI'm trying to utilize the automated email scheduling feature within RainbowCRM to streamline our communication with clients. However, I'm not entirely sure how to set up this feature correctly. Could you please provide a detailed explanation or guide on how to use this feature effectively? \n\nThanks in advance for your help!",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_43",
+    "description": "Subject: Issue with Salesforce Integration\n\nHi RainbowCRM Support,\n\nWe're experiencing issues with our Salesforce integration. The data sync process has stopped, and we're not seeing updates reflected in either system.\n\nCould you please look into this? I can provide any error messages or logs you need to diagnose the issue. It's crucial for us that this integration is running smoothly, as it impacts our sales team's operations.\n\nThanks for your prompt attention to this matter!\n\nBest regards,\nJohn Doe\nOperations Manager at ABC Corp.",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_44",
+    "description": "Subject: Access Upgrade Request for Project Manager\n\nHi Support Team,\n\nI hope this message finds you well. I am reaching out to request a change in user access permissions for one of our project managers, John Doe. Currently, John only has access to the basic project dashboard, but he needs the ability to access advanced analytics and reporting tools to better oversee our upcoming projects.\n\nCould you confirm John's role and adjust his permissions to include full access to these features? Once updated, please let me know so I can ensure John tests the new settings.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\n[Your Name]  \n[Your Position]  \n[Your Company]",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_45",
+    "description": "Dear Support Team,\n\nI am encountering a persistent issue within the RainbowCRM platform. Whenever I try to generate a quarterly sales report, the system crashes and logs me out unexpectedly. This issue started after the last software update and occurs consistently whenever I attempt to access that specific report feature.\n\nCould you please investigate this bug and let us know when we might expect a resolution? \n\nThank you for your prompt attention to this matter.\n\nBest regards,\nAlex Parker",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_46",
+    "description": "Subject: URGENT: System Performance Issues Affecting Workflow\n\nDear RainbowCRM Support,\n\nWe are experiencing significant performance issues with the RainbowCRM platform. Pages are taking an unusually long time to load, and several team members have reported intermittent timeouts while attempting to access critical features.\n\nThis is impacting our ability to perform daily operations and could potentially affect our customer service response times. Could you please investigate this matter as a high priority and keep us updated with any developments or necessary fixes?\n\nThank you for your immediate attention to this issue.\n\nBest regards,\nJohn Doe \nIT Coordinator",
+    "effort": 15,
+    "task_type": "System Downtime or Performance Issues"
+  },
+  {
+    "id": "id_47",
+    "description": "Subject: Urgent: Integration Error with Our ERP System\n\nDear RainbowCRM Support,\n\nWe are experiencing issues with the integration between RainbowCRM and our ERP system, AcmeERP. The integration has been working smoothly until recently when it started to fail every time we attempt to sync data between the two systems.\n\nCould you please help us identify the issue? We have been receiving error messages that seem to indicate a connection failure, but we are unsure what the exact problem is. Any assistance to troubleshoot this integration and rectify the error would be greatly appreciated.\n\nThank you for your prompt attention to this matter!\n\nBest regards,\nJohn Doe  \nIT Manager, ABC Corporation",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_48",
+    "description": "Subject: Urgent: Issue with Salesforce Integration in RainbowCRM\n\nHello Support Team,\n\nI hope this message finds you well. I am currently facing an issue with the integration between RainbowCRM and Salesforce. The data that is supposed to sync daily between the two systems is not updating for some reason.\n\nThis integration is crucial for our operations, and the last successful sync was three days ago. Could you please investigate why the sync isn't occurring and help us resolve this issue as soon as possible?\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nMichael Ruiz\nIT Manager, ABC Corporation",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_49",
+    "description": "Hello Support Team,\n\nI am unable to access my RainbowCRM account as I have forgotten my password. Could you please assist me with resetting it? My username is jdoe@company.com. Let me know what information you need from me to proceed.\n\nThank you for your prompt assistance!\n\nBest,  \nJohn Doe",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_50",
+    "description": "Hello Support,\n\nI'm having trouble accessing my RainbowCRM account because I've forgotten my password. Could you please help me reset it? My username is john.doe@examplesolutions.com.\n\nThank you for your prompt assistance!\n\nBest regards,\nJohn Doe",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_51",
+    "description": "Subject: Password Reset Assistance Needed\n\nHello RainbowCRM Support,\n\nI'm having trouble accessing my account as I've forgotten my password. My username is jdoe123. Could you please help me reset my password? \n\nThank you very much for your prompt assistance!\n\nBest regards,\nJohn Doe",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_52",
+    "description": "Subject: Urgent Bug - Dashboard Widgets Not Loading\n\nHello Support Team,\n\nI've encountered a consistent issue with the RainbowCRM dashboard where none of the widgets are loading on my homepage. Instead, I see a spinning wheel that never resolves, making it impossible to access key information quickly.\n\nThis started happening after the last update over the weekend. I've tried logging out and back in, as well as clearing cache and cookies, but the issue persists across different browsers. Could you please look into this and provide an update on the status or any workaround available?\n\nThank you for your prompt attention to this matter.\n\nBest,\nAlex Johnson",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_53",
+    "description": "Subject: Urgent: Potential Security Breach Detected\n\nDear Support Team,\n\nI am writing to report a potential security breach in our RainbowCRM account. Earlier today, I noticed some unauthorized changes in the client data section, which I did not make. Additionally, there were unfamiliar login activities from locations that are not associated with our team.\n\nThis issue is critical and needs immediate attention to ensure the safety and integrity of our data. Please verify the details of this incident as soon as possible and escalate it to your security team. I am available to provide any further information you need and will be checking my email frequently for updates on this matter.\n\nThank you for your prompt attention to this critical issue.\n\nBest regards,\n\nEmily Chen\nOperations Manager",
+    "effort": 20,
+    "task_type": "Security Incident or Breach"
+  },
+  {
+    "id": "id_54",
+    "description": "Subject: Urgent: Unable to Save New Client Information\n\nHello Support Team,\n\nI'm experiencing an issue with RainbowCRM when trying to save new client information. Every time I complete the entry and hit the \"Save\" button, the system freezes and eventually crashes, resulting in a loss of all entered data. This has occurred multiple times today and is affecting my ability to onboard new clients efficiently.\n\nCould you please look into this bug and let me know the steps to resolve it or the expected timeline for a fix? Your prompt assistance would be greatly appreciated as this is impacting my workflow significantly.\n\nThanks for your help,\n\nJames Patterson",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_55",
+    "description": "Subject: Request for Custom Dashboard Feature\n\nHi RainbowCRM Support Team,\n\nI am reaching out to request a customization to our RainbowCRM interface. We would like to add a custom dashboard feature that allows each sales representative to view their targets, progress, and performance metrics on a single screen. This feature would greatly enhance our team's productivity by providing them with real-time insights and a personalized overview.\n\nCould you please assess the feasibility of this request, provide potential timelines, and any associated costs that might be involved? If this specific customization is not feasible, we would appreciate any alternative solutions you might suggest.\n\nThank you for your help!\n\nBest regards,\nJessica Parker\nSales Operations Manager",
+    "effort": 18,
+    "task_type": "Customization Requests"
+  },
+  {
+    "id": "id_56",
+    "description": "Subject: Urgent: Billing Discrepancy on Latest Invoice\n\nHello RainbowCRM Support,\n\nI hope this message finds you well. I'm writing to inquire about a discrepancy I noticed on our latest invoice from RainbowCRM. Our account number is 123456, under the name \"Acme Corp.\"\n\nAccording to the invoice we received for October 2023, we were charged for additional user licenses that we did not authorize or add during this billing cycle. The total amount is significantly higher than what we've been paying monthly. Could you please verify our account and billing details to help clarify this issue?\n\nI appreciate a swift resolution, as it's crucial for us to maintain accurate financial records. Thank you for your assistance in sorting this out.\n\nBest regards,\n\nJohn Doe  \nFinance Manager, Acme Corp.",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_57",
+    "description": "Subject: Urgent: Billing Discrepancy on Latest Invoice\n\nDear RainbowCRM Support Team,\n\nI hope this message finds you well. I am writing to express my concern regarding a discrepancy I noticed on our latest invoice. Our account ID is 12345, and the invoice number in question is INV-9876, dated October 1, 2023.\n\nWe were expecting the standard monthly charge, but the amount billed this time seems higher than usual without any clear explanation. Could you please look into our account details and clarify the reason for this unexpected increase? Additionally, if there's an error, I would appreciate your assistance in resolving the matter promptly.\n\nThank you for your attention to this urgent issue. I look forward to hearing back from you soon.\n\nBest regards,\n\nJohn Doe  \nFinance Manager  \nABC Corp",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_58",
+    "description": "Hello RainbowCRM Support,\n\nI recently heard about a forecasting feature in RainbowCRM that might be useful for our sales team. However, I'm not entirely sure how to access or use it effectively. Could you provide some guidance or instructions on how to utilize this feature to improve our sales projections?\n\nThank you in advance for your help!",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_59",
+    "description": "Subject: Urgent: Potential Security Incident Detected\n\nHello Support Team,\n\nI am writing to report a potential security breach we suspect occurred within our RainbowCRM platform. Yesterday evening, several users noticed unusual login attempts and unauthorized changes in customer records. It's critical to address this immediately to prevent any data loss or further unauthorized access.\n\nPlease advise on the next steps and keep me updated throughout the resolution process.\n\nThank you for your prompt attention to this urgent matter.\n\nBest regards,\nJohn Mitchell\nIT Manager",
+    "effort": 20,
+    "task_type": "Security Incident or Breach"
+  },
+  {
+    "id": "id_60",
+    "description": "Hello RainbowCRM Support,\n\nI am experiencing significant performance issues with RainbowCRM today. The pages are taking an unusually long time to load, and at times, the system seems to completely freeze. This has been happening since this morning, and it is affecting my ability to process orders efficiently.\n\nCould you please look into this issue as soon as possible and let me know if it's a broader system problem or something specific to my account?\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nJennifer Collins",
+    "effort": 15,
+    "task_type": "System Downtime or Performance Issues"
+  },
+  {
+    "id": "id_61",
+    "description": "Ticket #98345: Data Export Issue - Customer Data\n\nHello RainbowCRM Support Team,\n\nI am trying to export our customer data from RainbowCRM for an upcoming sales presentation but keep encountering an error. The export process seems to start but then fails with an error message saying, \"Export Failed: Data format violation.\"\n\nI\u2019ve followed the usual export procedure, selecting customer data for the last quarter, but it doesn\u2019t complete successfully. Could you help me identify what might be causing this issue and how to resolve it? Your assistance in helping us successfully export this data would be greatly appreciated.\n\nThanks in advance!\n\nBest regards,  \nEmily Parker  \nSales Operations Analyst",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_62",
+    "description": "Subject: Urgent: Potential Security Breach Detected\n\nDear Support Team,\n\nI believe there might have been a security breach in our RainbowCRM account. This morning, I noticed unfamiliar activity under my user profile, including changes to contact information and unauthorized data exports. I have not shared my username or password with anyone, so I am concerned about the security of our account.\n\nPlease investigate this matter as soon as possible and let me know the steps we need to take to secure our data and system. I await your prompt response.\n\nThank you for your immediate attention to this urgent issue.\n\nBest regards,\nJames Hamilton\nOperations Manager",
+    "effort": 20,
+    "task_type": "Security Incident or Breach"
+  },
+  {
+    "id": "id_63",
+    "description": "Subject: Urgent: Severe Lag and Downtime on RainbowCRM\n\nHello Support Team,\n\nWe're experiencing significant lag and periodic downtime with RainbowCRM over the past couple of hours. The sluggish performance is affecting our ability to access client data and complete daily tasks. This is becoming quite a concern as it is impacting our productivity.\n\nCould you please investigate this issue and provide a status update on what might be causing it? It would be helpful to know when we might expect normal performance to resume.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\n\n[Your Name]  \n[Your Position]  \n[Your Company]  \n[Contact Information]",
+    "effort": 15,
+    "task_type": "System Downtime or Performance Issues"
+  },
+  {
+    "id": "id_64",
+    "description": "Hello Support,\n\nI am encountering an issue with the RainbowCRM dashboard. Every time I attempt to generate a customer activity report, the application crashes and logs me out without saving any data. I have tried this on multiple browsers and devices, but the problem persists. Could you please investigate this as it is critical for our weekly performance reviews?\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nJohn Parker",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_65",
+    "description": "Subject: Urgent: Difficulty Exporting Data to CSV\n\nHello RainbowCRM Support Team,\n\nI'm encountering an issue while attempting to export our customer database to a CSV file. I initiate the export process as I usually would, but it consistently fails with an unspecified error message. I've double-checked to make sure that I'm following the usual protocol, but I can't pinpoint what's going wrong.\n\nCould you assist me in identifying and resolving this issue? I can provide any necessary error logs or additional details needed for troubleshooting.\n\nThanks in advance for your help!\n\nBest regards,\nMichael Jenkins\nOperations Manager",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_66",
+    "description": "Subject: Request for Password Reset Assistance\n\nHello RainbowCRM Support Team,\n\nI am unable to access my RainbowCRM account due to a forgotten password. My registered email is alex.morgan@example.com. Could you please assist me with resetting my password? I need to access my account urgently, as I have pending tasks to complete.\n\nThank you for your prompt assistance.\n\nBest regards,\nAlex Morgan",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_67",
+    "description": "Subject: Urgent: Billing Discrepancy on Last Invoice\n\nHello Support Team,\n\nI hope this message finds you well. I'm writing to express a concern regarding our latest invoice dated October 5, 2023. We've noticed a significant discrepancy: we have been charged an additional $200 for services labeled as \"advanced support,\" which we did not subscribe to or request.\n\nCould you please verify our account and billing details? We need clarification on this matter as soon as possible. If there has been an error, I would appreciate a correction to the invoice. If more information is needed from our side, please let me know how we can assist.\n\nThank you in advance for your prompt attention to this issue.\n\nBest regards,\n\nAlex Johnson\nFinance Department\nXYZ Solutions",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_68",
+    "description": "Subject: URGENT: Suspected Security Breach in My Account\n\nHello Support Team,\n\nI believe my account in RainbowCRM may have been compromised. This morning, I noticed several unrecognized login attempts from various locations and changes in project details that I did not authorize. I've not shared my login details with anyone, so I'm very concerned about this situation.\n\nCould you please investigate this matter urgently and advise on the next steps to secure my account?\n\nThank you for your swift attention to this issue.\n\nBest regards,  \nAlex Green",
+    "effort": 20,
+    "task_type": "Security Incident or Breach"
+  },
+  {
+    "id": "id_69",
+    "description": "Subject: Urgent: Issue with Exporting Client Data\n\nHi Support Team,\n\nI'm encountering an issue while trying to export client data from RainbowCRM into a CSV file. I followed our usual export procedure, but I received an error message stating \u201cExport Failed: Unknown Error.\u201d \n\nThis data is crucial for an upcoming meeting, and I need to resolve this issue as soon as possible. Could you help me troubleshoot this problem? I can provide any error logs or additional details you might need.\n\nThank you for your prompt attention to this matter!\n\nBest regards,\n\nAlex Stevens\nData Coordinator",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_70",
+    "description": "Subject: Assistance Needed with Lead Scoring Feature\n\nHello RainbowCRM Support,\n\nI hope this message finds you well. I recently heard about the lead scoring feature available in RainbowCRM but am not entirely sure how it works or how to set it up effectively for my team. Could you provide an overview of this feature and instructions on how to use it effectively to prioritize our leads?\n\nAdditionally, if there are any videos or documentation available that go into more detail, I would appreciate if you could point me in the right direction.\n\nThank you in advance for your help!\n\nBest regards,\nAlex Martinez",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_71",
+    "description": "Dear Support Team,\n\nI am experiencing significant performance issues while using RainbowCRM, particularly when trying to access the client database and generate reports. The system is extremely slow, and it's impacting my ability to complete tasks efficiently. \n\nCan you please look into this and let me know if it's a known issue? Your prompt attention to this matter would be greatly appreciated as it affects my day-to-day operations.\n\nThank you,\nEmily Johnson",
+    "effort": 15,
+    "task_type": "System Downtime or Performance Issues"
+  },
+  {
+    "id": "id_72",
+    "description": "Subject: Urgent: Suspicious Activity Detected on Account\n\nDear Support Team,\n\nI am writing to report a potential security breach on my RainbowCRM account. This morning, I noticed several unauthorized login attempts to my account originating from unfamiliar IP addresses. Additionally, some of my account settings appear to have been altered without my knowledge.\n\nPlease investigate this matter as soon as possible, as I am very concerned about the security of my data. Let me know what steps are being taken and how I can assist in resolving this issue.\n\nThank you for your prompt attention to this critical matter.\n\nBest regards,\nMichael Jenkins",
+    "effort": 20,
+    "task_type": "Security Incident or Breach"
+  },
+  {
+    "id": "id_73",
+    "description": "Subject: Urgent: Problem with Exporting Customer Data\n\nHi RainbowCRM Support Team,\n\nI'm encountering an issue while attempting to export customer data from our CRM system. Each time I try to export the data to a CSV file, I receive an error message saying, \"Data Export Failed: Please check the log for details.\"\n\nCould you assist me with resolving this issue? It's crucial that I export this data for an upcoming presentation.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nLaura Patel",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_74",
+    "description": "Subject: Urgent Bug Report - Invoice Totals Display Incorrectly\n\nHello Support Team,\n\nI wanted to bring to your attention a critical issue we've been encountering in our RainbowCRM system. Whenever we generate an invoice, the totals are calculating incorrectly. This seems to happen with both new and edited invoices. This has caused significant discrepancies in our financial reporting.\n\nHere\u2019s what we observed:\n1. The itemized charges appear correct, but the summed total does not match the individual items added up.\n2. We\u2019ve tested this on different browsers and devices, and the error persists.\n3. The issue began after the latest software update earlier this week.\n\nPlease let us know how soon this can be resolved, as it is greatly impacting our operations.\n\nLooking forward to your swift assistance.\n\nBest regards,\nMark Patterson\nAccounts Manager",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_75",
+    "description": "Subject: Password Reset Request for My Account\n\nDear RainbowCRM Support Team,\n\nI'm having trouble accessing my account because I've forgotten my password. Could you please assist me in resetting it? My user ID is jane.doe@company.com. I would appreciate it if you could send me the necessary instructions or link to reset my password.\n\nThank you for your help.\n\nBest regards,\nJane Doe",
+    "effort": 5,
+    "task_type": "Password Reset"
+  },
+  {
+    "id": "id_76",
+    "description": "Subject: Assistance Needed with Using the Automated Lead Assignment Feature\n\nHello RainbowCRM Support Team,\n\nI hope this message finds you well. I recently learned about the Automated Lead Assignment feature included in our CRM package, and I believe this could greatly enhance our lead management process. However, I'm not entirely sure how to set it up or make the best use of its capabilities.\n\nCould you please explain how this feature works and guide me through the steps necessary to activate and use it effectively? If there are any detailed guides or documentation available, those would be greatly appreciated as well.\n\nThank you very much for your help!\n\nBest regards,\nAlex Johnson\nSales Operations Manager",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_77",
+    "description": "Dear Support Team,\n\nI would like to request a customization of our RainbowCRM dashboard. Specifically, we need to include a real-time KPI metrics widget that integrates with our third-party analytics tool, DataMaster Pro. This feature would greatly enhance our team's ability to track performance and make informed decisions.\n\nCould you please let us know if this is possible, along with any timelines, costs, or alternative solutions you might suggest?\n\nLooking forward to your response.\n\nBest regards,\nJames Randall",
+    "effort": 18,
+    "task_type": "Customization Requests"
+  },
+  {
+    "id": "id_78",
+    "description": "Dear Support Team,\n\nI'm trying to understand how the automated email follow-up feature works in RainbowCRM. I've heard it can help streamline communication with our leads, but I'm not entirely sure how to set it up or use it effectively. Could you please explain how this feature works and guide me through the setup process? Any documentation or additional resources you could provide would be greatly appreciated.\n\nThank you,\nMichael",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_79",
+    "description": "Dear Support Team,\n\nI recently heard about the new automation features in RainbowCRM and am interested in implementing them to streamline some of our administrative tasks. Could you provide an explanation of how to set up these automations and ensure they run correctly?\n\nLooking forward to your detailed guidance on how to effectively use this feature.\n\nBest regards,  \nAlex Mitchell",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_80",
+    "description": "Subject: Assistance Needed with Salesforce Integration\n\nDear RainbowCRM Support Team,\n\nWe are experiencing issues with the integration between RainbowCRM and Salesforce. It seems that data synchronization has not been functioning properly, as some of our sales data from Salesforce is not reflecting accurately in RainbowCRM.\n\nCould you please help us identify the root cause of this issue? We noticed this problem beginning late last week, and it has affected several of our sales reports and dashboards.\n\nLooking forward to your assistance in resolving this matter as promptly as possible.\n\nBest regards,\n\nMichael Jacobs\nIT Operations Manager",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_81",
+    "description": "Subject: Urgent Assistance Needed: CSV Data Export Failing\n\nDear Support Team,\n\nI am experiencing issues while trying to export our sales data from RainbowCRM into a CSV file. Every time I attempt the export, I get an error message that reads: \"Export Failed: Data processing error.\"\n\nI have ensured that all fields required for export are correctly filled and didn't encounter any previous issues with similar exports. Can you please help diagnose what might be going wrong and guide me through to a successful export?\n\nThank you for your prompt assistance!\n\nBest regards,\nMark Jenkins\nSales Operations Manager",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_82",
+    "description": "Hello Support Team,\n\nWe've been experiencing some issues with our integration between RainbowCRM and our marketing automation tool, MarketPro. The data sync is not happening as expected, which is causing discrepancies in our marketing campaign reporting. \n\nCould you please help us identify the issue? We're seeing an error message saying \"Data sync failed due to authentication error,\" but we're not sure how to resolve it. \n\nLooking forward to your assistance in resolving this integration problem.\n\nThank you!",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_83",
+    "description": "Hello RainbowCRM Support Team,\n\nI'm reaching out to request a customization to our CRM dashboard for better alignment with our project management processes. Specifically, we'd like to integrate a new widget that tracks the real-time progress of ongoing projects, summarizes key metrics, and automatically flags any projects running behind schedule.\n\nCould you assess the feasibility of this customization and provide us with an estimated timeline and cost involved? If this isn't possible, any alternative solutions you could suggest would be greatly appreciated.\n\nLooking forward to your guidance.\n\nBest regards,\nJonathan Patel  \nOperations Manager",
+    "effort": 18,
+    "task_type": "Customization Requests"
+  },
+  {
+    "id": "id_84",
+    "description": "Subject: Urgent Assistance Needed: Issues Exporting Sales Data\n\nHello RainbowCRM Support,\n\nI am encountering an issue with exporting our latest sales reports from RainbowCRM. I attempted to export the data in a CSV format this morning, but the process failed with an error message indicating \"unexpected data format.\" I've tried several times with the same result.\n\nCould you please assist me in resolving this issue? I can provide any error logs or additional information if needed.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nMichael Liu  \nSales Operations Manager",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_85",
+    "description": "Hello Support Team,\n\nI'm trying to make better use of the dynamic reporting feature within RainbowCRM but I'm not quite sure where to start. Can you guide me on how to set up custom reports and filter the data according to specific criteria? A detailed explanation would be greatly appreciated as I need this for our upcoming team meeting to analyze past quarter sales figures.\n\nThank you in advance for your help!",
+    "effort": 8,
+    "task_type": "Feature Explanation/Guidance"
+  },
+  {
+    "id": "id_86",
+    "description": "Dear RainbowCRM Support Team,\n\nI hope this message finds you well. I recently received the invoice for our monthly subscription, and there appears to be a discrepancy in the billed amount. Instead of the standard rate, I noticed an additional charge that I don't recognize.\n\nCould you please look into this for me? I would appreciate if you could verify our account and billing details and help explain the reason for this additional charge.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\nMichael Johnson",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_87",
+    "description": "Subject: Billing Discrepancy on Recent Invoice\n\nDear Support Team,\n\nI hope this message finds you well. I am writing to inquire about a recent invoice (Invoice #987654) we received on October 5th, 2023. Upon reviewing the invoice, I noticed a higher charge than what we typically expect based on our current subscription plan.\n\nCould you please verify the billing details for our account and help investigate this discrepancy? We would appreciate a detailed explanation of the charges listed on this invoice to better understand the difference.\n\nThank you in advance for your attention to this matter. Looking forward to your prompt response.\n\nBest regards,\n\nEmily Garcia\nAccounts Manager, Tech Solutions Ltd.",
+    "effort": 10,
+    "task_type": "Billing and Payment Queries"
+  },
+  {
+    "id": "id_88",
+    "description": "Subject: Urgent Bug: Dashboard Widgets Not Loading\n\nHello RainbowCRM Support Team,\n\nI've been experiencing an issue with the CRM dashboard. Every time I log in, none of the widgets load properly \u2013 instead, they just show a spinning loading icon that never resolves. I've tried refreshing the page and clearing my browser cache, but nothing seems to work. This started happening after the latest update earlier this week.\n\nCould you please look into this? It's really affecting my productivity as I'm unable to access key insights and metrics.\n\nThanks for your prompt attention to this matter.\n\nBest regards,\nMark Stevenson",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_89",
+    "description": "Subject: Urgent: Inconsistent Data Display in Dashboard Widgets\n\nHi RainbowCRM Support Team,\n\nI've encountered a persistent issue with the dashboard widgets on our platform. The data displayed in the 'Sales Performance' widget frequently shows figures that do not align with our actual sales data. This inconsistency seems random, as refreshing the page sometimes corrects it but often leaves it unchanged.\n\nCould you investigate this bug at your earliest convenience? This issue affects our ability to make informed decisions based on accurate data, and is quite critical for our ongoing operations.\n\nThanks for your prompt attention to this matter.\n\nBest regards,\nMichael Watson",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_90",
+    "description": "Support Request: Urgent Help with Integration\n\nDear RainbowCRM Support Team,\n\nWe have been experiencing issues with our integration between RainbowCRM and our accounting software, QuickBooks. The data is no longer syncing as expected, and billing information fails to update automatically, causing significant delays in our invoicing process.\n\nCould you please help us identify the root cause of the issue? I'd be happy to provide any error messages or logs required to assist with troubleshooting.\n\nLooking forward to your prompt assistance.\n\nBest regards,\nMichael Stone\nFinance Manager, TechCorp Solutions",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_91",
+    "description": "Hi RainbowCRM Support Team,\n\nI am experiencing issues with accessing certain features in the CRM system. I am the marketing team lead, but it seems I only have permissions set for a standard user, which restricts me from performing necessary tasks such as modifying campaign details and accessing advanced analytics.\n\nCould you please adjust my permissions to reflect my role as a team lead, allowing me the necessary access to effectively perform my duties? My username is janedoe23.\n\nThank you for your prompt assistance with this matter.\n\nBest regards,\nJane Doe",
+    "effort": 7,
+    "task_type": "User Access and Permissions"
+  },
+  {
+    "id": "id_92",
+    "description": "Subject: Unable to Sync Data Between RainbowCRM and QuickBooks\n\nHello Support Team,\n\nWe are experiencing issues with the integration between our RainbowCRM platform and QuickBooks. The synchronization process was working flawlessly until recently, but it now fails to update any invoice or payment information. This is crucial for our accounting team to maintain accurate financial records.\n\nCould you help identify the issue with the integration? Unfortunately, there are no specific error codes displayed, just a generic message stating \"Integration Sync Failed.\"\n\nYour prompt assistance would be greatly appreciated as this is impacting our financial operations.\n\nBest regards,\nJessica Morrison  \nAccounts Manager, SilverLine Corp",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_93",
+    "description": "Subject: Urgent Assistance Required for Exporting Client Data\n\nHello Support Team,\n\nI am experiencing an issue while trying to export client data from RainbowCRM to our internal database. Every time I attempt to export the file, I receive an error message indicating that the export process has failed, but it doesn't provide any specific reasons why.\n\nThe data export process is crucial for our quarterly reporting, and I need to resolve this issue before the end of the week. Could you please help me troubleshoot and fix this problem? I can provide error logs if necessary.\n\nThank you in advance for your prompt assistance.\n\nBest regards,\nJohn Parker",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_94",
+    "description": "Hello Support,\n\nI've encountered an issue with RainbowCRM's contact management module. Whenever I try to save a new contact, I receive an error message saying, \"Save failed: Unknown error.\" I've attempted this multiple times with different browsers, and the problem persists. This is causing delays in our client onboarding process.\n\nCould you please look into this issue and provide an update on the resolution timeline? Thank you for your prompt attention to this matter.\n\nBest regards,\n\nJohn Doe",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_95",
+    "description": "Subject: Assistance Needed With Salesforce Integration\n\nHi RainbowCRM Support Team,\n\nWe are encountering issues with our Salesforce integration. It's not syncing our customer data as expected, and we are receiving error messages when attempting to pull data from Salesforce into RainbowCRM.\n\nCould you please help us troubleshoot this issue? We could provide specific error messages and more details if needed.\n\nLooking forward to your prompt assistance.\n\nBest regards,\nAlex Johnson  \nIT Manager, GreenWave Solutions",
+    "effort": 12,
+    "task_type": "Integration Issues"
+  },
+  {
+    "id": "id_96",
+    "description": "Subject: Unable to Export Reports from Dashboard\n\nDear Support Team,\n\nI've encountered an issue with the RainbowCRM platform where I am unable to export sales reports from the dashboard. Whenever I click on the \"Export\" button, the system doesn\u2019t respond or generate any files, regardless of the browser I use. This functionality is crucial for our weekly reporting, and it's becoming a significant bottleneck.\n\nCould you please investigate and address this as soon as possible? Your help in resolving this quickly would be greatly appreciated.\n\nBest regards,\nMichael Sanders",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_97",
+    "description": "Hi Support Team,\n\nI've encountered an issue while using RainbowCRM that I hope you can help with. Whenever I try to add a new contact to the system, the application freezes and I\u2019m unable to proceed. This happens specifically when I fill in the 'Notes' section. I've tried this multiple times and each time the same thing occurs.\n\nCould you please look into this and let me know when it might be resolved? This functionality is crucial for me to manage my daily tasks efficiently.\n\nThanks for your help!",
+    "effort": 17,
+    "task_type": "Bug Reports"
+  },
+  {
+    "id": "id_98",
+    "description": "Subject: Trouble Exporting Contacts Data to CSV Format\n\nHello RainbowCRM Support Team,\n\nI am having an issue exporting my contacts data to a CSV file. Every time I attempt to export, I receive an error message stating \"Export Failed: Data Processing Error\". I really need this data for a report I'm preparing and could use some help resolving the issue.\n\nCould you please review the error and provide guidance on how to successfully export my contacts? I appreciate your assistance!\n\nBest regards,\n\nJohn Martinez",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  },
+  {
+    "id": "id_99",
+    "description": "Subject: Assistance Needed with Data Export to CSV\n\nHello Support Team,\n\nI'm encountering an issue while trying to export client data to a CSV file from RainbowCRM. Every time I attempt the export, I receive an error message that says, \"Export failed due to invalid data format.\" I've tried multiple times without any success.\n\nCould you please help me resolve this issue? I need to export this data for an upcoming sales meeting, and it's quite urgent. Let me know if you need any more information from my end.\n\nThank you for your help!\n\nBest regards,\nJohn Davis",
+    "effort": 13,
+    "task_type": "Data Import/Export Issues"
+  }
+]
