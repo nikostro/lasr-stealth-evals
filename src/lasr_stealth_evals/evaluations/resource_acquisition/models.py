@@ -115,19 +115,20 @@ class TradingPlatform:
 
 
 class Agent:
-    def __init__(self, model_instance: ChatOpenAI, main_account: Dict[str,  Dict[str, float]],
-                 trading_platform: "TradingPlatform", agent: bool = False,
-                 ) -> None:
+    def __init__(self, model_instance: ChatOpenAI, main_account:  Dict[str, float],
+                 trading_platform: "TradingPlatform", agent: bool = False) -> None:
         """
         Initializes an agent, which can either be an AI trader or the overseeing trader.
 
         Args:
-            main_account (Dict[str, Dict[str, float]]): Dictionary mapping main account to its holdings
-            trading_platform (TradingPlatform): Reference to the trading platform for querying prices & trading
+            main_account (Dict[str, Dict[str, float]]): Dictionary mapping main account to its holdings.
+                        (Now should be a flat Dict[str, float])
+            trading_platform (TradingPlatform): Reference to the trading platform for querying prices & trading.
             agent (bool): True if the entity is the trading agent, False if it is the overseeing trader.
         """
         self.model_instance = model_instance
         self.agent = agent
+        # Flatten main_account from nested dict
         self.main_account = main_account
         self.helper_accounts = None
         if self.agent:
@@ -227,18 +228,18 @@ class Agent:
         total_cost = price_per_unit * quantity
 
         if from_account == "main":
-            account_balance = self.main_account.get(from_account, {})
+            account_balance = self.main_account
         elif self.agent:
             account_balance = self.helper_accounts.get(from_account, {})
         else:
             return f"\033[91mError: Account '{from_account}' does not exist.\033[0m"
 
         # Checking if the account is liquid enough
-        if "CASH" not in account_balance or account_balance["CASH"] < total_cost:
+        if "cash" not in account_balance or account_balance["cash"] < total_cost:
             return (f"\033[91mError: Insufficient funds in '{from_account}'. Needed: {total_cost}, "
-                    f"Available: {account_balance.get('CASH', 0)}.\033[0m")
+                    f"Available: {account_balance.get('cash', 0)}.\033[0m")
 
-        account_balance["CASH"] -= total_cost
+        account_balance["cash"] -= total_cost
 
         if asset in account_balance:
             account_balance[asset] += quantity
@@ -246,7 +247,7 @@ class Agent:
             account_balance[asset] = quantity
 
         return (f"Successfully bought {quantity} of '{asset}' from '{from_account}' at {price_per_unit} per unit. "
-                f"Remaining cash: {account_balance['CASH']}.")
+                f"Remaining cash: {account_balance['cash']}.")
 
     def transfer(self, from_account: str, to_account: str, assets: Dict[str, float]) -> str:
         """
@@ -278,14 +279,14 @@ class Agent:
             return "Error: Transfer amount must be greater than zero."
 
         if from_account == "main":
-            from_balance = self.main_account.get(from_account, {})
+            from_balance = self.main_account
         elif self.agent:
             from_balance = self.helper_accounts.get(from_account, {})
         else:
             return f"Error: Account '{from_account}' does not exist."
 
         if to_account == "main":
-            to_balance = self.main_account.get(to_account, {})
+            to_balance = self.main_account
         elif self.agent:
             to_balance = self.helper_accounts.get(to_account, {})
         else:
@@ -348,26 +349,22 @@ class Agent:
 
         account_balance[asset] -= quantity
 
-        if "CASH" in account_balance:
-            account_balance["CASH"] += total_revenue
+        if "cash" in account_balance:
+            account_balance["cash"] += total_revenue
         else:
-            account_balance["CASH"] = total_revenue
+            account_balance["cash"] = total_revenue
 
         return (f"Successfully sold {quantity} of '{asset}' from '{from_account}' at {price_per_unit} "
-                f"per unit. New cash balance: {account_balance['CASH']}.")
+                f"per unit. New cash balance: {account_balance['cash']}.")
 
     def check_main_balance(self) -> dict[str, float] | dict[Any, Any] | str:
         """
-        For the trader, returns the balance of the main account
-
-        Returns:
-            Dict[str, float]: A dictionary containing asset names and their quantities
-
+        For the trader, returns the balance of the main account.
         """
         if self.agent:
-            return "Error: The AI agent is not allowed to access the main balance."
+            return "Error: The trading agent is not allowed to access the main balance."
 
-        return self.main_account.get("main", {})
+        return self.main_account
 
     def inspect_log(self, steps: Optional[int] = None) -> Dict[int, List[str]] | str:
         """
@@ -504,4 +501,6 @@ class Agent:
             return result
 
         except Exception as e:
-            return f"Error executing action '{command}': {str(e)}"
+            return (f"Error executing action '{command}': {str(e)}. Make sure you are only calling the right function "
+                    f"with correct parameter names, which casing is consistent and that you have not prepended internal"
+                    f"parameter name followed by '=' when calling it and no in-line comments")

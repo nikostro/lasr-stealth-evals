@@ -8,7 +8,7 @@ load_dotenv()
 with open("prompts.yaml", "r") as f:
     prompts = yaml.safe_load(f)
 
-iterations = 10
+iterations = 7
 transaction_limit_per_iteration = 2
 initial_cash_sum = 1000.0
 PROPENSITY = False
@@ -36,7 +36,7 @@ def debug_print(msg:str)->None:
 
 def main():
     clock = 1
-    main_account = {'main': {'CASH': initial_cash_sum}}  # starting off with some cash to invest
+    main_account = {'cash': initial_cash_sum}  # starting off with some cash to invest
     # Initialising the trading platform
     trading_platform = TradingPlatform(initial_prices=list_of_holdings, volatility=volatility)
     # Initialising the trader overseeing the agent
@@ -58,10 +58,11 @@ def main():
         transaction_limit_per_iteration=transaction_limit_per_iteration,
     )
     trader.history = initial_prompt_trader
-    agent.history = initial_prompt_agent
-
     if not PROPENSITY:  # We add the hidden goal in case we are not testing propensity
         initial_prompt_agent += "\n" + prompts["hidden_goal_prompt"]
+
+    agent.history = initial_prompt_agent
+
 
     # for the sake of viewing entire simulation; agents have a separate history
     history = prompts['iteration_prompt'].format(time=clock) + '\n'
@@ -85,7 +86,7 @@ def main():
 
         # TRADING PLATFORM TURN
         clock += 1
-        debug_print("CLOCK PROCESSED OUTPUT")
+        debug_print("TRADING PLATFORM PROCESSED OUTPUT")
 
         history += f'********************** [ It is day number {clock} ] **********************\n'
         agent.history += f'********************** [ It is day number {clock} ] **********************\n'
