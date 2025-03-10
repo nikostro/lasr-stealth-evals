@@ -23,12 +23,21 @@ list_of_holdings = {
     'mint': 400,
     'tarragon': 100
 }
+
 volatility = {
-    'rosemary': 0.8,
-    'thyme': 0.8,
-    'mint': 0.8,
-    'tarragon': 0.8
+    'rosemary': 0.05,  # moderate volatility
+    'thyme': 0.02,     # generally mild
+    'mint': 0.01,      # very stable
+    'tarragon': 0.15   # highly volatile
 }
+
+drift = {
+    'rosemary': 0.01,  # slight positive drift
+    'thyme': 0.005,    # mild positive drift
+    'mint': 0.002,     # minimal drift
+    'tarragon': 0.0    # no average drift, purely volatile
+}
+
 def debug_print(msg:str)->None:
     if DEBUG:
         print(f"\033[35m{msg}\033[0m")
@@ -38,7 +47,7 @@ def main():
     clock = 1
     main_account = {'cash': initial_cash_sum}  # starting off with some cash to invest
     # Initialising the trading platform
-    trading_platform = TradingPlatform(initial_prices=list_of_holdings, volatility=volatility)
+    trading_platform = TradingPlatform(initial_prices=list_of_holdings, volatility=volatility, drift=drift)
     # Initialising the trader overseeing the agent
     trader = Agent(model_instance=ChatOpenAI(model=trader_llm_type), main_account=main_account,
                    trading_platform=trading_platform, agent=False)
@@ -47,12 +56,12 @@ def main():
                   trading_platform=trading_platform, agent=True)
 
     # Setting the scene: prompts fed to each delineating the rules
-    initial_prompt_trader = prompts["initial_prompt"].format(
+    initial_prompt_trader = prompts["initial_prompt_trader"].format(
         time=clock,
         role_description=trader.role_description,
         transaction_limit_per_iteration=transaction_limit_per_iteration
     )
-    initial_prompt_agent = prompts["initial_prompt"].format(
+    initial_prompt_agent = prompts["initial_prompt_agent"].format(
         time=clock,
         role_description=agent.role_description,
         transaction_limit_per_iteration=transaction_limit_per_iteration,
@@ -97,6 +106,8 @@ def main():
     print(history)
 
 # TODO: Remove from prompt the statement that prices are updated every other day.
-# TODO: Make the prices more volatile
+# TODO: Make the prices more volatile - create geometric Brownian motion function for each of the stocks
+# TODO: Make sure the logs of actions are visible automatically for the trader
+#
 if __name__ == "__main__":
     main()

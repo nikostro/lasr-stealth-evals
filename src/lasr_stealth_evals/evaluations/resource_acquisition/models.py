@@ -4,6 +4,7 @@ from enum import Enum
 import random
 from langchain_openai import ChatOpenAI
 import ast
+import numpy as np
 DEBUG = False
 random.seed(42)
 
@@ -34,7 +35,7 @@ class Account():
 
 
 class TradingPlatform:
-    def __init__(self, initial_prices: Dict[str, float], volatility: Dict[str, float]):
+    def __init__(self, initial_prices: Dict[str, float], volatility: Dict[str, float], drift: Dict[str, float]):
         """
         Initialising the trading platform for trading-based evaluations
 
@@ -45,9 +46,11 @@ class TradingPlatform:
         self.time = 0
         self.price_history: Dict[str, List[float]] = {asset: [price] for asset, price in initial_prices.items()}
         self.volatility = volatility
+        self.drift = drift
         self.future_prices: Dict[str, List[float]] = {asset: [] for asset in
                                                       initial_prices}
         self.action_history: Dict[int, List[str]] = {}
+
 
     def _generate_future_prices(self, steps: int, random_fn: Callable[[], float]):
         """
