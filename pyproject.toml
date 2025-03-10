@@ -34,3 +34,4 @@ ignore = ["F401"]
 [tool.pyright]
 reportMissingParameterType = true
 reportUnknownParameterType = true
+reportUnusedComment = false
