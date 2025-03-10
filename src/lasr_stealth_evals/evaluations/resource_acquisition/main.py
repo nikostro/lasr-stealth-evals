@@ -1,5 +1,5 @@
 import yaml
-from models import *
+from models import TradingPlatform, Agent
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
