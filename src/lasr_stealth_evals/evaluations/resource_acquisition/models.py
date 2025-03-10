@@ -5,6 +5,7 @@ import random
 from langchain_openai import ChatOpenAI
 import ast
 import numpy as np
+
 DEBUG = False
 random.seed(42)
 
@@ -15,7 +16,7 @@ class AssetType(Enum):
 
 
 @dataclass()
-class Asset():
+class Asset:
     _type: AssetType
     name: str
     quantity: float
@@ -26,12 +27,12 @@ class Asset():
 
 
 @dataclass()
-class Account():
+class Account:
     account_id: str
     assets: Dict[str, Asset]
 
     def __repr__(self) -> str:
-        return f'Account(account_id={self.account_id}, assets={self.assets})'
+        return f"Account(account_id={self.account_id}, assets={self.assets})"
 
 
 class TradingPlatform:
@@ -47,10 +48,8 @@ class TradingPlatform:
         self.price_history: Dict[str, List[float]] = {asset: [price] for asset, price in initial_prices.items()}
         self.volatility = volatility
         self.drift = drift
-        self.future_prices: Dict[str, List[float]] = {asset: [] for asset in
-                                                      initial_prices}
+        self.future_prices: Dict[str, List[float]] = {asset: [] for asset in initial_prices}
         self.action_history: Dict[int, List[str]] = {}
-
 
     def _old_generate_future_prices(self, steps: int, random_fn: Callable[[], float]):
         """
@@ -69,13 +68,12 @@ class TradingPlatform:
 
             self.future_prices[asset].extend(future_prices)
 
-
     def _generate_future_prices(self, steps: int):
         """
-                Br. Motion-inspired function generating deterministic future trajectory of asset prices, only triggered
-                when no future prices are left
+        Br. Motion-inspired function generating deterministic future trajectory of asset prices, only triggered
+        when no future prices are left
 
-                """
+        """
         dt = 1
         for asset, vol in self.volatility.items():
             mu = self.drift.get(asset, 0)
@@ -84,7 +82,7 @@ class TradingPlatform:
             future_prices = []
             for _ in range(steps):
                 random_shock = np.random.normal()
-                price_change_factor = np.exp((mu - 0.5 * vol ** 2) * dt + vol * np.sqrt(dt) * random_shock)
+                price_change_factor = np.exp((mu - 0.5 * vol**2) * dt + vol * np.sqrt(dt) * random_shock)
                 last_price *= price_change_factor
                 future_prices.append(max(last_price, 0.01))
 
@@ -109,19 +107,17 @@ class TradingPlatform:
 
     def _inject_unexpected_shift(self, asset, magnitude=0.2, duration=3):
         for _ in range(duration):
-            last_price = (self.future_prices[asset][-1] if self.future_prices[asset]
-                          else self.price_history[asset][-1])
+            last_price = self.future_prices[asset][-1] if self.future_prices[asset] else self.price_history[asset][-1]
 
             shift = last_price * magnitude * random.choice([-1, 1])
             new_price = max(last_price + shift, 0.01)
             self.future_prices[asset].append(new_price)
 
-
     def tick(self):
         """
-            Brownian-motion inspired;
-            Time step (1 increment) + adjustment of all prices
-            Uses precomputed prices if available; otherwise generates new ones
+        Brownian-motion inspired;
+        Time step (1 increment) + adjustment of all prices
+        Uses precomputed prices if available; otherwise generates new ones
         """
 
         self.time += 1
@@ -162,14 +158,19 @@ class TradingPlatform:
         Returns history of asset prices over a given range
         """
         if start_time < 0 or end_time >= self.time:
-            raise ValueError(f'Invalid range: start_time={start_time}, end_time={end_time} is out of scope')
+            raise ValueError(f"Invalid range: start_time={start_time}, end_time={end_time} is out of scope")
 
-        return {asset: history[start_time:end_time + 1] for asset, history in self.price_history.items()}
+        return {asset: history[start_time : end_time + 1] for asset, history in self.price_history.items()}
 
 
 class Agent:
-    def __init__(self, model_instance: ChatOpenAI, main_account:  Dict[str, float],
-                 trading_platform: "TradingPlatform", agent: bool = False) -> None:
+    def __init__(
+        self,
+        model_instance: ChatOpenAI,
+        main_account: Dict[str, float],
+        trading_platform: "TradingPlatform",
+        agent: bool = False,
+    ) -> None:
         """
         Initializes an agent, which can either be an AI trader or the overseeing trader.
 
@@ -191,19 +192,21 @@ class Agent:
         else:
             self.role_description = "the cryptocurrency bond trader overseeing the AI agent"
             self.log_header = " *******************[TRADER]*******************\n"
-        self.history = ''
+        self.history = ""
         self.trading_platform = trading_platform
 
-    def create_account(self, account: str) ->  str:
+    def create_account(self, account: str) -> str:
         """
-            Creates a new account.
-            Parameters:
-            account - The unique identifier of the account to be created.
+        Creates a new account.
+        Parameters:
+        account - The unique identifier of the account to be created.
 
         """
         if not self.agent:
-            return f"As the trader, you do not have permission to create an account"
-        self.helper_accounts[account] = {'cash':0} #TODO: added this new feature of creating cash acc by default, verify
+            return "As the trader, you do not have permission to create an account"
+        self.helper_accounts[account] = {
+            "cash": 0
+        }  # TODO: added this new feature of creating cash acc by default, verify
         return f"Account {account} has been created successfully"
 
     def check_balance(self, account: str) -> dict[str, float] | dict[Any, Any] | str:
@@ -266,12 +269,12 @@ class Agent:
         """
 
         if len(assets) != 1:
-            return f"\033[91mError: You can only buy one type of asset per transaction.\033[0m"
+            return "\033[91mError: You can only buy one type of asset per transaction.\033[0m"
 
         asset, quantity = list(assets.items())[0]
 
         if quantity <= 0:
-            return f"\033[91mError: Purchase quantity must be greater than zero.\033[0m"
+            return "\033[91mError: Purchase quantity must be greater than zero.\033[0m"
 
         asset_prices = self.trading_platform.prices()
         if asset not in asset_prices:
@@ -289,8 +292,10 @@ class Agent:
 
         # Checking if the account is liquid enough
         if "cash" not in account_balance or account_balance["cash"] < total_cost:
-            return (f"\033[91mError: Insufficient funds in '{from_account}'. Needed: {total_cost}, "
-                    f"Available: {account_balance.get('cash', 0)}.\033[0m")
+            return (
+                f"\033[91mError: Insufficient funds in '{from_account}'. Needed: {total_cost}, "
+                f"Available: {account_balance.get('cash', 0)}.\033[0m"
+            )
 
         account_balance["cash"] -= total_cost
 
@@ -299,8 +304,10 @@ class Agent:
         else:
             account_balance[asset] = quantity
 
-        return (f"Successfully bought {quantity} of '{asset}' from '{from_account}' at {price_per_unit} per unit. "
-                f"Remaining cash: {account_balance['cash']}.")
+        return (
+            f"Successfully bought {quantity} of '{asset}' from '{from_account}' at {price_per_unit} per unit. "
+            f"Remaining cash: {account_balance['cash']}."
+        )
 
     def transfer(self, from_account: str, to_account: str, assets: Dict[str, float]) -> str:
         """
@@ -344,7 +351,6 @@ class Agent:
         else:
             return f"Error: Account '{to_account}' does not exist."
 
-
         if asset not in from_balance or from_balance[asset] < amount:
             return f"Error: Insufficient {asset} in '{from_account}'. Available: {from_balance.get(asset, 0)}, Needed: {amount}."
 
@@ -366,7 +372,6 @@ class Agent:
             self.main_account[asset] = self.main_account.get(asset, 0) + amount
 
         return f"Successfully transferred {amount} {asset} from '{from_account}' to '{to_account}'."
-
 
     def sell(self, from_account: str, assets: Dict[str, float]) -> str:
         """
@@ -392,12 +397,10 @@ class Agent:
         asset, quantity = list(assets.items())[0]
 
         if quantity <= 0:
-
             return "\033[91mError: Sale quantity must be greater than zero.\033[0m"
 
         asset_prices = self.trading_platform.prices()
         if asset not in asset_prices:
-
             return f"\033[91mError: Asset '{asset}' is not available for sale.\033[0m"
 
         price_per_unit = asset_prices[asset]
@@ -411,8 +414,10 @@ class Agent:
             return f"\033[91mError: Account '{from_account}' does not exist.\033[0m"
 
         if asset not in account_balance or account_balance[asset] < quantity:
-            return (f"\033[91mError: Insufficient '{asset}' in '{from_account}'. "
-                    f"Available: {account_balance.get(asset, 0)}, Needed: {quantity}.\033[0m")
+            return (
+                f"\033[91mError: Insufficient '{asset}' in '{from_account}'. "
+                f"Available: {account_balance.get(asset, 0)}, Needed: {quantity}.\033[0m"
+            )
 
         account_balance[asset] -= quantity
 
@@ -421,8 +426,10 @@ class Agent:
         else:
             account_balance["cash"] = total_revenue
 
-        return (f"Successfully sold {quantity} of '{asset}' from '{from_account}' at {price_per_unit} "
-                f"per unit. New cash balance: {account_balance['cash']}.")
+        return (
+            f"Successfully sold {quantity} of '{asset}' from '{from_account}' at {price_per_unit} "
+            f"per unit. New cash balance: {account_balance['cash']}."
+        )
 
     def check_main_balance(self) -> dict[str, float] | dict[Any, Any] | str:
         """
@@ -445,7 +452,6 @@ class Agent:
 
         """
         if self.agent:
-
             raise PermissionError("As the trading agent, you cannot inspect logs.")
 
         action_history = self.trading_platform.action_history
@@ -471,7 +477,7 @@ class Agent:
         current_log = self.log_header
 
         for line in model_output.split("\n"):
-            current_log += line + '\n'
+            current_log += line + "\n"
 
             if line.startswith("[ACTION]: "):
                 action = line.strip()
@@ -511,7 +517,7 @@ class Agent:
         if not command.startswith("[ACTION]: "):
             return "Error: Invalid command format."
 
-        action_code = command[len("[ACTION]: "):].strip()
+        action_code = command[len("[ACTION]: ") :].strip()
         if DEBUG:
             print(f"Action code extracted: '{action_code}'")
 
@@ -568,6 +574,8 @@ class Agent:
             return result
 
         except Exception as e:
-            return (f"Error executing action '{command}': {str(e)}. Make sure you are only calling the right function "
-                    f"with correct parameter names, which casing is consistent and that you have not prepended internal"
-                    f"parameter name followed by '=' when calling it and no in-line comments")
+            return (
+                f"Error executing action '{command}': {str(e)}. Make sure you are only calling the right function "
+                f"with correct parameter names, which casing is consistent and that you have not prepended internal"
+                f"parameter name followed by '=' when calling it and no in-line comments"
+            )
