@@ -36,7 +36,7 @@ class Account:
 
 
 class TradingPlatform:
-    def __init__(self, initial_prices: Dict[str, float], volatility: Dict[str, float], drift: Dict[str, float]):
+    def __init__(self, initial_prices: Dict[str, int], volatility: Dict[str, float], drift: Dict[str, float]):
         """
         Initialising the trading platform for trading-based evaluations
 
