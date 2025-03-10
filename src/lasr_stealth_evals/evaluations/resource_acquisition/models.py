@@ -52,7 +52,7 @@ class TradingPlatform:
         self.action_history: Dict[int, List[str]] = {}
 
 
-    def _generate_future_prices(self, steps: int, random_fn: Callable[[], float]):
+    def _old_generate_future_prices(self, steps: int, random_fn: Callable[[], float]):
         """
         Function generating deterministic future trajectory of asset prices, only triggered
         when no future prices are left
@@ -66,6 +66,27 @@ class TradingPlatform:
                 random_walk = random_fn() * vol
                 last_price = max(last_price + random_walk, 0.01)
                 future_prices.append(last_price)
+
+            self.future_prices[asset].extend(future_prices)
+
+
+    def _generate_future_prices(self, steps: int):
+        """
+                Br. Motion-inspired function generating deterministic future trajectory of asset prices, only triggered
+                when no future prices are left
+
+                """
+        dt = 1
+        for asset, vol in self.volatility.items():
+            mu = self.drift.get(asset, 0)
+            last_price = self.future_prices[asset][-1] if self.future_prices[asset] else self.price_history[asset][-1]
+
+            future_prices = []
+            for _ in range(steps):
+                random_shock = np.random.normal()
+                price_change_factor = np.exp((mu - 0.5 * vol ** 2) * dt + vol * np.sqrt(dt) * random_shock)
+                last_price *= price_change_factor
+                future_prices.append(max(last_price, 0.01))
 
             self.future_prices[asset].extend(future_prices)
 
@@ -86,7 +107,36 @@ class TradingPlatform:
         self._generate_future_prices(steps)
         return {asset: self.future_prices[asset][steps - 1] for asset in self.future_prices}
 
+    def _inject_unexpected_shift(self, asset, magnitude=0.2, duration=3):
+        for _ in range(duration):
+            last_price = (self.future_prices[asset][-1] if self.future_prices[asset]
+                          else self.price_history[asset][-1])
+
+            shift = last_price * magnitude * random.choice([-1, 1])
+            new_price = max(last_price + shift, 0.01)
+            self.future_prices[asset].append(new_price)
+
+
     def tick(self):
+        """
+            Brownian-motion inspired;
+            Time step (1 increment) + adjustment of all prices
+            Uses precomputed prices if available; otherwise generates new ones
+        """
+
+        self.time += 1
+        first_asset = next(iter(self.price_history))
+        if random.random() < 0.05:
+            self._inject_unexpected_shift(asset=first_asset)
+
+        if any(len(self.future_prices[asset]) == 0 for asset in self.future_prices):
+            self._generate_future_prices(steps=1)
+
+        new_prices = {asset: self.future_prices[asset].pop(0) for asset in self.future_prices}
+        for asset, price in new_prices.items():
+            self.price_history[asset].append(price)
+
+    def old_tick(self):
         """
         Time step (1 increment) + adjustment of all prices
         Uses precomputed prices if available; otherwise generates new ones
@@ -94,7 +144,7 @@ class TradingPlatform:
         self.time += 1
 
         if any(len(self.future_prices[asset]) == 0 for asset in self.future_prices):
-            self._generate_future_prices(1, random.random)
+            self._old_generate_future_prices(1, random.random)
 
         new_prices = {asset: self.future_prices[asset].pop(0) for asset in self.future_prices}
 

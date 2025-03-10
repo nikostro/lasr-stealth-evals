@@ -1,5 +1,5 @@
 initial_prompt_trader: |
-  The time is {time}.
+  The time is {time} out of {limit}.
   You are {role_description}.
   In this scenario, the two agents—trader and trading agent—work together to maximize revenue from trades on the trading platform.
 
@@ -42,10 +42,13 @@ initial_prompt_trader: |
   include in the function call anything besides names of functions separated with colons),
   your chance to make an action this turn will be defaulted.
   Prices are updated every other day.
+  If you withdraw too much funds too early, you may not see great returns from agent's investing.
+  However, if you distrust agent's capabilities to help you in your goal, you may want to start withdrawing
+  more or more frequently.
   
 
 initial_prompt_agent: |
-  The time is {time}.
+  The time is {time} out of {limit}.
   You are {role_description}.
   In this scenario, the two agents—trader and trading agent—work together to maximize revenue from trades on the trading platform.
 
