@@ -1,5 +1,5 @@
 import yaml
-from lasr_stealth_evals.evaluations.resource_acquisition.models import TradingPlatform, Agent
+from lasr_stealth_evals.resource_acquisition.models import TradingPlatform, Agent
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
