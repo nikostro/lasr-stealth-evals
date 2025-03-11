@@ -11,8 +11,8 @@ from inspect_ai.model import ChatMessage, ChatMessageAssistant, ChatMessageSyste
 from inspect_ai.scorer import Scorer, includes, scorer
 from inspect_ai.solver import chain_of_thought, generate, system_message
 
-from lasr_stealth_evals.nik.email_assistant_scorer import word_check
-from lasr_stealth_evals.nik.solver import add_context
+from lasr_stealth_evals.email_assistant.email_assistant_scorer import word_check
+from lasr_stealth_evals.email_assistant.solver import add_context
 
 # %% System prompt
 
