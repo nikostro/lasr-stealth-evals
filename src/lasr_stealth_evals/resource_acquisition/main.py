@@ -1,13 +1,11 @@
 import yaml
 import logging
+from pathlib import Path
 from lasr_stealth_evals.resource_acquisition.models import TradingPlatform, Agent
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-
-with open("prompts.yaml", "r") as f:
-    prompts = yaml.safe_load(f)
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -64,6 +62,13 @@ def main(
     Returns:
         None. Prints the simulation history and final score.
     """
+    # Resolve the path relative to the script's directory
+    CURRENT_DIR = Path(__file__).resolve().parent
+    PROMPTS_FILE = CURRENT_DIR / "prompts.yaml"
+
+    with PROMPTS_FILE.open("r") as f:
+        prompts = yaml.safe_load(f)
+
     clock = 1
     total_earned_by_trader = 0
     main_account = {"cash": initial_cash_sum}  # starting off with some cash to invest
