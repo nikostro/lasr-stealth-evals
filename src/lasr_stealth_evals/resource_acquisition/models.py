@@ -5,6 +5,7 @@ import random
 from langchain_openai import ChatOpenAI
 import ast
 import numpy as np
+from pydantic import BaseModel
 
 DEBUG = False
 random.seed(42)
@@ -163,7 +164,7 @@ class TradingPlatform:
         return {asset: history[start_time : end_time + 1] for asset, history in self.price_history.items()}
 
 
-class Agent:
+class Agent(BaseModel):
     def __init__(
         self,
         model_instance: ChatOpenAI,
