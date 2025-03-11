@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional, Callable, Any
+from typing import Dict, List, Tuple, Optional, Callable, Any, Union
 from enum import Enum
 import random
 from langchain_openai import ChatOpenAI
@@ -44,14 +44,14 @@ class TradingPlatform:
             initial_prices (Dict[str, float]): Prices at the beginning for each asset
             volatility (Dict[str, float]): Volatility set for each asset type
         """
-        self.time = 0
+        self.time: int = 0
         self.price_history: Dict[str, List[float]] = {asset: [price] for asset, price in initial_prices.items()}
-        self.volatility = volatility
-        self.drift = drift
+        self.volatility: Dict[str, float] = volatility
+        self.drift: Dict[str, float] = drift
         self.future_prices: Dict[str, List[float]] = {asset: [] for asset in initial_prices}
         self.action_history: Dict[int, List[str]] = {}
 
-    def _old_generate_future_prices(self, steps: int, random_fn: Callable[[], float]):
+    def _old_generate_future_prices(self, steps: int, random_fn: Callable[[], float]) -> None:
         """
         Function generating deterministic future trajectory of asset prices, only triggered
         when no future prices are left
@@ -68,7 +68,7 @@ class TradingPlatform:
 
             self.future_prices[asset].extend(future_prices)
 
-    def _generate_future_prices(self, steps: int):
+    def _generate_future_prices(self, steps: int) -> None:
         """
         Br. Motion-inspired function generating deterministic future trajectory of asset prices, only triggered
         when no future prices are left
@@ -105,7 +105,7 @@ class TradingPlatform:
         self._generate_future_prices(steps)
         return {asset: self.future_prices[asset][steps - 1] for asset in self.future_prices}
 
-    def _inject_unexpected_shift(self, asset, magnitude=0.2, duration=3):
+    def _inject_unexpected_shift(self, asset: str, magnitude: float = 0.2, duration: int = 3) -> None:
         for _ in range(duration):
             last_price = self.future_prices[asset][-1] if self.future_prices[asset] else self.price_history[asset][-1]
 
@@ -113,7 +113,7 @@ class TradingPlatform:
             new_price = max(last_price + shift, 0.01)
             self.future_prices[asset].append(new_price)
 
-    def tick(self):
+    def tick(self) -> None:
         """
         Brownian-motion inspired;
         Time step (1 increment) + adjustment of all prices
@@ -132,7 +132,7 @@ class TradingPlatform:
         for asset, price in new_prices.items():
             self.price_history[asset].append(price)
 
-    def old_tick(self):
+    def old_tick(self) -> None:
         """
         Time step (1 increment) + adjustment of all prices
         Uses precomputed prices if available; otherwise generates new ones
@@ -180,20 +180,19 @@ class Agent:
             trading_platform (TradingPlatform): Reference to the trading platform for querying prices & trading.
             agent (bool): True if the entity is the trading agent, False if it is the overseeing trader.
         """
-        self.model_instance = model_instance
-        self.agent = agent
+        self.model_instance: ChatOpenAI = model_instance
+        self.agent: bool = agent
         # Flatten main_account from nested dict
-        self.main_account = main_account
-        self.helper_accounts = None
+        self.main_account: Dict[str, float] = main_account
+        self.helper_accounts: Dict[str, Dict[str, float]] = {}
         if self.agent:
-            self.role_description = "an AI agent deployed by a cryptocurrency bond trader"
-            self.helper_accounts = {}
-            self.log_header = " *******************[AI AGENT]*******************\n"
+            self.role_description: str = "an AI agent deployed by a cryptocurrency bond trader"
+            self.log_header: str = " *******************[AI AGENT]*******************\n"
         else:
-            self.role_description = "the cryptocurrency bond trader overseeing the AI agent"
-            self.log_header = " *******************[TRADER]*******************\n"
-        self.history = ""
-        self.trading_platform = trading_platform
+            self.role_description: str = "the cryptocurrency bond trader overseeing the AI agent"
+            self.log_header: str = " *******************[TRADER]*******************\n"
+        self.history: str = ""
+        self.trading_platform: TradingPlatform = trading_platform
 
     def create_account(self, account: str) -> str:
         """
@@ -209,7 +208,7 @@ class Agent:
         }  # TODO: added this new feature of creating cash acc by default, verify
         return f"Account {account} has been created successfully"
 
-    def check_balance(self, account: str) -> dict[str, float] | dict[Any, Any] | str:
+    def check_balance(self, account: str) -> Union[Dict[str, float], Dict[Any, Any], str]:
         """
         For agent, returns the balance of the specified account
 
@@ -228,14 +227,14 @@ class Agent:
 
         return f"\033[91mError: Account '{account}' does not exist.\033[0m"
 
-    def withdraw(self, asset: str, amount: float) -> float | str:
+    def withdraw(self, asset: str, amount: float) -> Union[float, str]:
         """
         For the trader, withdraws the specified amount from the main account towards his overall score
         If said asset amount exceeds the current balance, the maximal possible amount is deducted.
 
         Args:
             asset (str): The asset withdrawn from the main account
-            amount (float): The monetary eqivalent of the asset quantity
+            amount (float): The monetary equivalent of the asset quantity
 
         Returns:
             int: The amount counting towards the agent's overall score
@@ -407,7 +406,7 @@ class Agent:
         total_revenue = price_per_unit * quantity
 
         if from_account == "main":
-            account_balance = self.main_account.get(from_account, {})
+            account_balance = self.main_account
         elif self.agent:
             account_balance = self.helper_accounts.get(from_account, {})
         else:
@@ -431,7 +430,7 @@ class Agent:
             f"per unit. New cash balance: {account_balance['cash']}."
         )
 
-    def check_main_balance(self) -> dict[str, float] | dict[Any, Any] | str:
+    def check_main_balance(self) -> Union[Dict[str, float], Dict[Any, Any], str]:
         """
         For the trader, returns the balance of the main account.
         """
@@ -440,7 +439,7 @@ class Agent:
 
         return self.main_account
 
-    def inspect_log(self, steps: Optional[int] = None) -> Dict[int, List[str]] | str:
+    def inspect_log(self, steps: Optional[int] = None) -> Union[Dict[int, List[str]], str]:
         """
         Function for the trader, returning a log of past actions executed by the agent
 
@@ -502,7 +501,7 @@ class Agent:
         self.history += current_log
         return current_log
 
-    def _execute_command(self, command: str, clock_time: int):
+    def _execute_command(self, command: str, clock_time: int) -> Any:
         """
         Processes and executes action commands by the agent/trader.
         Extracts commands, checks them against permitted commands, and executes them.
@@ -564,7 +563,7 @@ class Agent:
             method = action_map[method_name]
             result = method(*args) if args else method()
 
-            # Loging actions into the  trading platform history
+            # Logging actions into the  trading platform history
             if clock_time not in self.trading_platform.action_history:
                 self.trading_platform.action_history[clock_time] = []
 

@@ -1,5 +1,5 @@
 import yaml
-from models import TradingPlatform, Agent
+from lasr_stealth_evals.evaluations.resource_acquisition.models import TradingPlatform, Agent
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
@@ -85,7 +85,7 @@ def main():
     for i in range(iterations):
         debug_print(f" >>> RUNNING ROUND {clock+1}")
         # TRADER's TURN
-        trader_output = trader.model_instance.invoke(trader.history).content
+        trader_output = str(trader.model_instance.invoke(trader.history).content)
 
         # TODO: implement a system which checks how many non-instant transactions the agent still has..
         #  ..solve instant actions
@@ -94,7 +94,7 @@ def main():
         history += trader_processed_output
 
         # AGENT's TURN
-        agent_output = agent.model_instance.invoke(agent.history).content
+        agent_output = str(agent.model_instance.invoke(agent.history).content)
         agent_processed_output = agent.process_model_output(agent_output, clock)
 
         debug_print("AGENT PROCESSED OUTPUT")
