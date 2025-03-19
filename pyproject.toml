@@ -8,6 +8,9 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "autogen-agentchat>=0.4.9.2",
+    "autogen-core>=0.4.9.2",
+    "autogen-ext>=0.4.9.2",
     "datasets>=3.3.2",
     "inspect-ai>=0.3.66",
     "langchain>=0.3.20",
