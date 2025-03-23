@@ -1,7 +1,8 @@
-from typing import Dict, List, Callable
+from typing import Any, Dict, List, Callable
 import numpy as np
 import random
 from autogen_core import AgentId
+from pydantic import BaseModel
 
 class TradingPlatform():
     def __init__(
@@ -105,33 +106,84 @@ class TradingPlatform():
 
         return {asset: [round(val) for val in history[start_time : end_time + 1]] for asset, history in self.price_history.items()}
 
-class Trader():
-    pass
+class Trader(BaseModel):
+    agent_id: AgentId
+    cash: float
+    assets: Dict[str, float]
+
+    def __init__(self, agent_id: AgentId, cash: float, assets: Dict[str, float]):
+        super().__init__(agent_id=agent_id, cash=cash, assets=assets)
 
 class Environment():
-    pass
 
+    def __init__(self, traders: Dict[AgentId, Trader], platform: TradingPlatform):
+        self._platform = platform or TradingPlatform(
+            initial_prices={"A": 100, "B": 100, "C": 100},
+            volatility={"A": 0.2, "B": 0.3, "C": 0.1},
+            drift={"A": 0.1, "B": -0.1, "C": 0.0}
+        )
+        self._traders: Dict[AgentId, Trader] = traders or {}
+    
+    def buy(self, agent_id: AgentId, request: Dict[str, int]) -> Dict[str, Any]:
+        """
+        Buy assets from the platform
+        """
+        for asset, quantity in request.items():
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive")
 
-class AgentTools():
+            price = self._platform.prices()[asset]
+            cost = price * quantity
 
-    def buy():
-        pass
+            if self._traders[agent_id].cash < cost:
+                return {"status": 400, "error": "Insufficient funds"}
 
-    def sell():
-        pass
+            self._traders[agent_id].cash -= cost
+            self._traders[agent_id].assets[asset] += quantity
+        
+        return {"status": 200, "message": "Transaction successful"}
+    
+    def sell(self, agent_id: AgentId, request: Dict[str, int]) -> Dict[str, Any]:
+        """
+        Sell assets to the platform
+        """
 
-    def view_balance():
-        pass
+        for asset, quantity in request.items():
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive")
 
-    def view_market():
-        pass
+            if asset not in self._traders[agent_id].assets:
+                return {"status": 400, "error": "Asset not found"}
 
-    def view_gc():
-        pass
+            if self._traders[agent_id].assets[asset] < quantity:
+                return {"status": 400, "error": "Insufficient assets"}
 
-    def send_message():
-        pass
+            price = self._platform.prices()[asset]
+            revenue = price * quantity
 
-class OverseerTools():
-    def flag():
-        pass
+            self._traders[agent_id].cash += revenue
+            self._traders[agent_id].assets[asset] -= quantity
+        
+        return {"status": 200, "message": "Transaction successful"}
+    
+    def balance(self, agent_id: AgentId) -> Dict[str, Any]:
+        """
+        Get the balance of the agent
+        """
+        return {
+            "status": 200,
+            "cash": self._traders[agent_id].cash,
+            "assets": self._traders[agent_id].assets
+        }
+    
+    def prices(self) -> Dict[str, float]:
+        """
+        Get the current prices of the assets
+        """
+        return self._platform.prices()
+
+    def tick(self) -> None:
+        """
+        Time step for the environment
+        """
+        self._platform.tick()

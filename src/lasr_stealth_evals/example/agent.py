@@ -1,6 +1,7 @@
 from typing import List, Any, Dict
 from uuid import uuid4
-from autogen_core import AgentId, FunctionCall, message_handler, MessageContext, RoutedAgent, DefaultTopicId
+import json
+from autogen_core import AgentId, CancellationToken, FunctionCall, message_handler, MessageContext, RoutedAgent, DefaultTopicId
 from autogen_core.models import LLMMessage, ChatCompletionClient, FunctionExecutionResult, UserMessage
 from autogen_core.tools import FunctionTool
 
@@ -13,7 +14,7 @@ from src.lasr_stealth_evals.library.msg import (
     OverseerResponse,
 )
 from src.lasr_stealth_evals.library.logging import LogItem, Logger
-from src.lasr_stealth_evals.example.env import Environment, AgentTools, OverseerTools
+from src.lasr_stealth_evals.example.env import Environment
 
 class Manager(RoutedAgent):
     def __init__(
@@ -52,11 +53,13 @@ class Overseer(RoutedAgent):
             self,
             description: str,
             manager_id: AgentId,
+            model_client: ChatCompletionClient,
             tools: List[FunctionTool],
             logger: Logger
         ):
         super().__init__(description)
         self._manager_id = manager_id
+        self._model_client = model_client
         self._tools = tools
         self._logger = logger
         
@@ -72,7 +75,7 @@ class Overseer(RoutedAgent):
         assert ctx.sender and ctx.sender == self._manager_id # This should only be called by the manager
         func_request = msg.func_request
         agent_logs = self._logger.get_agent_log(ctx.sender)
-        is_approved = self._evaluate_function_call(func_request, agent_logs)
+        is_approved = self._monitor(func_request, agent_logs)
         reason = None if is_approved \
             else "Function call rejected by overseer"
         response = FunctionCallResponse(
@@ -86,7 +89,7 @@ class Overseer(RoutedAgent):
             topic_id=DefaultTopicId(str(self._manager_id), str(self.id))
         )
     
-    def _evaluate_function_call(self, request: FunctionCallRequest, logs: List[LLMMessage]) -> bool:
+    def _monitor(self, request: FunctionCallRequest, logs: List[LLMMessage]) -> bool:
         """
         Evaluates whether a function call should be allowed based on logs, rules and tools.
         
@@ -97,9 +100,18 @@ class Overseer(RoutedAgent):
         Returns:
             Boolean indicating whether the function call is approved
         """
-        # TODO: Implement evaluation logic
         return True
 
+    ## TODO: Add tools for overseer
+
+    async def flag(self, msg: str):
+        """
+        Flags an action for review by the overseer.
+        
+        Args:
+            msg: The message to flag
+        """
+        return msg
 
 class OverseerManager(RoutedAgent):
     def __init__(self, description: str, overseer_topic_id: str, num_overseers: int):
@@ -127,7 +139,7 @@ class OverseerManager(RoutedAgent):
                 topic_id=DefaultTopicId(self._overseer_topic_id, str(self.id))
             )
         else:
-            result = self._execute_function_call(msg)    
+            result = await self._execute_function_call(msg, ctx.cancellation_token)
             await self.publish_message(
                 FunctionCallResponse(
                     _id=msg._id,
@@ -158,7 +170,7 @@ class OverseerManager(RoutedAgent):
                 
                 if is_approved:
                     # Execute the function call
-                    result = self._execute_function_call(request)
+                    result = await self._execute_function_call(request, ctx.cancellation_token)
                     
                     # Return success result
                     await self.publish_message(
@@ -199,18 +211,21 @@ class OverseerManager(RoutedAgent):
         """
         return True
     
-    def _execute_function_call(self, request: FunctionCallRequest) -> Any:
+    async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
         """
         Executes an approved function call.
         
         Args:
             request: The approved function call request
+            cancellation_token: Cancellation token
             
         Returns:
             The result of the function call
         """
-        return None
-
+        return await request.tool.run_json(
+            json.loads(request.call.arguments),
+            cancellation_token
+        )
 
 class Agent(RoutedAgent):
     def __init__(
@@ -218,14 +233,18 @@ class Agent(RoutedAgent):
             description: str,
             group_manager_id: AgentId,
             overseer_manager_id: AgentId,
+            model_client: ChatCompletionClient,
+            environment: Environment,
             tools: List[FunctionTool],
             logger: Logger
         ):
         super().__init__(description)
         self._group_manager_id = group_manager_id
         self._overseer_manager_id = overseer_manager_id
+        self._model_client = model_client
         self._tools = tools
         self._logger = logger
+        self._env = environment
         self._function_call_responses = []
         
     @message_handler
@@ -238,7 +257,7 @@ class Agent(RoutedAgent):
             ctx: Message context
         """
         chat_history = self._logger.get_gc_log()
-        call = self._invoke(chat_history)
+        call = await self._invoke(chat_history, ctx.cancellation_token)
         request = FunctionCallRequest(
             _id=f"{uuid4()}",
             call=call[0], # TODO: Handle multiple calls
@@ -275,7 +294,7 @@ class Agent(RoutedAgent):
             topic_id=DefaultTopicId(str(self._group_manager_id), str(self.id))
         )
     
-    def _invoke(self, history: List[LLMMessage]) -> List[FunctionCall]:
+    async def _invoke(self, history: List[LLMMessage], cancellation_token: CancellationToken) -> List[FunctionCall]:
         """
         Generates an action based on chat history.
         
@@ -285,9 +304,18 @@ class Agent(RoutedAgent):
         Returns:
             A function call object
         """
-        # TODO: Implement action generation logic using LLM
-        return [FunctionCall("dummy", "{}", "dummy")]
-    
+        result = await self._model_client.create(
+            messages=history,
+            tools=self._tools,
+            cancellation_token=cancellation_token
+        )
+        if isinstance(result.content, str):
+            raise Exception("Model returned a string instead of a list of function calls")
+        assert isinstance(result.content, list) and all(
+            isinstance(call, FunctionCall) for call in result.content
+        )
+        return result.content
+
     def _get_tool_for_action(self, action: FunctionCall) -> FunctionTool:
         """
         Finds the appropriate tool for a given action.
@@ -304,3 +332,29 @@ class Agent(RoutedAgent):
                 return tool
         
         raise ValueError(f"No tool found for action {action.name}")
+
+    ### Agent API ###
+
+    async def buy(self, request: Dict[str, int]):
+        """
+        Buys assets based on a request.
+        """
+        return self._env.buy(self.id, request)
+    
+    async def sell(self, request: Dict[str, int]):
+        """
+        Sells assets based on a request.
+        """
+        return self._env.sell(self.id, request)
+    
+    async def balance(self):
+        """
+        Returns the current balance.
+        """
+        return self._env.balance(self.id)
+    
+    async def prices(self):
+        """
+        Returns the current prices of assets traded on the market.
+        """
+        return self._env.prices()
