@@ -234,7 +234,7 @@ class Agent(RoutedAgent):
             group_manager_id: AgentId,
             overseer_manager_id: AgentId,
             model_client: ChatCompletionClient,
-            environment: Environment,
+            environment: Environment | None,
             tools: List[FunctionTool],
             logger: Logger
         ):
@@ -339,22 +339,26 @@ class Agent(RoutedAgent):
         """
         Buys assets based on a request.
         """
+        assert self._env
         return self._env.buy(self.id, request)
     
     async def sell(self, request: Dict[str, int]):
         """
         Sells assets based on a request.
         """
+        assert self._env
         return self._env.sell(self.id, request)
     
     async def balance(self):
         """
         Returns the current balance.
         """
+        assert self._env
         return self._env.balance(self.id)
     
     async def prices(self):
         """
         Returns the current prices of assets traded on the market.
         """
+        assert self._env
         return self._env.prices()

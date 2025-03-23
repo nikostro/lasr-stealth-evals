@@ -107,12 +107,8 @@ class TradingPlatform():
         return {asset: [round(val) for val in history[start_time : end_time + 1]] for asset, history in self.price_history.items()}
 
 class Trader(BaseModel):
-    agent_id: AgentId
     cash: float
     assets: Dict[str, float]
-
-    def __init__(self, agent_id: AgentId, cash: float, assets: Dict[str, float]):
-        super().__init__(agent_id=agent_id, cash=cash, assets=assets)
 
 class Environment():
 
