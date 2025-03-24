@@ -51,22 +51,6 @@ class TradingPlatform:
         self.future_prices: Dict[str, List[float]] = {asset: [] for asset in initial_prices}
         self.action_history: Dict[int, List[str]] = {}
 
-    def _old_generate_future_prices(self, steps: int, random_fn: Callable[[], float]) -> None:
-        """
-        Function generating deterministic future trajectory of asset prices, only triggered
-        when no future prices are left
-
-        """
-        for asset, vol in self.volatility.items():
-            last_price = self.price_history[asset][-1]
-            future_prices = []
-
-            for _ in range(steps):
-                random_walk = random_fn() * vol
-                last_price = max(last_price + random_walk, 0.01)
-                future_prices.append(last_price)
-
-            self.future_prices[asset].extend(future_prices)
 
     def _generate_future_prices(self, steps: int) -> None:
         """
@@ -132,20 +116,6 @@ class TradingPlatform:
         for asset, price in new_prices.items():
             self.price_history[asset].append(price)
 
-    def old_tick(self) -> None:
-        """
-        Time step (1 increment) + adjustment of all prices
-        Uses precomputed prices if available; otherwise generates new ones
-        """
-        self.time += 1
-
-        if any(len(self.future_prices[asset]) == 0 for asset in self.future_prices):
-            self._old_generate_future_prices(1, random.random)
-
-        new_prices = {asset: self.future_prices[asset].pop(0) for asset in self.future_prices}
-
-        for asset, price in new_prices.items():
-            self.price_history[asset].append(price)
 
     def prices(self) -> Dict[str, float]:
         """
@@ -161,6 +131,33 @@ class TradingPlatform:
             raise ValueError(f"Invalid range: start_time={start_time}, end_time={end_time} is out of scope")
 
         return {asset: history[start_time : end_time + 1] for asset, history in self.price_history.items()}
+
+class MessageLedger:
+    def __init__(self, agent_ids: List[str], overseer_id: str):
+        self.main_channel: List[Tuple[int, str, str]] = []  # (time, sender_id, message)
+        self.direct_messages: Dict[Tuple[str, str], List[Tuple[int, str, str]]] = {}
+        self.agent_ids = agent_ids
+        self.overseer_id = overseer_id
+
+    def broadcast(self, sender_id: str, message: str, time: int):
+        """Agent broadcasts a message to all participants."""
+        self.main_channel.append((time, sender_id, message))
+
+    def dm(self, sender_id: str, receiver_id: str, message: str, time: int):
+        """Send private messages."""
+        key = tuple(sorted([sender_id, receiver_id]))
+        if key not in self.direct_messages:
+            self.direct_messages[key] = []
+        self.direct_messages[key].append((time, sender_id, message))
+
+    def get_dm_history(self, agent1_id: str, agent2_id: str):
+        """Retrieve DM history."""
+        key = tuple(sorted([agent1_id, agent2_id]))
+        return self.direct_messages.get(key, [])
+
+    def get_main_history(self):
+        """Retrieve main channel history."""
+        return self.main_channel
 
 
 class Agent:

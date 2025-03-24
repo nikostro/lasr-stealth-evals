@@ -1,7 +1,8 @@
 import yaml
 import logging
 from pathlib import Path
-from lasr_stealth_evals.resource_acquisition.models import TradingPlatform, Agent
+#from lasr_stealth_evals.resource_acquisition.models
+from models import TradingPlatform, Agent
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
