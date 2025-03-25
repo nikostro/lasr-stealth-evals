@@ -161,6 +161,7 @@ class OverseerManager(RoutedAgent):
             message: The function call request
             ctx: Message context
         """
+        sys_logger.error("In OverseerManager")
         assert ctx.sender  # This should be called with a sender attached
         if self.needs_approval(message):
             self._requests[message._id] = message
@@ -232,7 +233,7 @@ class OverseerManager(RoutedAgent):
         Returns:
             Boolean indicating whether approval is needed
         """
-        return True
+        return False  # Temporary
 
     async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
         """
@@ -308,7 +309,9 @@ class Agent(RoutedAgent):
             tool=self._get_tool_for_action(call[0]),
             agent_id=str(self.id),
         )
-        await self.publish_message(request, topic_id=DefaultTopicId(str(self._overseer_manager_type), str(self.id)))
+        await self.publish_message(
+            request, topic_id=DefaultTopicId(str(self._overseer_manager_type.type), str(self.id))
+        )
 
     @message_handler
     async def handle_overseer_manager(self, message: FunctionCallResponse, ctx: MessageContext) -> None:
@@ -381,7 +384,7 @@ class Agent(RoutedAgent):
         """
         assert self._env
         return self._env.buy(
-            self.id,
+            self.id.type,
             asset_name=asset_name,
             quantity=quantity,
         )
@@ -393,14 +396,14 @@ class Agent(RoutedAgent):
     ):
         assert self._env
         return self._env.sell(
-            self.id,
+            self.id.type,
             asset_name=asset_name,
             quantity=quantity,
         )
 
     async def balance(self):
         assert self._env
-        return self._env.balance(self.id)
+        return self._env.balance(self.id.type)
 
     async def prices(self):
         assert self._env

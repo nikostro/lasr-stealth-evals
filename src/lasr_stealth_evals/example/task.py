@@ -46,7 +46,12 @@ class MyMessage:
 async def main():
     # Initialize runtime
     runtime = SingleThreadedAgentRuntime()
-    environment = Environment(traders=None, platform=None)  # Needs to be populated post-hoc
+    trading_platform = TradingPlatform(
+        initial_prices={"AAPL": 200, "MSFT": 400, "GOOGL": 150, "SHEL": 70, "HSBA": 6.5},
+        volatility={"AAPL": 0.1, "MSFT": 0.15, "GOOGL": 0.2, "SHEL": 0.12, "HSBA": 0.08},
+        drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
+    )
+    environment = Environment(traders=["agent1"], platform=trading_platform)  # Needs to be populated post-hoc
     logger = Logger()
 
     models = init_models()
@@ -87,7 +92,10 @@ async def main():
     # agent_id = AgentId(agent_type, "default")
     # overseer_manager_id = AgentId(overseer_manager_type, "default")
     manager_id = AgentId(manager_type, "default")
-    await runtime.add_subscription(TypeSubscription(topic_type="agent1", agent_type="agent1"))
+    await runtime.add_subscription(TypeSubscription(topic_type=agent_type.type, agent_type=agent_type.type))
+    await runtime.add_subscription(
+        TypeSubscription(topic_type=overseer_manager_type.type, agent_type=overseer_manager_type.type)
+    )
     runtime.start()
     await runtime.send_message(RequestToSpeak(), manager_id)
 
@@ -96,13 +104,7 @@ async def main():
     await runtime.stop_when_idle()
 
     # Initialize trading platform without the environment yet
-    trading_platform = TradingPlatform(
-        initial_prices={"AAPL": 200, "MSFT": 400, "GOOGL": 150, "SHEL": 70, "HSBA": 6.5},
-        volatility={"AAPL": 0.1, "MSFT": 0.15, "GOOGL": 0.2, "SHEL": 0.12, "HSBA": 0.08},
-        drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
-    )
 
-    environment._platform = trading_platform
     # environment._traders = {agent.id: Trader() for agent in agents["agents"]} # type: ignore
 
     # Now create function tools using the environment

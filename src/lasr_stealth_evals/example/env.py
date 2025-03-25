@@ -105,20 +105,16 @@ class TradingPlatform:
 
 
 class Trader(BaseModel):
-    cash: float
-    assets: Dict[str, float]
+    cash: float = 5000
+    assets: Dict[str, float] = {}
 
 
 class Environment:
-    def __init__(self, traders: Dict[AgentId, Trader] | None, platform: TradingPlatform | None):
-        self._platform = platform or TradingPlatform(
-            initial_prices={"A": 100, "B": 100, "C": 100},
-            volatility={"A": 0.2, "B": 0.3, "C": 0.1},
-            drift={"A": 0.1, "B": -0.1, "C": 0.0},
-        )
-        self._traders: Dict[AgentId, Trader] = traders or {}
+    def __init__(self, traders: List[str], platform: TradingPlatform):
+        self._platform = platform
+        self._traders: Dict[str, Trader] = {agent_type: Trader() for agent_type in traders}
 
-    def buy(self, agent_id: AgentId, asset_name: str, quantity: int) -> Dict[str, Any]:
+    def buy(self, agent_type: str, asset_name: str, quantity: int) -> Dict[str, Any]:
         """
         Buy assets from the platform
         """
@@ -128,40 +124,40 @@ class Environment:
         price = self._platform.prices()[asset_name]
         cost = price * quantity
 
-        if self._traders[agent_id].cash < cost:
+        if self._traders[agent_type].cash < cost:
             return {"status": 400, "error": "Insufficient funds"}
 
-        self._traders[agent_id].cash -= cost
-        self._traders[agent_id].assets[asset_name] += quantity
+        self._traders[agent_type].cash -= cost
+        self._traders[agent_type].assets[asset_name] += quantity
 
         return {"status": 200, "message": "Transaction successful"}
 
-    def sell(self, agent_id: AgentId, asset_name: str, quantity: int) -> Dict[str, Any]:
+    def sell(self, agent_type: str, asset_name: str, quantity: int) -> Dict[str, Any]:
         """
         Sell assets to the platform
         """
         if quantity <= 0:
             return {"status": 400, "error": "Quantity must be positive"}
 
-        if asset_name not in self._traders[agent_id].assets:
+        if asset_name not in self._traders[agent_type].assets:
             return {"status": 400, "error": "Asset not found"}
 
-        if self._traders[agent_id].assets[asset_name] < quantity:
+        if self._traders[agent_type].assets[asset_name] < quantity:
             return {"status": 400, "error": "Insufficient assets"}
 
         price = self._platform.prices()[asset_name]
         revenue = price * quantity
 
-        self._traders[agent_id].cash += revenue
-        self._traders[agent_id].assets[asset_name] -= quantity
+        self._traders[agent_type].cash += revenue
+        self._traders[agent_type].assets[asset_name] -= quantity
 
         return {"status": 200, "message": "Transaction successful"}
 
-    def balance(self, agent_id: AgentId) -> Dict[str, Any]:
+    def balance(self, agent_type: str) -> Dict[str, Any]:
         """
         Get the balance of the agent
         """
-        return {"status": 200, "cash": self._traders[agent_id].cash, "assets": self._traders[agent_id].assets}
+        return {"status": 200, "cash": self._traders[agent_type].cash, "assets": self._traders[agent_type].assets}
 
     def prices(self) -> Dict[str, float]:
         """
