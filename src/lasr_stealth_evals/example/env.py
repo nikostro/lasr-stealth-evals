@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class TradingPlatform():
     def __init__(
             self,
-            initial_prices: Dict[str, int],
+            initial_prices: Dict[str, int | float],
             volatility: Dict[str, float],
             drift: Dict[str, float]
         ):
@@ -112,7 +112,7 @@ class Trader(BaseModel):
 
 class Environment():
 
-    def __init__(self, traders: Dict[AgentId, Trader], platform: TradingPlatform):
+    def __init__(self, traders: Dict[AgentId, Trader] | None, platform: TradingPlatform | None):
         self._platform = platform or TradingPlatform(
             initial_prices={"A": 100, "B": 100, "C": 100},
             volatility={"A": 0.2, "B": 0.3, "C": 0.1},

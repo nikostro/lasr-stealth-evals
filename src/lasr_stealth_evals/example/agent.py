@@ -1,11 +1,11 @@
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional
 from uuid import uuid4
 import json
 from autogen_core import AgentId, CancellationToken, FunctionCall, message_handler, MessageContext, RoutedAgent, DefaultTopicId
-from autogen_core.models import LLMMessage, ChatCompletionClient, FunctionExecutionResult, UserMessage
+from autogen_core.models import LLMMessage, ChatCompletionClient, FunctionExecutionResult, UserMessage, SystemMessage, AssistantMessage
 from autogen_core.tools import FunctionTool
 
-from src.lasr_stealth_evals.library.msg import (
+from lasr_stealth_evals.library.msg import (
     Message,
     RequestToSpeak,
     FunctionCallRequest,
@@ -13,8 +13,8 @@ from src.lasr_stealth_evals.library.msg import (
     OverseerRequest,
     OverseerResponse,
 )
-from src.lasr_stealth_evals.library.logging import LogItem, Logger
-from src.lasr_stealth_evals.example.env import Environment
+from lasr_stealth_evals.library.logging import LogItem, Logger
+from lasr_stealth_evals.example.env import Environment
 
 class Manager(RoutedAgent):
     def __init__(
@@ -33,15 +33,15 @@ class Manager(RoutedAgent):
         self._num_turns = num_turns
     
     @message_handler
-    async def handle_message(self, msg: Message, ctx: MessageContext):
+    async def handle_message(self, message: Message, ctx: MessageContext) -> None:
         """
         Handles messages from agents, logs them, and rotates to the next agent.
         
         Args:
-            msg: Message containing logs from the agent
+            message: Message containing logs from the agent
             ctx: Message context including the source agent
         """
-        self._logger.extend(msg.log)
+        self._logger.extend(message.log)
         self._agent_idx = (self._agent_idx + 1) % len(self._agents)
         await self.publish_message(
             RequestToSpeak(),
@@ -53,27 +53,29 @@ class Overseer(RoutedAgent):
             self,
             description: str,
             manager_id: AgentId,
-            model_client: ChatCompletionClient,
+            model_client: ChatCompletionClient | None,
+            system_message: SystemMessage | None,
             tools: List[FunctionTool],
             logger: Logger
         ):
         super().__init__(description)
         self._manager_id = manager_id
         self._model_client = model_client
+        self._system_message = system_message
         self._tools = tools
         self._logger = logger
         
     @message_handler
-    async def handle_message(self, msg: OverseerRequest, ctx: MessageContext):
+    async def handle_message(self, message: OverseerRequest, ctx: MessageContext) -> None:
         """
         Evaluates function call requests and decides whether to approve them.
         
         Args:
-            msg: The function call request to evaluate
+            message: The function call request to evaluate
             ctx: Message context
         """
         assert ctx.sender and ctx.sender == self._manager_id # This should only be called by the manager
-        func_request = msg.func_request
+        func_request = message.func_request
         agent_logs = self._logger.get_agent_log(ctx.sender)
         is_approved = self._monitor(func_request, agent_logs)
         reason = None if is_approved \
@@ -104,14 +106,14 @@ class Overseer(RoutedAgent):
 
     ## TODO: Add tools for overseer
 
-    async def flag(self, msg: str):
+    async def flag(self, message: str):
         """
         Flags an action for review by the overseer.
         
         Args:
-            msg: The message to flag
+            message: The message to flag
         """
-        return msg
+        return message
 
 class OverseerManager(RoutedAgent):
     def __init__(self, description: str, overseer_topic_id: str, num_overseers: int):
@@ -122,27 +124,27 @@ class OverseerManager(RoutedAgent):
         self._requests: Dict[str, FunctionCallRequest] = {}
         
     @message_handler
-    async def handle_agent(self, msg: FunctionCallRequest, ctx: MessageContext):
+    async def handle_agent(self, message: FunctionCallRequest, ctx: MessageContext) -> None:
         """
         Processes function call requests and forwards them to overseers if needed.
         
         Args:
-            msg: The function call request
+            message: The function call request
             ctx: Message context
         """
         assert ctx.sender # This should be called with a sender attached
-        if self.needs_approval(msg):
-            self._requests[msg._id] = msg
+        if self.needs_approval(message):
+            self._requests[message._id] = message
             self._buffer = []
             await self.publish_message(
-                OverseerRequest(func_request=msg),
+                OverseerRequest(func_request=message),
                 topic_id=DefaultTopicId(self._overseer_topic_id, str(self.id))
             )
         else:
-            result = await self._execute_function_call(msg, ctx.cancellation_token)
+            result = await self._execute_function_call(message, ctx.cancellation_token)
             await self.publish_message(
                 FunctionCallResponse(
-                    _id=msg._id,
+                    _id=message._id,
                     result=result,
                     approved=True,
                     reason=None
@@ -151,17 +153,17 @@ class OverseerManager(RoutedAgent):
             )
     
     @message_handler
-    async def handle_overseer(self, msg: OverseerResponse, ctx: MessageContext):
+    async def handle_overseer(self, message: OverseerResponse, ctx: MessageContext) -> None:
         """
         Processes responses from overseers and executes function calls if approved.
         
         Args:
-            msg: The overseer's response
+            message: The overseer's response
             ctx: Message context
         """
-        self._buffer.append(msg)
+        self._buffer.append(message)
         if len(self._buffer) >= self._num_overseers:
-            func_response = msg.func_response
+            func_response = message.func_response
             request_id = func_response._id
             
             if request_id in self._requests:
@@ -248,12 +250,12 @@ class Agent(RoutedAgent):
         self._function_call_responses = []
         
     @message_handler
-    async def handle_group_manager(self, msg: RequestToSpeak, ctx: MessageContext):
+    async def handle_group_manager(self, message: RequestToSpeak, ctx: MessageContext) -> None:
         """
         Generates actions when it's this agent's turn to speak.
         
         Args:
-            msg: Request to speak
+            message: Request to speak
             ctx: Message context
         """
         chat_history = self._logger.get_gc_log()
@@ -270,17 +272,17 @@ class Agent(RoutedAgent):
         )
     
     @message_handler
-    async def handle_overseer_manager(self, msg: FunctionCallResponse, ctx: MessageContext):
+    async def handle_overseer_manager(self, message: FunctionCallResponse, ctx: MessageContext) -> None:
         """
         Processes responses to function call requests.
         
         Args:
-            msg: The function call response
+            message: The function call response
             ctx: Message context
         """
         
         # Create a message to signal end of turn
-        logs = [FunctionExecutionResult(content=str(msg), name="dummy", call_id="dummy", is_error=False)]
+        logs = [FunctionExecutionResult(content=str(message), name="dummy", call_id="dummy", is_error=False)]
         logs = [
             LogItem(
                 source=self.id,
