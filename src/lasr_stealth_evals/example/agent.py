@@ -274,9 +274,15 @@ class Agent(RoutedAgent):
         if _use_tools:
             pass
         tools = [
-            FunctionTool(self.buy, description="Buys assets based on a request."),
+            FunctionTool(
+                self.buy,
+                description="Buys `quantity` amount of `asset_name` from the market platform. You must have sufficient balance to do this operation.",
+            ),
             FunctionTool(self.balance, description="Returns the current balance of the agent."),
-            FunctionTool(self.sell, "Buys assets based on a request."),
+            FunctionTool(
+                self.sell,
+                "Sells `quantity` amount of `asset_name` from the market platform. You must have sufficient holdings of the asset to do this operation.",
+            ),
             FunctionTool(self.prices, description="Returns the current prices of assets traded on the market."),
         ]
         sys_logger.error(tools[0].schema)
@@ -365,60 +371,37 @@ class Agent(RoutedAgent):
 
     async def buy(
         self,
-        ticker: str,
-        quantity: int,
-    ) -> Annotated[
-        dict[str, Any],
-        "Response with status code and message.",
-        "Success: {'status': 200, 'message': 'Transaction successful'}",
-        "Error: {'status': 400, 'error': 'Insufficient funds'}",
-    ]:
+        asset_name: Annotated[str, "Name of the asset you want to buy. This must be specified."],
+        quantity: Annotated[
+            int, "Number of stocks of the asset you want to buy. This must be a integer greater than 0."
+        ],
+    ) -> Dict[str, Any]:
         """
         Buys assets based on a request.
         """
         assert self._env
-        return self._env.buy(self.id, {ticker: quantity})
+        return self._env.buy(
+            self.id,
+            asset_name=asset_name,
+            quantity=quantity,
+        )
 
-    async def sell(self, request: Dict[str, int]):
-        """
-        Sells assets based on a request.
-
-        Args:
-            request: Dictionary mapping asset names to quantities to sell.
-                     Example: {"AAPL": 10, "MSFT": 5} to sell 10 shares of AAPL and 5 shares of MSFT.
-                     Quantity must be positive.
-
-        Returns:
-            Dict[str, Any]: Response with status code and message.
-                            Success: {"status": 200, "message": "Transaction successful"}
-                            Error: {"status": 400, "error": "Insufficient assets"} or
-                                  {"status": 400, "error": "Asset not found"}
-        """
+    async def sell(
+        self,
+        asset_name: Annotated[str, "Name of the asset you want to sell. This must be specified."],
+        quantity: Annotated[int, "Number of stocks of the asset you want to sell. This must be an integer."],
+    ):
         assert self._env
-        return self._env.sell(self.id, request)
+        return self._env.sell(
+            self.id,
+            asset_name=asset_name,
+            quantity=quantity,
+        )
 
     async def balance(self):
-        """
-        Returns the current balance of the agent.
-
-        Returns:
-            Dict[str, Any]: Response with status code, cash balance, and owned assets.
-                            Example: {
-                                "status": 200,
-                                "cash": 1000.0,
-                                "assets": {"AAPL": 10, "MSFT": 5}
-                            }
-        """
         assert self._env
         return self._env.balance(self.id)
 
     async def prices(self):
-        """
-        Returns the current prices of assets traded on the market.
-
-        Returns:
-            Dict[str, float]: Dictionary mapping asset names to their current prices.
-                              Example: {"AAPL": 150.25, "MSFT": 300.50, "GOOGL": 2500.75}
-        """
         assert self._env
         return self._env.prices()
