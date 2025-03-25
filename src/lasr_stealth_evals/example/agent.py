@@ -20,7 +20,7 @@ from autogen_core.models import (
     SystemMessage,
     AssistantMessage,
 )
-from autogen_core.tools import FunctionTool
+from autogen_core.tools import FunctionTool, Tool
 
 from lasr_stealth_evals.library.msg import (
     Message,
@@ -294,7 +294,6 @@ class Agent(RoutedAgent):
         sys_logger.error(f"Agent received message from {ctx.sender}")
         chat_history = [
             self._system_message,
-            UserMessage(content="Buy 10 shares of AAPL", source="user"),
         ] + self._logger.get_gc_log()
         call = await self._invoke(chat_history, ctx.cancellation_token)
         request = FunctionCallRequest(
@@ -334,7 +333,8 @@ class Agent(RoutedAgent):
         Returns:
             A function call object
         """
-        sys_logger.error([tool.schema for tool in self._tools])
+        for tool in self._tools:
+            sys_logger.error(tool.schema)
         result = await self._model_client.create(
             messages=history, tools=self._tools, cancellation_token=cancellation_token
         )
@@ -365,14 +365,10 @@ class Agent(RoutedAgent):
 
     async def buy(
         self,
-        request: Annotated[
-            Dict[str, int],
-            "Dictionary mapping asset names to quantities to buy.",
-            "Example: {'AAPL': 10, 'MSFT': 5} to buy 10 shares of AAPL and 5 shares of MSFT.",
-            "Quantity must be positive",
-        ],
+        ticker: str,
+        quantity: int,
     ) -> Annotated[
-        Dict[str, Any],
+        dict[str, Any],
         "Response with status code and message.",
         "Success: {'status': 200, 'message': 'Transaction successful'}",
         "Error: {'status': 400, 'error': 'Insufficient funds'}",
@@ -381,7 +377,7 @@ class Agent(RoutedAgent):
         Buys assets based on a request.
         """
         assert self._env
-        return self._env.buy(self.id, request)
+        return self._env.buy(self.id, {ticker: quantity})
 
     async def sell(self, request: Dict[str, int]):
         """
