@@ -109,7 +109,7 @@ class Overseer(RoutedAgent):
         is_approved = self._monitor(func_request, agent_logs)
         reason = None if is_approved else "Function call rejected by overseer"
         response = FunctionCallResponse(
-            _id=func_request._id,
+            id=func_request.id,
             result=None,  # Result will be filled by OverseerManager if approved
             approved=is_approved,
             reason=reason,
@@ -164,7 +164,7 @@ class OverseerManager(RoutedAgent):
         sys_logger.error("In OverseerManager")
         assert ctx.sender  # This should be called with a sender attached
         if self.needs_approval(message):
-            self._requests[message._id] = message
+            self._requests[message.id] = message
             self._buffer = []
             await self.publish_message(
                 OverseerRequest(func_request=message),
@@ -173,7 +173,7 @@ class OverseerManager(RoutedAgent):
         else:
             result = await self._execute_function_call(message, ctx.cancellation_token)
             await self.publish_message(
-                FunctionCallResponse(_id=message._id, result=result, approved=True, reason=None),
+                FunctionCallResponse(id=message.id, result=result, approved=True, reason=None),
                 topic_id=TopicId(type=str(ctx.sender.type), source=str(self.id)),
             )
 
@@ -190,7 +190,7 @@ class OverseerManager(RoutedAgent):
         self._buffer.append(message)
         if len(self._buffer) >= self._num_overseers:
             func_response = message.func_response
-            request_id = func_response._id
+            request_id = func_response.id
 
             if request_id in self._requests:
                 request = self._requests.pop(request_id)
@@ -203,7 +203,7 @@ class OverseerManager(RoutedAgent):
 
                     # Return success result
                     await self.publish_message(
-                        FunctionCallResponse(_id=request_id, result=result, approved=True, reason=None),
+                        FunctionCallResponse(id=request_id, result=result, approved=True, reason=None),
                         topic_id=TopicId(type=str(agent_type), source=str(self.id)),
                     )
                 else:
@@ -214,7 +214,7 @@ class OverseerManager(RoutedAgent):
                     ]
                     await self.publish_message(
                         FunctionCallResponse(
-                            _id=request_id,
+                            id=request_id,
                             result=None,
                             approved=False,
                             reason="; ".join(reasons) or "Function call rejected",
@@ -304,7 +304,7 @@ class Agent(RoutedAgent):
         ] + self._logger.get_gc_log()
         call = await self._invoke(chat_history, ctx.cancellation_token)
         request = FunctionCallRequest(
-            _id=f"{uuid4()}",
+            id=f"{uuid4()}",
             call=call[0],  # TODO: Handle multiple calls
             tool=self._get_tool_for_action(call[0]),
             agent_id=str(self.id),
@@ -330,7 +330,7 @@ class Agent(RoutedAgent):
             for log in logs
         ]
         logs = Message(log=logs)
-        await self.publish_message(logs, topic_id=DefaultTopicId(str(self._manager_type), str(self.id)))
+        await self.publish_message(logs, topic_id=DefaultTopicId(self._manager_type.type, str(self.id)))
 
     async def _invoke(self, history: List[LLMMessage], cancellation_token: CancellationToken) -> List[FunctionCall]:
         """
