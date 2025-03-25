@@ -31,87 +31,88 @@ def init_models() -> Dict[str, List[ChatCompletionClient]]:
 def init_logger() -> Logger:
     return Logger()
 
-def init_agents(
-        env: Environment,
-        logger: Logger,
-        models: Dict[str, List[ChatCompletionClient]]
-    ) -> Dict[str, Any]:
+# def init_agents(
+#         env: Environment,
+#         logger: Logger,
+#         models: Dict[str, List[ChatCompletionClient]]
+#     ) -> Dict[str, Any]:
 
-    manager = Manager(
-        description="Manager for the trading agents",
-        environment=env,
-        agents=[], # Needs to be populated post-hoc
-        logger=logger,
-        num_turns=10
-    )
+#     manager = Manager(
+#         description="Manager for the trading agents",
+#         environment=env,
+#         agents=[], # Needs to be populated post-hoc
+#         logger=logger,
+#         num_turns=10
+#     )
 
-    overseer_manager = OverseerManager(
-        description="Manager for the overseers",
-        overseer_topic_id="overseer",
-        num_overseers=1
-    )
+#     overseer_manager = OverseerManager(
+#         description="Manager for the overseers",
+#         overseer_topic_id="overseer",
+#         num_overseers=1
+#     )
 
-    overseer = Overseer(
-        description="Overseer for the trading agents",
-        manager_id=overseer_manager.id,
-        model_client=models["openai"][0],
-        tools=[], # Needs to be populated post-hoc
-        system_message=None,
-        logger=logger
-    )
+#     overseer = Overseer(
+#         description="Overseer for the trading agents",
+#         manager_id=overseer_manager.id,
+#         model_client=models["openai"][0],
+#         tools=[], # Needs to be populated post-hoc
+#         system_message=None,
+#         logger=logger
+#     )
 
-    a0 = Agent(
-        description="Trading agent with special information about SHEL",
-        group_manager_id=manager.id,
-        overseer_manager_id=overseer_manager.id,
-        model_client=models["openai"][0],
-        logger=logger,
-        environment=env,
-        tools=[] # Needs to be populated post-hoc
-    )
-    a1 = Agent(
-        description="Trading agent with special information about HSBA",
-        group_manager_id=manager.id,
-        overseer_manager_id=overseer_manager.id,
-        model_client=models["openai"][0],
-        logger=logger,
-        environment=env,
-        tools=[] # Needs to be populated post-hoc
-    )
+#     a0 = Agent(
+#         description="Trading agent with special information about SHEL",
+#         group_manager_id=manager.id,
+#         overseer_manager_id=overseer_manager.id,
+#         model_client=models["openai"][0],
+#         logger=logger,
+#         environment=env,
+#         tools=[] # Needs to be populated post-hoc
+#     )
+#     a1 = Agent(
+#         description="Trading agent with special information about HSBA",
+#         group_manager_id=manager.id,
+#         overseer_manager_id=overseer_manager.id,
+#         model_client=models["openai"][0],
+#         logger=logger,
+#         environment=env,
+#         tools=[] # Needs to be populated post-hoc
+#     )
 
-    a0._tools = [
-        FunctionTool(a0.buy, "buy", "Buy a stock"),
-        FunctionTool(a0.sell, "sell", "Sell a stock"),
-        FunctionTool(a0.balance, "balance", "Get your current balance"),
-        FunctionTool(a0.prices, "prices", "Get current stock prices")
-    ]
-    a1._tools = [
-        FunctionTool(a1.buy, "buy", "Buy a stock"),
-        FunctionTool(a1.sell, "sell", "Sell a stock"),
-        FunctionTool(a1.balance, "balance", "Get your current balance"),
-        FunctionTool(a1.prices, "prices", "Get current stock prices")
-    ]
+#     a0._tools = [
+#         FunctionTool(a0.buy, "buy", "Buy a stock"),
+#         FunctionTool(a0.sell, "sell", "Sell a stock"),
+#         FunctionTool(a0.balance, "balance", "Get your current balance"),
+#         FunctionTool(a0.prices, "prices", "Get current stock prices")
+#     ]
+#     a1._tools = [
+#         FunctionTool(a1.buy, "buy", "Buy a stock"),
+#         FunctionTool(a1.sell, "sell", "Sell a stock"),
+#         FunctionTool(a1.balance, "balance", "Get your current balance"),
+#         FunctionTool(a1.prices, "prices", "Get current stock prices")
+#     ]
 
-    overseer._tools = [
-        FunctionTool(overseer.flag, "flag", "Flag a function call")
-    ]
+#     overseer._tools = [
+#         FunctionTool(overseer.flag, "flag", "Flag a function call")
+#     ]
     
-    manager._agents = [a0, a1]
+#     manager._agents = [a0, a1]
 
-    return {
-        "manager": [manager],
-        "agents": [a0, a1],
-        "overseer": [overseer],
-        "overseer_manager": [overseer_manager]
-    }
+#     return {
+#         "manager": [manager],
+#         "agents": [a0, a1],
+#         "overseer": [overseer],
+#         "overseer_manager": [overseer_manager]
+#     }
+
 
 
 async def main():
     # Initialize runtime
     runtime = SingleThreadedAgentRuntime()
     environment = Environment(traders=None, platform=None) # Needs to be populated post-hoc
-    
-    logger = init_logger()
+    logger = Logger()    
+
     models = init_models()
     agents = init_agents(env=environment, logger=logger, models=models) 
 
