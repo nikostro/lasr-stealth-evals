@@ -72,7 +72,7 @@ class Manager(RoutedAgent):
         self._logger.extend(message.log)
         self._agent_idx = (self._agent_idx + 1) % len(self._agent_topics)
         await self.publish_message(
-            RequestToSpeak(), topic_id=TopicId(type=str(self._agent_topics[self._agent_idx]), source=str(self.id))
+            RequestToSpeak(), topic_id=TopicId(type=str(self._agent_topics[self._agent_idx].type), source=str(self.id))
         )
 
 
@@ -105,7 +105,7 @@ class Overseer(RoutedAgent):
         sys_logger.debug("Overseer")
         assert ctx.sender  # This should only be called by the manager
         func_request = message.func_request
-        agent_logs = self._logger.get_agent_log(ctx.sender)
+        agent_logs = self._logger.get_agent_log(ctx.sender.type)
         is_approved = self._monitor(func_request, agent_logs)
         reason = None if is_approved else "Function call rejected by overseer"
         response = FunctionCallResponse(
@@ -322,15 +322,15 @@ class Agent(RoutedAgent):
             message: The function call response
             ctx: Message context
         """
-
+        sys_logger.error(f"Agent received message from {ctx.sender}")
         # Create a message to signal end of turn
         logs = [FunctionExecutionResult(content=str(message), name="dummy", call_id="dummy", is_error=False)]
         logs = [
-            LogItem(source=self.id, content=UserMessage(content=log.content, source=str(self.id)), _obs=[self.id])
+            LogItem(source=self.id.type, content=UserMessage(content=log.content, source=str(self.id)), observability=[self.id.type])
             for log in logs
         ]
         logs = Message(log=logs)
-        await self.publish_message(logs, topic_id=DefaultTopicId(self._manager_type.type, str(self.id)))
+        await self.publish_message(logs, topic_id=TopicId(self._manager_type.type, str(self.id)))
 
     async def _invoke(self, history: List[LLMMessage], cancellation_token: CancellationToken) -> List[FunctionCall]:
         """
