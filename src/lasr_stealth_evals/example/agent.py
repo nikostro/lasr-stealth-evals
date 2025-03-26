@@ -346,8 +346,6 @@ class Agent(RoutedAgent):
         Returns:
             A function call object
         """
-        for tool in self._tools:
-            sys_logger.debug(tool.schema)
         result = await self._model_client.create(
             messages=history, tools=self._tools, cancellation_token=cancellation_token
         )

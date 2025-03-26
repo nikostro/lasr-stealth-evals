@@ -102,8 +102,6 @@ async def main():
 
     # Initialize trading platform without the environment yet
 
-    # environment._traders = {agent.id: Trader() for agent in agents["agents"]} # type: ignore
-
     # Now create function tools using the environment
     print(environment._traders)
 
