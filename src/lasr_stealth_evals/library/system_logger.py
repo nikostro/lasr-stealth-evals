@@ -13,7 +13,7 @@ LOG_LEVEL_MAP = {
 
 def get_logger(name: str) -> logging.Logger:
     console_handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(module)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(module)s - %(funcName)s - %(levelname)s - %(message)s")
     console_handler.setFormatter(formatter)
 
     # Create logger with custom level
