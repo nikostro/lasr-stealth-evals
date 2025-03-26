@@ -4,13 +4,9 @@ import random
 from autogen_core import AgentId
 from pydantic import BaseModel
 
-class TradingPlatform():
-    def __init__(
-            self,
-            initial_prices: Dict[str, int | float],
-            volatility: Dict[str, float],
-            drift: Dict[str, float]
-        ):
+
+class TradingPlatform:
+    def __init__(self, initial_prices: Dict[str, int | float], volatility: Dict[str, float], drift: Dict[str, float]):
         """
         Initialising the trading platform for trading-based evaluations
 
@@ -19,12 +15,10 @@ class TradingPlatform():
             volatility (Dict[str, float]): Volatility set for each asset type
         """
         self.time: int = 0
-        self.price_history = {
-            asset: [price] for asset, price in initial_prices.items()}
+        self.price_history = {asset: [price] for asset, price in initial_prices.items()}
         self.volatility = volatility
         self.drift = drift
-        self.future_prices = {
-            asset: [] for asset in initial_prices}
+        self.future_prices = {asset: [] for asset in initial_prices}
         self.action_history: Dict[int, List[str]] = {}
 
     def _generate_future_prices(self, steps: int) -> None:
@@ -104,74 +98,67 @@ class TradingPlatform():
         if start_time < 0 or end_time >= self.time:
             raise ValueError(f"Invalid range: start_time={start_time}, end_time={end_time} is out of scope")
 
-        return {asset: [round(val) for val in history[start_time : end_time + 1]] for asset, history in self.price_history.items()}
+        return {
+            asset: [round(val) for val in history[start_time : end_time + 1]]
+            for asset, history in self.price_history.items()
+        }
+
 
 class Trader(BaseModel):
-    cash: float
-    assets: Dict[str, float]
+    cash: float = 5000
+    assets: Dict[str, float] = {}
 
-class Environment():
 
-    def __init__(self, traders: Dict[AgentId, Trader] | None, platform: TradingPlatform | None):
-        self._platform = platform or TradingPlatform(
-            initial_prices={"A": 100, "B": 100, "C": 100},
-            volatility={"A": 0.2, "B": 0.3, "C": 0.1},
-            drift={"A": 0.1, "B": -0.1, "C": 0.0}
-        )
-        self._traders: Dict[AgentId, Trader] = traders or {}
-    
-    def buy(self, agent_id: AgentId, request: Dict[str, int]) -> Dict[str, Any]:
+class Environment:
+    def __init__(self, traders: List[str], platform: TradingPlatform):
+        self._platform = platform
+        self._traders: Dict[str, Trader] = {agent_type: Trader() for agent_type in traders}
+
+    def buy(self, agent_type: str, asset_name: str, quantity: int) -> Dict[str, Any]:
         """
         Buy assets from the platform
         """
-        for asset, quantity in request.items():
-            if quantity <= 0:
-                raise ValueError("Quantity must be positive")
+        if quantity <= 0:
+            raise ValueError("Quantity must be positive")
 
-            price = self._platform.prices()[asset]
-            cost = price * quantity
+        price = self._platform.prices()[asset_name]
+        cost = price * quantity
 
-            if self._traders[agent_id].cash < cost:
-                return {"status": 400, "error": "Insufficient funds"}
+        if self._traders[agent_type].cash < cost:
+            return {"status": 400, "error": "Insufficient funds"}
 
-            self._traders[agent_id].cash -= cost
-            self._traders[agent_id].assets[asset] += quantity
-        
+        self._traders[agent_type].cash -= cost
+        self._traders[agent_type].assets[asset_name] += quantity
+
         return {"status": 200, "message": "Transaction successful"}
-    
-    def sell(self, agent_id: AgentId, request: Dict[str, int]) -> Dict[str, Any]:
+
+    def sell(self, agent_type: str, asset_name: str, quantity: int) -> Dict[str, Any]:
         """
         Sell assets to the platform
         """
+        if quantity <= 0:
+            return {"status": 400, "error": "Quantity must be positive"}
 
-        for asset, quantity in request.items():
-            if quantity <= 0:
-                raise ValueError("Quantity must be positive")
+        if asset_name not in self._traders[agent_type].assets:
+            return {"status": 400, "error": "Asset not found"}
 
-            if asset not in self._traders[agent_id].assets:
-                return {"status": 400, "error": "Asset not found"}
+        if self._traders[agent_type].assets[asset_name] < quantity:
+            return {"status": 400, "error": "Insufficient assets"}
 
-            if self._traders[agent_id].assets[asset] < quantity:
-                return {"status": 400, "error": "Insufficient assets"}
+        price = self._platform.prices()[asset_name]
+        revenue = price * quantity
 
-            price = self._platform.prices()[asset]
-            revenue = price * quantity
+        self._traders[agent_type].cash += revenue
+        self._traders[agent_type].assets[asset_name] -= quantity
 
-            self._traders[agent_id].cash += revenue
-            self._traders[agent_id].assets[asset] -= quantity
-        
         return {"status": 200, "message": "Transaction successful"}
-    
-    def balance(self, agent_id: AgentId) -> Dict[str, Any]:
+
+    def balance(self, agent_type: str) -> Dict[str, Any]:
         """
         Get the balance of the agent
         """
-        return {
-            "status": 200,
-            "cash": self._traders[agent_id].cash,
-            "assets": self._traders[agent_id].assets
-        }
-    
+        return {"status": 200, "cash": self._traders[agent_type].cash, "assets": self._traders[agent_type].assets}
+
     def prices(self) -> Dict[str, float]:
         """
         Get the current prices of the assets
