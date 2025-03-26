@@ -14,15 +14,14 @@ LOG_LEVEL_MAP = {
 def get_logger(name: str) -> logging.Logger:
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter("%(asctime)s - %(module)s - %(levelname)s - %(message)s")
-
-    # Add formatter to console_handler
     console_handler.setFormatter(formatter)
 
-    logging.basicConfig(
-        level=logging.ERROR,  # Set default log level to debug
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[console_handler],
-    )
+    # Create logger with custom level
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(console_handler)
 
-    return logging.getLogger(name)
+    # Prevent propagation to root logger
+    logger.propagate = False
+
+    return logger

@@ -50,7 +50,7 @@ class Manager(RoutedAgent):
 
     @message_handler
     async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
-        sys_logger.error(
+        sys_logger.debug(
             f"Manager received request from {ctx.sender}. Sending to {self._agent_topics[self._agent_idx]}"
         )
         await self.publish_message(
@@ -66,7 +66,7 @@ class Manager(RoutedAgent):
             message: Message containing logs from the agent
             ctx: Message context including the source agent
         """
-        sys_logger.error(
+        sys_logger.debug(
             f"Manager received request from {ctx.sender}. Sending to {self._agent_topics[self._agent_idx]}"
         )
         self._logger.extend(message.log)
@@ -102,7 +102,7 @@ class Overseer(RoutedAgent):
             message: The function call request to evaluate
             ctx: Message context
         """
-        sys_logger.error("Overseer")
+        sys_logger.debug("Overseer")
         assert ctx.sender  # This should only be called by the manager
         func_request = message.func_request
         agent_logs = self._logger.get_agent_log(ctx.sender)
@@ -161,7 +161,7 @@ class OverseerManager(RoutedAgent):
             message: The function call request
             ctx: Message context
         """
-        sys_logger.error("In OverseerManager")
+        sys_logger.debug("In OverseerManager")
         assert ctx.sender  # This should be called with a sender attached
         if self.needs_approval(message):
             self._requests[message.id] = message
@@ -186,7 +186,7 @@ class OverseerManager(RoutedAgent):
             message: The overseer's response
             ctx: Message context
         """
-        sys_logger.error("Overseer Manager received")
+        sys_logger.debug("Overseer Manager received")
         self._buffer.append(message)
         if len(self._buffer) >= self._num_overseers:
             func_response = message.func_response
@@ -286,7 +286,7 @@ class Agent(RoutedAgent):
             ),
             FunctionTool(self.prices, description="Returns the current prices of assets traded on the market."),
         ]
-        sys_logger.error(tools[0].schema)
+        sys_logger.debug(tools[0].schema)
         return tools
 
     @message_handler
@@ -298,7 +298,7 @@ class Agent(RoutedAgent):
             message: Request to speak
             ctx: Message context
         """
-        sys_logger.error(f"Agent received message from {ctx.sender}")
+        sys_logger.debug(f"Agent received message from {ctx.sender}")
         chat_history = [
             self._system_message,
         ] + self._logger.get_gc_log()
@@ -343,14 +343,14 @@ class Agent(RoutedAgent):
             A function call object
         """
         for tool in self._tools:
-            sys_logger.error(tool.schema)
+            sys_logger.debug(tool.schema)
         result = await self._model_client.create(
             messages=history, tools=self._tools, cancellation_token=cancellation_token
         )
         if isinstance(result.content, str):
-            sys_logger.error(result.content)
+            sys_logger.debug(result.content)
         assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
-        sys_logger.error(result.content)
+        sys_logger.debug(result.content)
         return result.content
 
     def _get_tool_for_action(self, action: FunctionCall) -> FunctionTool:
