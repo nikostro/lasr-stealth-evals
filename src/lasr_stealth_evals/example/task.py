@@ -88,18 +88,15 @@ async def main():
             system_message=SystemMessage(content=dummy_system_message),
         ),
     )
-    print(agent_type)
-    # agent_id = AgentId(agent_type, "default")
-    # overseer_manager_id = AgentId(overseer_manager_type, "default")
     manager_id = AgentId(manager_type, "default")
     await runtime.add_subscription(TypeSubscription(topic_type=agent_type.type, agent_type=agent_type.type))
     await runtime.add_subscription(
         TypeSubscription(topic_type=overseer_manager_type.type, agent_type=overseer_manager_type.type)
     )
+    await runtime.add_subscription(TypeSubscription(topic_type=manager_type.type, agent_type=manager_type.type))
     runtime.start()
     await runtime.send_message(RequestToSpeak(), manager_id)
 
-    # await runtime.publish_message(MyMessage("Hello, world!"), DefaultTopicId())
     # Wait for the message to be processed and then stop the runtime.
     await runtime.stop_when_idle()
 

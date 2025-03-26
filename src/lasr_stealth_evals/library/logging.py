@@ -9,22 +9,20 @@ GROUP_CHAT = "GROUP_CHAT"
 
 
 class LogItem(BaseModel):
-    model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)  # type: ignore
-
-    source: AgentId
+    source: str
     content: LLMMessage
-    _obs: List[AgentId]
+    observability: List[str]
 
 
 class Logger:
     def __init__(self):
         self.log: List[LogItem] = []
 
-    def get_agent_log(self, agent_id: AgentId) -> List[LLMMessage]:
-        return [item.content for item in self.log if agent_id in item._obs]
+    def get_agent_log(self, agent_type: str) -> List[LLMMessage]:
+        return [item.content for item in self.log if agent_type in item.observability]
 
     def get_gc_log(self) -> List[LLMMessage]:
-        return [item.content for item in self.log if GROUP_CHAT in item._obs]
+        return [item.content for item in self.log if GROUP_CHAT in item.observability]
 
     def append(self, log: LogItem):
         self.extend([log])
