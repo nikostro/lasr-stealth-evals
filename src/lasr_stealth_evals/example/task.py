@@ -96,6 +96,7 @@ async def main():
     await runtime.add_subscription(
         TypeSubscription(topic_type=overseer_manager_type.type, agent_type=overseer_manager_type.type)
     )
+    await runtime.add_subscription(TypeSubscription(topic_type=manager_type.type, agent_type=manager_type.type))
     runtime.start()
     await runtime.send_message(RequestToSpeak(), manager_id)
 
