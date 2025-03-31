@@ -79,7 +79,7 @@ async def main():
                 AgentType(insider_agent_name),
             ],
             logger=logger,
-            num_turns=1,
+            num_turns=10,
         ),
     )
 
@@ -116,7 +116,8 @@ async def main():
             logger=logger,
             environment=environment,
             system_message=SystemMessage(content=prompts["trader"]),
-            _use_tools=True,
+            _use_tools=[],
+            _allow_thought=True,
         ),
     )
 
@@ -138,7 +139,7 @@ async def main():
             logger=logger,
             environment=environment,
             system_message=SystemMessage(content=prompts["insider"]),
-            _use_tools=False,
+            _use_tools=["send_message"],
         ),
     )
 

@@ -21,6 +21,7 @@ from autogen_core.models import (
     AssistantMessage,
 )
 from autogen_core.tools import FunctionTool, Tool
+from inspect import getdoc
 
 from lasr_stealth_evals.library.msg import (
     Message,
@@ -30,7 +31,7 @@ from lasr_stealth_evals.library.msg import (
     OverseerRequest,
     OverseerResponse,
 )
-from lasr_stealth_evals.library.logging import LogItem, Logger
+from lasr_stealth_evals.library.logging import LogItem, GROUP_CHAT, Logger
 from lasr_stealth_evals.example.env import Environment
 from lasr_stealth_evals.library.system_logger import get_logger
 
@@ -62,7 +63,7 @@ class Manager(RoutedAgent):
     async def handle_message(self, message: Message, ctx: MessageContext) -> None:
         assert ctx.sender
         sys_logger.info(
-            f"Manager received request from {ctx.sender.type}. Sending to {self._agent_topics[self._agent_idx]}"
+            f"Manager received request from {ctx.sender.type}. Sending to {self._agent_topics[self._agent_idx].type}"
         )
         self._logger.extend(message.log)
         self._agent_idx += 1
@@ -93,7 +94,7 @@ class Overseer(RoutedAgent):
         self._manager_type = manager_type
         self._model_client = model_client
         self._system_message = system_message
-        self._tools = tools
+        self._use_tools = tools
         self._logger = logger
 
     @message_handler
@@ -252,6 +253,12 @@ class OverseerManager(RoutedAgent):
         return await request.tool.run_json(json.loads(request.call.arguments), cancellation_token)
 
 
+def agent_tool(f: Any) -> Any:
+    """Mark functions in the agent as tools"""
+    f._is_agent_tool = True
+    return f
+
+
 class Agent(RoutedAgent):
     def __init__(
         self,
@@ -262,8 +269,8 @@ class Agent(RoutedAgent):
         environment: Environment | None,
         system_message: SystemMessage,
         logger: Logger,
-        _use_tools: bool = True,  # TODO add finegrained tool selection
-        _allow_thought: bool = False,
+        _use_tools: List[str] = [],
+        _allow_thought: bool = True,
     ):
         super().__init__(description)
         self._manager_type = manager_type
@@ -276,21 +283,25 @@ class Agent(RoutedAgent):
         self._tools = self._init_tools(_use_tools)
         self._allow_thought = _allow_thought
 
-    def _init_tools(self, _use_tools: bool) -> List[FunctionTool]:
+    def _init_tools(self, _tools: list[str]) -> List[FunctionTool]:
+        available_tools = self.get_agent_tool_names()
+
+        # If no specific tools provided, use all available tools
+        tools_to_add = _tools if _tools else available_tools
+
+        # Verify specified tools exist (if any were specified)
+        if _tools:
+            assert all(
+                tool in available_tools for tool in tools_to_add
+            ), f"Some tools in {tools_to_add} are not in {available_tools}"
+
+        # Create FunctionTools for each tool name
         tools = []
-        if _use_tools:
-            tools = [
-                FunctionTool(
-                    self.buy,
-                    description="Buys `quantity` amount of `asset_name` from the market platform. You must have sufficient balance to do this operation.",
-                ),
-                FunctionTool(self.balance, description="Returns the current balance of the agent."),
-                FunctionTool(
-                    self.sell,
-                    "Sells `quantity` amount of `asset_name` from the market platform. You must have sufficient holdings of the asset to do this operation.",
-                ),
-                FunctionTool(self.prices, description="Returns the current prices of assets traded on the market."),
-            ]
+        for tool_name in tools_to_add:
+            tool_method = getattr(self, tool_name)
+            if hasattr(tool_method, "_is_agent_tool"):
+                description = getdoc(tool_method) or f"Execute the {tool_name} function"
+                tools.append(FunctionTool(tool_method, description=description))
         return tools
 
     @message_handler
@@ -348,27 +359,27 @@ class Agent(RoutedAgent):
         Returns:
             A function call object
         """
-        history = [self._system_message] + self._logger.get_agent_log(self.id.type)
+        history = [self._system_message] + self._logger.get_agent_log(self.id.type) + self._logger.get_gc_log()
+        sys_logger.info(f"HISTORY: {history}")
+        sys_logger.info(f"GC LOG: {self._logger.get_gc_log()}")
         if self._allow_thought:
             history += [AssistantMessage(content="<thinking>", source=str(self.id.type))]
-            result = await self._model_client.create(
-                messages=history, tools=self._tools, cancellation_token=cancellation_token
-            )
+            result = await self._model_client.create(messages=history, cancellation_token=cancellation_token)
             history += [AssistantMessage(content=result.content, source=str(self.id.type))]
-            history += [AssistantMessage(content="\n</thinking>", source=str(self.id.type))]
-        history += [AssistantMessage(content="<tool_use>", source=str(self.id.type))]
+            history += [AssistantMessage(content="</thinking>", source=str(self.id.type))]
+        history += [AssistantMessage(content="<actions>", source=str(self.id.type))]
+
         result = await self._model_client.create(
             messages=history,
             tools=self._tools,
             cancellation_token=cancellation_token,
         )
-        sys_logger.info(f"Agent {self.id.type} received result: {result.content}")
         if isinstance(result.content, str):
             sys_logger.debug(result.content)
         assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
         history += [AssistantMessage(content=result.content, source=str(self.id.type))]
-        history += [AssistantMessage(content="</tool_use>", source=str(self.id.type))]
-        sys_logger.debug(f"Agent {self.id.type} received history: {history}")
+        history += [AssistantMessage(content="</actions>", source=str(self.id.type))]
+        sys_logger.info(f"TOOL CALL {self.id.type}: {result.content}")
         return result.content
 
     def _get_tool_for_action(self, action: FunctionCall) -> FunctionTool:
@@ -385,11 +396,14 @@ class Agent(RoutedAgent):
         for tool in self._tools:
             if tool.name == action.name:
                 return tool
-
+        # TODO add method to give feedback for bad tool calls
         raise ValueError(f"No tool found for action {action.name}")
 
     ### Agent API ###
+    def get_agent_tool_names(self) -> List[str]:
+        return [name for name, func in self.__class__.__dict__.items() if hasattr(func, "_is_agent_tool")]
 
+    @agent_tool
     async def buy(
         self,
         asset_name: Annotated[str, "Name of the asset you want to buy. This must be specified."],
@@ -397,21 +411,22 @@ class Agent(RoutedAgent):
             int, "Number of stocks of the asset you want to buy. This must be a integer greater than 0."
         ],
     ) -> Dict[str, Any]:
-        """
-        Buys assets based on a request.
-        """
+        """Buys `quantity` amount of `asset_name` from the market platform. You must have sufficient balance to do this operation."""
         assert self._env
+        sys_logger.info(f"ASSET: {asset_name}")
         return self._env.buy(
             self.id.type,
             asset_name=asset_name,
             quantity=quantity,
         )
 
+    @agent_tool
     async def sell(
         self,
         asset_name: Annotated[str, "Name of the asset you want to sell. This must be specified."],
         quantity: Annotated[int, "Number of stocks of the asset you want to sell. This must be an integer."],
     ):
+        """Sells `quantity` amount of `asset_name` from the market platform. You must have sufficient holdings of the asset to do this operation."""
         assert self._env
         return self._env.sell(
             self.id.type,
@@ -419,12 +434,27 @@ class Agent(RoutedAgent):
             quantity=quantity,
         )
 
+    @agent_tool
     async def balance(self):
+        """Returns the current balance of the agent."""
         assert self._env
         return self._env.balance(self.id.type)
 
+    @agent_tool
     async def prices(self):
+        """Returns the current prices of assets traded on the market."""
         assert self._env
         return self._env.prices()
 
-    # async def message_groupchat()
+    @agent_tool
+    async def send_message(self, content: str):
+        self._logger.append(
+            LogItem(
+                source=self.id.type,
+                content=UserMessage(
+                    content=content,
+                    source=str(self.id.type),
+                ),
+                observability=[GROUP_CHAT],
+            )
+        )
