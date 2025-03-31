@@ -52,9 +52,6 @@ class Manager(RoutedAgent):
 
     @message_handler
     async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
-        sys_logger.debug(
-            f"Manager received request from {ctx.sender.type if ctx.sender else ""}. Sending to {self._agent_topics[self._agent_idx]}"
-        )
         await self.publish_message(
             RequestToSpeak(), topic_id=TopicId(type=self._agent_topics[self._agent_idx].type, source="default")
         )
@@ -62,18 +59,13 @@ class Manager(RoutedAgent):
     @message_handler
     async def handle_message(self, message: Message, ctx: MessageContext) -> None:
         assert ctx.sender
-        sys_logger.info(
-            f"Manager received request from {ctx.sender.type}. Sending to {self._agent_topics[self._agent_idx].type}"
-        )
         self._logger.extend(message.log)
         self._agent_idx += 1
         if self._agent_idx >= len(self._agent_topics):
-            self._agent_idx = 0
             self._current_turn += 1
             self._env.tick()
         self._agent_idx %= len(self._agent_topics)
         if self._current_turn >= self._num_turns:
-            sys_logger.debug("Manager finished")
             return
         await self.publish_message(
             RequestToSpeak(), topic_id=TopicId(type=str(self._agent_topics[self._agent_idx].type), source=str(self.id))
@@ -107,7 +99,6 @@ class Overseer(RoutedAgent):
             ctx: Message context
         """
         assert ctx.sender
-        sys_logger.debug(f"Overseer received request from {ctx.sender.type}")
         func_request = message.func_request
         agent_logs = self._logger.get_agent_log(ctx.sender.type)
         is_approved = self._monitor(func_request, agent_logs)
@@ -166,7 +157,6 @@ class OverseerManager(RoutedAgent):
             ctx: Message context
         """
         assert ctx.sender
-        sys_logger.debug(f"Overseer Manager received request from {ctx.sender.type}")
         if self.needs_approval(message):
             self._requests[message.id] = message
             self._buffer = []
@@ -190,7 +180,6 @@ class OverseerManager(RoutedAgent):
             message: The overseer's response
             ctx: Message context
         """
-        sys_logger.debug("Overseer Manager received")
         self._buffer.append(message)
         if len(self._buffer) >= self._num_overseers:
             func_response = message.func_response
@@ -314,7 +303,6 @@ class Agent(RoutedAgent):
             ctx: Message context
         """
         assert ctx.sender
-        sys_logger.debug(f"Agent received message from {ctx.sender.type}")
         call = await self._invoke(ctx.cancellation_token)
         request = FunctionCallRequest(
             id=f"{uuid4()}",
@@ -360,8 +348,6 @@ class Agent(RoutedAgent):
             A function call object
         """
         history = [self._system_message] + self._logger.get_agent_log(self.id.type) + self._logger.get_gc_log()
-        sys_logger.info(f"HISTORY: {history}")
-        sys_logger.info(f"GC LOG: {self._logger.get_gc_log()}")
         if self._allow_thought:
             history += [AssistantMessage(content="<thinking>", source=str(self.id.type))]
             result = await self._model_client.create(messages=history, cancellation_token=cancellation_token)
@@ -374,12 +360,9 @@ class Agent(RoutedAgent):
             tools=self._tools,
             cancellation_token=cancellation_token,
         )
-        if isinstance(result.content, str):
-            sys_logger.debug(result.content)
         assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
         history += [AssistantMessage(content=result.content, source=str(self.id.type))]
         history += [AssistantMessage(content="</actions>", source=str(self.id.type))]
-        sys_logger.info(f"TOOL CALL {self.id.type}: {result.content}")
         return result.content
 
     def _get_tool_for_action(self, action: FunctionCall) -> FunctionTool:
@@ -413,7 +396,6 @@ class Agent(RoutedAgent):
     ) -> Dict[str, Any]:
         """Buys `quantity` amount of `asset_name` from the market platform. You must have sufficient balance to do this operation."""
         assert self._env
-        sys_logger.info(f"ASSET: {asset_name}")
         return self._env.buy(
             self.id.type,
             asset_name=asset_name,
