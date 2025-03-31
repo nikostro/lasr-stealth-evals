@@ -7,12 +7,10 @@ from logging import getLogger
 
 GROUP_CHAT = "GROUP_CHAT"
 
-
 class LogItem(BaseModel):
     source: str
     content: LLMMessage
     observability: List[str]
-
 
 class Logger:
     def __init__(self):
