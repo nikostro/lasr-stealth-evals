@@ -70,7 +70,6 @@ class Manager(RoutedAgent):
         sys_logger.debug(
             f"Manager received request from {ctx.sender}. Sending to {self._agent_topics[self._agent_idx]}"
         )
-        sys_logger.debug(f"Logger: {self._logger.log}")
         self._logger.extend(message.log)
         self._agent_idx += 1
         if self._agent_idx >= len(self._agent_topics):

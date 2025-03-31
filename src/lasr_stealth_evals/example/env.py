@@ -112,7 +112,8 @@ class Trader(BaseModel):
 class Environment:
     def __init__(self, traders: List[str], platform: TradingPlatform):
         self._platform = platform
-        self._traders: Dict[str, Trader] = {agent_type: Trader() for agent_type in traders}
+        assets = {asset: 0.0 for asset in self._platform.price_history.keys()}
+        self._traders: Dict[str, Trader] = {agent_type: Trader(assets=assets) for agent_type in traders}
 
     def buy(self, agent_type: str, asset_name: str, quantity: int) -> Dict[str, Any]:
         """
