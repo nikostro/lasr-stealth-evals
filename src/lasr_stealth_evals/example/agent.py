@@ -269,7 +269,7 @@ class Agent(RoutedAgent):
         environment: Environment | None,
         system_message: SystemMessage,
         logger: Logger,
-        _use_tools: bool = True,
+        _use_tools: bool = True,  # TODO add finegrained tool selection
     ):
         super().__init__(description)
         self._manager_type = manager_type
