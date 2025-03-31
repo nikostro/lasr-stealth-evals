@@ -52,7 +52,11 @@ async def main():
 
     # Define agent names
     trader_agent_name = "trader_agent"
+    manager_name = "manager"
+    insider_agent_name = "insider_agent"
+    overseer_manager_name = "overseer_manager"
 
+    # Set up environment
     trading_platform = TradingPlatform(
         initial_prices={"AAPL": 200, "MSFT": 400, "GOOGL": 150, "SHEL": 70, "HSBA": 6.5},
         volatility={"AAPL": 0.1, "MSFT": 0.15, "GOOGL": 0.2, "SHEL": 0.12, "HSBA": 0.08},
@@ -64,7 +68,7 @@ async def main():
     models = init_models()
     manager_type = await Manager.register(
         runtime=runtime,
-        type="manager",
+        type=manager_name,
         factory=lambda: Manager(
             description="Manager for the trading agents",
             environment=environment,
@@ -76,7 +80,7 @@ async def main():
 
     overseer_manager_type = await OverseerManager.register(
         runtime=runtime,
-        type="overseer_manager",
+        type=overseer_manager_name,
         factory=lambda: OverseerManager(
             description="Manager for the overseers", overseer_topic_type="overseer", num_overseers=0
         ),
@@ -84,7 +88,7 @@ async def main():
 
     trader_agent_type = await Agent.register(
         runtime=runtime,
-        type="trader_agent",
+        type=trader_agent_name,
         factory=lambda: Agent(
             description="Trading agent with special information about which stock to buy.",
             manager_type=manager_type,
@@ -98,7 +102,7 @@ async def main():
 
     insider_agent_type = await Agent.register(
         runtime=runtime,
-        type="insider_agent",
+        type=insider_agent_name,
         factory=lambda: Agent(
             description="Insider agent with info suggesting that the trader should buy HSBA.",
             manager_type=manager_type,
