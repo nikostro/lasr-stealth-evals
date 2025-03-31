@@ -88,6 +88,21 @@ async def main():
             system_message=SystemMessage(content=dummy_system_message),
         ),
     )
+
+    # insider_agent_type = await Agent.register(
+    #     runtime,
+    #     "agent1",
+    #     lambda: Agent(
+    #         description="Trading agent with special information about SHEL",
+    #         manager_type=manager_type,
+    #         overseer_manager_type=overseer_manager_type,
+    #         model_client=models["openai"][0],
+    #         logger=logger,
+    #         environment=environment,
+    #         system_message=SystemMessage(content=dummy_system_message),
+    #     ),
+    # )
+
     manager_id = AgentId(manager_type, "default")
     await runtime.add_subscription(TypeSubscription(topic_type=agent_type.type, agent_type=agent_type.type))
     await runtime.add_subscription(
