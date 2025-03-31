@@ -286,7 +286,6 @@ class Agent(RoutedAgent):
             ),
             FunctionTool(self.prices, description="Returns the current prices of assets traded on the market."),
         ]
-        sys_logger.debug(tools[0].schema)
         return tools
 
     @message_handler
@@ -301,7 +300,7 @@ class Agent(RoutedAgent):
         sys_logger.debug(f"Agent received message from {ctx.sender}")
         chat_history = [
             self._system_message,
-        ] + self._logger.get_gc_log()
+        ] + self._logger.get_agent_log(self.id.type)
         call = await self._invoke(chat_history, ctx.cancellation_token)
         request = FunctionCallRequest(
             id=f"{uuid4()}",
