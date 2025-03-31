@@ -133,17 +133,17 @@ async def main():
             agent_type=overseer_manager_type.type,
         )
     )
-    await runtime.add_subscription(TypeSubscription(topic_type=manager_type.type, agent_type=manager_type.type))
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=manager_type.type,
+            agent_type=manager_type.type,
+        )
+    )
     runtime.start()
     await runtime.send_message(RequestToSpeak(), manager_id)
 
     # Wait for the message to be processed and then stop the runtime.
     await runtime.stop_when_idle()
-
-    # Initialize trading platform without the environment yet
-
-    # Now create function tools using the environment
-    print(environment._traders)
 
 
 if __name__ == "__main__":
