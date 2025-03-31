@@ -60,13 +60,6 @@ class Manager(RoutedAgent):
 
     @message_handler
     async def handle_message(self, message: Message, ctx: MessageContext) -> None:
-        """
-        Handles messages from agents, logs them, and rotates to the next agent.
-
-        Args:
-            message: Message containing logs from the agent
-            ctx: Message context including the source agent
-        """
         assert ctx.sender
         sys_logger.info(
             f"Manager received request from {ctx.sender.type}. Sending to {self._agent_topics[self._agent_idx]}"
@@ -270,6 +263,7 @@ class Agent(RoutedAgent):
         system_message: SystemMessage,
         logger: Logger,
         _use_tools: bool = True,  # TODO add finegrained tool selection
+        _allow_thought: bool = False,
     ):
         super().__init__(description)
         self._manager_type = manager_type
@@ -280,6 +274,7 @@ class Agent(RoutedAgent):
         self._system_message = system_message
         self._function_call_responses = []
         self._tools = self._init_tools(_use_tools)
+        self._allow_thought = _allow_thought
 
     def _init_tools(self, _use_tools: bool) -> List[FunctionTool]:
         tools = []
@@ -309,10 +304,7 @@ class Agent(RoutedAgent):
         """
         assert ctx.sender
         sys_logger.debug(f"Agent received message from {ctx.sender.type}")
-        chat_history = [
-            self._system_message,
-        ] + self._logger.get_agent_log(self.id.type)
-        call = await self._invoke(chat_history, ctx.cancellation_token)
+        call = await self._invoke(ctx.cancellation_token)
         request = FunctionCallRequest(
             id=f"{uuid4()}",
             call=call[0],  # TODO: Handle multiple calls
@@ -346,7 +338,7 @@ class Agent(RoutedAgent):
         logs = Message(log=logs)
         await self.publish_message(logs, topic_id=TopicId(self._manager_type.type, str(self.id)))
 
-    async def _invoke(self, history: List[LLMMessage], cancellation_token: CancellationToken) -> List[FunctionCall]:
+    async def _invoke(self, cancellation_token: CancellationToken) -> List[FunctionCall]:
         """
         Generates an action based on chat history.
 
@@ -356,13 +348,27 @@ class Agent(RoutedAgent):
         Returns:
             A function call object
         """
+        history = [self._system_message] + self._logger.get_agent_log(self.id.type)
+        if self._allow_thought:
+            history += [AssistantMessage(content="<thinking>", source=str(self.id.type))]
+            result = await self._model_client.create(
+                messages=history, tools=self._tools, cancellation_token=cancellation_token
+            )
+            history += [AssistantMessage(content=result.content, source=str(self.id.type))]
+            history += [AssistantMessage(content="\n</thinking>", source=str(self.id.type))]
+        history += [AssistantMessage(content="<tool_use>", source=str(self.id.type))]
         result = await self._model_client.create(
-            messages=history, tools=self._tools, cancellation_token=cancellation_token
+            messages=history,
+            tools=self._tools,
+            cancellation_token=cancellation_token,
         )
         sys_logger.info(f"Agent {self.id.type} received result: {result.content}")
         if isinstance(result.content, str):
             sys_logger.debug(result.content)
         assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
+        history += [AssistantMessage(content=result.content, source=str(self.id.type))]
+        history += [AssistantMessage(content="</tool_use>", source=str(self.id.type))]
+        sys_logger.debug(f"Agent {self.id.type} received history: {history}")
         return result.content
 
     def _get_tool_for_action(self, action: FunctionCall) -> FunctionTool:
