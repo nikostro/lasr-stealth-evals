@@ -48,14 +48,17 @@ class MyMessage:
 
 
 async def main():
-    # Initialize runtime
     runtime = SingleThreadedAgentRuntime()
+
+    # Define agent names
+    trader_agent_name = "trader_agent"
+
     trading_platform = TradingPlatform(
         initial_prices={"AAPL": 200, "MSFT": 400, "GOOGL": 150, "SHEL": 70, "HSBA": 6.5},
         volatility={"AAPL": 0.1, "MSFT": 0.15, "GOOGL": 0.2, "SHEL": 0.12, "HSBA": 0.08},
         drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
     )
-    environment = Environment(traders=["agent1"], platform=trading_platform)  # Needs to be populated post-hoc
+    environment = Environment(traders=[trader_agent_name], platform=trading_platform)
     logger = Logger()
 
     models = init_models()
@@ -65,7 +68,7 @@ async def main():
         factory=lambda: Manager(
             description="Manager for the trading agents",
             environment=environment,
-            agent_topics=[AgentType("agent1")],  # Needs to be populated post-hoc
+            agent_topics=[AgentType(trader_agent_name)],
             logger=logger,
             num_turns=10,
         ),
@@ -83,7 +86,7 @@ async def main():
         runtime=runtime,
         type="trader_agent",
         factory=lambda: Agent(
-            description="Trading agent with special information about SHEL",
+            description="Trading agent with special information about which stock to buy.",
             manager_type=manager_type,
             overseer_manager_type=overseer_manager_type,
             model_client=models["openai"][0],
