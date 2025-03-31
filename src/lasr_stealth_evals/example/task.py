@@ -88,9 +88,21 @@ async def main():
             system_message=SystemMessage(content=dummy_system_message),
         ),
     )
-    print(agent_type)
-    # agent_id = AgentId(agent_type, "default")
-    # overseer_manager_id = AgentId(overseer_manager_type, "default")
+
+    # insider_agent_type = await Agent.register(
+    #     runtime,
+    #     "agent1",
+    #     lambda: Agent(
+    #         description="Trading agent with special information about SHEL",
+    #         manager_type=manager_type,
+    #         overseer_manager_type=overseer_manager_type,
+    #         model_client=models["openai"][0],
+    #         logger=logger,
+    #         environment=environment,
+    #         system_message=SystemMessage(content=dummy_system_message),
+    #     ),
+    # )
+
     manager_id = AgentId(manager_type, "default")
     await runtime.add_subscription(TypeSubscription(topic_type=agent_type.type, agent_type=agent_type.type))
     await runtime.add_subscription(
@@ -100,13 +112,10 @@ async def main():
     runtime.start()
     await runtime.send_message(RequestToSpeak(), manager_id)
 
-    # await runtime.publish_message(MyMessage("Hello, world!"), DefaultTopicId())
     # Wait for the message to be processed and then stop the runtime.
     await runtime.stop_when_idle()
 
     # Initialize trading platform without the environment yet
-
-    # environment._traders = {agent.id: Trader() for agent in agents["agents"]} # type: ignore
 
     # Now create function tools using the environment
     print(environment._traders)

@@ -47,6 +47,7 @@ class Manager(RoutedAgent):
         self._env = environment
         self._logger = logger
         self._num_turns = num_turns
+        self._current_turn = 0
 
     @message_handler
     async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
@@ -70,7 +71,15 @@ class Manager(RoutedAgent):
             f"Manager received request from {ctx.sender}. Sending to {self._agent_topics[self._agent_idx]}"
         )
         self._logger.extend(message.log)
+        self._agent_idx += 1
+        if self._agent_idx >= len(self._agent_topics):
+            self._agent_idx = 0
+            self._current_turn += 1
+            self._env.tick()
         self._agent_idx = (self._agent_idx + 1) % len(self._agent_topics)
+        if self._current_turn >= self._num_turns:
+            sys_logger.debug("Manager finished")
+            return  # How does this link back to Inspect?
         await self.publish_message(
             RequestToSpeak(), topic_id=TopicId(type=str(self._agent_topics[self._agent_idx].type), source=str(self.id))
         )
@@ -286,7 +295,6 @@ class Agent(RoutedAgent):
             ),
             FunctionTool(self.prices, description="Returns the current prices of assets traded on the market."),
         ]
-        sys_logger.debug(tools[0].schema)
         return tools
 
     @message_handler
@@ -301,13 +309,13 @@ class Agent(RoutedAgent):
         sys_logger.debug(f"Agent received message from {ctx.sender}")
         chat_history = [
             self._system_message,
-        ] + self._logger.get_gc_log()
+        ] + self._logger.get_agent_log(self.id.type)
         call = await self._invoke(chat_history, ctx.cancellation_token)
         request = FunctionCallRequest(
             id=f"{uuid4()}",
             call=call[0],  # TODO: Handle multiple calls
             tool=self._get_tool_for_action(call[0]),
-            agent_id=str(self.id),
+            agent_id=str(self.id.type),
         )
         await self.publish_message(
             request, topic_id=DefaultTopicId(str(self._overseer_manager_type.type), str(self.id))
@@ -326,7 +334,11 @@ class Agent(RoutedAgent):
         # Create a message to signal end of turn
         logs = [FunctionExecutionResult(content=str(message), name="dummy", call_id="dummy", is_error=False)]
         logs = [
-            LogItem(source=self.id.type, content=UserMessage(content=log.content, source=str(self.id)), observability=[self.id.type])
+            LogItem(
+                source=self.id.type,
+                content=UserMessage(content=log.content, source=str(self.id.type)),
+                observability=[self.id.type],
+            )
             for log in logs
         ]
         logs = Message(log=logs)
@@ -342,8 +354,6 @@ class Agent(RoutedAgent):
         Returns:
             A function call object
         """
-        for tool in self._tools:
-            sys_logger.debug(tool.schema)
         result = await self._model_client.create(
             messages=history, tools=self._tools, cancellation_token=cancellation_token
         )
