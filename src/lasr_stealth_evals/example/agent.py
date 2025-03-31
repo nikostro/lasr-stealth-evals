@@ -70,6 +70,7 @@ class Manager(RoutedAgent):
         sys_logger.debug(
             f"Manager received request from {ctx.sender}. Sending to {self._agent_topics[self._agent_idx]}"
         )
+        sys_logger.debug(f"Logger: {self._logger.log}")
         self._logger.extend(message.log)
         self._agent_idx += 1
         if self._agent_idx >= len(self._agent_topics):
@@ -315,7 +316,7 @@ class Agent(RoutedAgent):
             id=f"{uuid4()}",
             call=call[0],  # TODO: Handle multiple calls
             tool=self._get_tool_for_action(call[0]),
-            agent_id=str(self.id),
+            agent_id=str(self.id.type),
         )
         await self.publish_message(
             request, topic_id=DefaultTopicId(str(self._overseer_manager_type.type), str(self.id))
@@ -336,7 +337,7 @@ class Agent(RoutedAgent):
         logs = [
             LogItem(
                 source=self.id.type,
-                content=UserMessage(content=log.content, source=str(self.id)),
+                content=UserMessage(content=log.content, source=str(self.id.type)),
                 observability=[self.id.type],
             )
             for log in logs
