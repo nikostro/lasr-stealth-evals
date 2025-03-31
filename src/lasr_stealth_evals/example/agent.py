@@ -269,7 +269,7 @@ class Agent(RoutedAgent):
         environment: Environment | None,
         system_message: SystemMessage,
         logger: Logger,
-        _use_tools: Optional[List[str]] = [],
+        _use_tools: bool = True,
     ):
         super().__init__(description)
         self._manager_type = manager_type
@@ -279,9 +279,9 @@ class Agent(RoutedAgent):
         self._env = environment
         self._system_message = system_message
         self._function_call_responses = []
-        self._tools = self._init_tools(_use_tools or [])
+        self._tools = self._init_tools(_use_tools)
 
-    def _init_tools(self, _use_tools: List[str] = []) -> List[FunctionTool]:
+    def _init_tools(self, _use_tools: bool) -> List[FunctionTool]:
         if _use_tools:
             pass
         tools = [

@@ -116,6 +116,7 @@ async def main():
             logger=logger,
             environment=environment,
             system_message=SystemMessage(content=prompts["trader"]),
+            _use_tools=True,
         ),
     )
 
@@ -137,7 +138,7 @@ async def main():
             logger=logger,
             environment=environment,
             system_message=SystemMessage(content=prompts["insider"]),
-            _use_tools=[],
+            _use_tools=False,
         ),
     )
 
