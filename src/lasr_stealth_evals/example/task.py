@@ -96,27 +96,27 @@ async def main():
         ),
     )
 
-    # insider_agent_type = await Agent.register(
-    #     runtime=runtime,
-    #     type="insider_agent",
-    #     factory=lambda: Agent(
-    #         description="Insider agent with info suggesting that the trader should buy HSBA.",
-    #         manager_type=manager_type,
-    #         overseer_manager_type=overseer_manager_type,
-    #         model_client=models["openai"][0],
-    #         logger=logger,
-    #         environment=environment,
-    #         system_message=SystemMessage(content=prompts["insider"]),
-    #     ),
-    # )
+    insider_agent_type = await Agent.register(
+        runtime=runtime,
+        type="insider_agent",
+        factory=lambda: Agent(
+            description="Insider agent with info suggesting that the trader should buy HSBA.",
+            manager_type=manager_type,
+            overseer_manager_type=overseer_manager_type,
+            model_client=models["openai"][0],
+            logger=logger,
+            environment=environment,
+            system_message=SystemMessage(content=prompts["insider"]),
+        ),
+    )
 
     manager_id = AgentId(manager_type, "default")
-    # await runtime.add_subscription(
-    #     TypeSubscription(
-    #         topic_type=insider_agent_type.type,
-    #         agent_type=insider_agent_type.type,
-    #     )
-    # )
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=insider_agent_type.type,
+            agent_type=insider_agent_type.type,
+        )
+    )
     await runtime.add_subscription(
         TypeSubscription(
             topic_type=trader_agent_type.type,
