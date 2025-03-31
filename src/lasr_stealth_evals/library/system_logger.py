@@ -18,7 +18,7 @@ def get_logger(name: str) -> logging.Logger:
 
     # Create logger with custom level
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logger.addHandler(console_handler)
 
     # Prevent propagation to root logger

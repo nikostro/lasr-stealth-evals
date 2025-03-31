@@ -51,7 +51,6 @@ class Manager(RoutedAgent):
 
     @message_handler
     async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
-
         sys_logger.debug(
             f"Manager received request from {ctx.sender.type if ctx.sender else ""}. Sending to {self._agent_topics[self._agent_idx]}"
         )
@@ -334,7 +333,6 @@ class Agent(RoutedAgent):
             ctx: Message context
         """
         assert ctx.sender
-        sys_logger.error(f"Agent received message from {ctx.sender.type}")
         # Create a message to signal end of turn
         logs = [FunctionExecutionResult(content=str(message), name="dummy", call_id="dummy", is_error=False)]
         logs = [
@@ -361,7 +359,7 @@ class Agent(RoutedAgent):
         result = await self._model_client.create(
             messages=history, tools=self._tools, cancellation_token=cancellation_token
         )
-        sys_logger.debug(f"Agent {self.id.type} received result: {result.content}")
+        sys_logger.info(f"Agent {self.id.type} received result: {result.content}")
         if isinstance(result.content, str):
             sys_logger.debug(result.content)
         assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
