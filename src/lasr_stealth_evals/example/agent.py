@@ -282,20 +282,20 @@ class Agent(RoutedAgent):
         self._tools = self._init_tools(_use_tools)
 
     def _init_tools(self, _use_tools: bool) -> List[FunctionTool]:
+        tools = []
         if _use_tools:
-            pass
-        tools = [
-            FunctionTool(
-                self.buy,
-                description="Buys `quantity` amount of `asset_name` from the market platform. You must have sufficient balance to do this operation.",
-            ),
-            FunctionTool(self.balance, description="Returns the current balance of the agent."),
-            FunctionTool(
-                self.sell,
-                "Sells `quantity` amount of `asset_name` from the market platform. You must have sufficient holdings of the asset to do this operation.",
-            ),
-            FunctionTool(self.prices, description="Returns the current prices of assets traded on the market."),
-        ]
+            tools = [
+                FunctionTool(
+                    self.buy,
+                    description="Buys `quantity` amount of `asset_name` from the market platform. You must have sufficient balance to do this operation.",
+                ),
+                FunctionTool(self.balance, description="Returns the current balance of the agent."),
+                FunctionTool(
+                    self.sell,
+                    "Sells `quantity` amount of `asset_name` from the market platform. You must have sufficient holdings of the asset to do this operation.",
+                ),
+                FunctionTool(self.prices, description="Returns the current prices of assets traded on the market."),
+            ]
         return tools
 
     @message_handler
@@ -420,3 +420,5 @@ class Agent(RoutedAgent):
     async def prices(self):
         assert self._env
         return self._env.prices()
+
+    # async def message_groupchat()
