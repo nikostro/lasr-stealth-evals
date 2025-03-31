@@ -47,6 +47,7 @@ class Manager(RoutedAgent):
         self._env = environment
         self._logger = logger
         self._num_turns = num_turns
+        self._current_turn = 0
 
     @message_handler
     async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
@@ -70,7 +71,15 @@ class Manager(RoutedAgent):
             f"Manager received request from {ctx.sender}. Sending to {self._agent_topics[self._agent_idx]}"
         )
         self._logger.extend(message.log)
+        self._agent_idx += 1
+        if self._agent_idx >= len(self._agent_topics):
+            self._agent_idx = 0
+            self._current_turn += 1
+            self._env.tick()
         self._agent_idx = (self._agent_idx + 1) % len(self._agent_topics)
+        if self._current_turn >= self._num_turns:
+            sys_logger.debug("Manager finished")
+            return  # How does this link back to Inspect?
         await self.publish_message(
             RequestToSpeak(), topic_id=TopicId(type=str(self._agent_topics[self._agent_idx].type), source=str(self.id))
         )
