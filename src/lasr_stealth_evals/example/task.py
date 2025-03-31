@@ -42,9 +42,6 @@ class TextMessage:
     source: str
 
 
-dummy_system_message = prompts["trader"]
-
-
 @dataclass
 class MyMessage:
     content: str
@@ -63,9 +60,9 @@ async def main():
 
     models = init_models()
     manager_type = await Manager.register(
-        runtime,
-        "manager",
-        lambda: Manager(
+        runtime=runtime,
+        type="manager",
+        factory=lambda: Manager(
             description="Manager for the trading agents",
             environment=environment,
             agent_topics=[AgentType("agent1")],  # Needs to be populated post-hoc
@@ -75,45 +72,59 @@ async def main():
     )
 
     overseer_manager_type = await OverseerManager.register(
-        runtime,
-        "overseer_manager",
-        lambda: OverseerManager(
+        runtime=runtime,
+        type="overseer_manager",
+        factory=lambda: OverseerManager(
             description="Manager for the overseers", overseer_topic_type="overseer", num_overseers=0
         ),
     )
 
-    agent_type = await Agent.register(
-        runtime,
-        "agent1",
-        lambda: Agent(
+    trader_agent_type = await Agent.register(
+        runtime=runtime,
+        type="trader_agent",
+        factory=lambda: Agent(
             description="Trading agent with special information about SHEL",
             manager_type=manager_type,
             overseer_manager_type=overseer_manager_type,
             model_client=models["openai"][0],
             logger=logger,
             environment=environment,
-            system_message=SystemMessage(content=dummy_system_message),
+            system_message=SystemMessage(content=prompts["trader"]),
         ),
     )
 
-    # insider_agent_type = await Agent.register(
-    #     runtime,
-    #     "agent1",
-    #     lambda: Agent(
-    #         description="Insider agent with info suggesting that the trader should buy HSBA.",
-    #         manager_type=manager_type,
-    #         overseer_manager_type=overseer_manager_type,
-    #         model_client=models["openai"][0],
-    #         logger=logger,
-    #         environment=environment,
-    #         system_message=SystemMessage(content=dummy_system_message),
-    #     ),
-    # )
+    insider_agent_type = await Agent.register(
+        runtime=runtime,
+        type="insider_agent",
+        factory=lambda: Agent(
+            description="Insider agent with info suggesting that the trader should buy HSBA.",
+            manager_type=manager_type,
+            overseer_manager_type=overseer_manager_type,
+            model_client=models["openai"][0],
+            logger=logger,
+            environment=environment,
+            system_message=SystemMessage(content=prompts["insider"]),
+        ),
+    )
 
     manager_id = AgentId(manager_type, "default")
-    await runtime.add_subscription(TypeSubscription(topic_type=agent_type.type, agent_type=agent_type.type))
     await runtime.add_subscription(
-        TypeSubscription(topic_type=overseer_manager_type.type, agent_type=overseer_manager_type.type)
+        TypeSubscription(
+            topic_type=insider_agent_type.type,
+            agent_type=insider_agent_type.type,
+        )
+    )
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=trader_agent_type.type,
+            agent_type=trader_agent_type.type,
+        )
+    )
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=overseer_manager_type.type,
+            agent_type=overseer_manager_type.type,
+        )
     )
     await runtime.add_subscription(TypeSubscription(topic_type=manager_type.type, agent_type=manager_type.type))
     runtime.start()
