@@ -51,8 +51,9 @@ class Manager(RoutedAgent):
 
     @message_handler
     async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
+
         sys_logger.debug(
-            f"Manager received request from {ctx.sender}. Sending to {self._agent_topics[self._agent_idx]}"
+            f"Manager received request from {ctx.sender.type if ctx.sender else ""}. Sending to {self._agent_topics[self._agent_idx]}"
         )
         await self.publish_message(
             RequestToSpeak(), topic_id=TopicId(type=self._agent_topics[self._agent_idx].type, source="default")
@@ -67,8 +68,9 @@ class Manager(RoutedAgent):
             message: Message containing logs from the agent
             ctx: Message context including the source agent
         """
+        assert ctx.sender
         sys_logger.debug(
-            f"Manager received request from {ctx.sender}. Sending to {self._agent_topics[self._agent_idx]}"
+            f"Manager received request from {ctx.sender.type}. Sending to {self._agent_topics[self._agent_idx]}"
         )
         self._logger.extend(message.log)
         self._agent_idx += 1
@@ -111,8 +113,8 @@ class Overseer(RoutedAgent):
             message: The function call request to evaluate
             ctx: Message context
         """
-        sys_logger.debug("Overseer")
-        assert ctx.sender  # This should only be called by the manager
+        assert ctx.sender
+        sys_logger.debug(f"Overseer received request from {ctx.sender.type}")
         func_request = message.func_request
         agent_logs = self._logger.get_agent_log(ctx.sender.type)
         is_approved = self._monitor(func_request, agent_logs)
@@ -170,8 +172,8 @@ class OverseerManager(RoutedAgent):
             message: The function call request
             ctx: Message context
         """
-        sys_logger.debug("In OverseerManager")
-        assert ctx.sender  # This should be called with a sender attached
+        assert ctx.sender
+        sys_logger.debug(f"Overseer Manager received request from {ctx.sender.type}")
         if self.needs_approval(message):
             self._requests[message.id] = message
             self._buffer = []
@@ -306,7 +308,8 @@ class Agent(RoutedAgent):
             message: Request to speak
             ctx: Message context
         """
-        sys_logger.debug(f"Agent received message from {ctx.sender}")
+        assert ctx.sender
+        sys_logger.debug(f"Agent received message from {ctx.sender.type}")
         chat_history = [
             self._system_message,
         ] + self._logger.get_agent_log(self.id.type)
@@ -330,7 +333,8 @@ class Agent(RoutedAgent):
             message: The function call response
             ctx: Message context
         """
-        sys_logger.error(f"Agent received message from {ctx.sender}")
+        assert ctx.sender
+        sys_logger.error(f"Agent received message from {ctx.sender.type}")
         # Create a message to signal end of turn
         logs = [FunctionExecutionResult(content=str(message), name="dummy", call_id="dummy", is_error=False)]
         logs = [
@@ -357,10 +361,10 @@ class Agent(RoutedAgent):
         result = await self._model_client.create(
             messages=history, tools=self._tools, cancellation_token=cancellation_token
         )
+        sys_logger.debug(f"Agent {self.id.type} received result: {result.content}")
         if isinstance(result.content, str):
             sys_logger.debug(result.content)
         assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
-        sys_logger.debug(result.content)
         return result.content
 
     def _get_tool_for_action(self, action: FunctionCall) -> FunctionTool:
