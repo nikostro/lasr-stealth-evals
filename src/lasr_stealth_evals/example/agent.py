@@ -31,22 +31,24 @@ class Manager(RoutedAgent):
         self._env = environment
         self._logger = logger
         self._num_turns = num_turns
-    
+
+
+
     @message_handler
-    async def handle_message(self, msg: Message, ctx: MessageContext):
-        """
-        Handles messages from agents, logs them, and rotates to the next agent.
-        
-        Args:
-            msg: Message containing logs from the agent
-            ctx: Message context including the source agent
-        """
-        self._logger.extend(msg.log)
-        self._agent_idx = (self._agent_idx + 1) % len(self._agents)
-        await self.publish_message(
-            RequestToSpeak(),
-            topic_id=DefaultTopicId(str(self._agents[self._agent_idx].id), str(self.id))
-        )
+    async def handle_message(self, msg: UserMessage, ctx: MessageContext):
+        sender = ctx.sender
+        topic_id = ctx.topic_id
+        content = msg.content
+        platform_time = self._env._platform.time  # grab platform time here
+
+        if topic_id == MessagingChannels.PUBLIC:
+            self._logger.log_public(sender, content, platform_time)
+        elif topic_id.startswith("dm-") and topic_id.endswith("-overseer"):
+            self._logger.log_overseer_dm(sender, content, platform_time)
+        elif topic_id.startswith("dm-"):
+            agents = topic_id.replace("dm-", "").split("-")
+            receiver = [a for a in agents if a != sender][0]
+            self._logger.log_agent_dm(sender, receiver, content, platform_time)
 
 class Overseer(RoutedAgent):
     def __init__(
@@ -62,7 +64,7 @@ class Overseer(RoutedAgent):
         self._model_client = model_client
         self._tools = tools
         self._logger = logger
-        
+
     @message_handler
     async def handle_message(self, msg: OverseerRequest, ctx: MessageContext):
         """
@@ -246,7 +248,27 @@ class Agent(RoutedAgent):
         self._logger = logger
         self._env = environment
         self._function_call_responses = []
-        
+
+
+    async def send_public_message(self, content: str):
+        await self.publish_message(
+            UserMessage(content=content),
+            topic_id=MessagingChannels.PUBLIC
+        )
+
+    async def send_dm_to_agent(self, receiver: AgentId, content: str):
+        topic_id = MessagingChannels.agent_dm(str(self.id), str(receiver))
+        await self.publish_message(
+            UserMessage(content=content),
+            topic_id=topic_id
+        )
+
+    async def send_dm_to_overseer(self, content: str):
+        topic_id = MessagingChannels.overseer_dm(str(self.id))
+        await self.publish_message(
+            UserMessage(content=content),
+            topic_id=topic_id
+        )
     @message_handler
     async def handle_group_manager(self, msg: RequestToSpeak, ctx: MessageContext):
         """
