@@ -66,6 +66,8 @@ async def main():
     logger = Logger()
 
     models = init_models()
+
+    # Initialise and register agents
     manager_type = await Manager.register(
         runtime=runtime,
         type=manager_name,
@@ -78,12 +80,26 @@ async def main():
         ),
     )
 
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=manager_type.type,
+            agent_type=manager_type.type,
+        )
+    )
+
     overseer_manager_type = await OverseerManager.register(
         runtime=runtime,
         type=overseer_manager_name,
         factory=lambda: OverseerManager(
             description="Manager for the overseers", overseer_topic_type="overseer", num_overseers=0
         ),
+    )
+
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=overseer_manager_type.type,
+            agent_type=overseer_manager_type.type,
+        )
     )
 
     trader_agent_type = await Agent.register(
@@ -100,6 +116,13 @@ async def main():
         ),
     )
 
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=trader_agent_type.type,
+            agent_type=trader_agent_type.type,
+        )
+    )
+
     insider_agent_type = await Agent.register(
         runtime=runtime,
         type=insider_agent_name,
@@ -114,35 +137,21 @@ async def main():
         ),
     )
 
-    manager_id = AgentId(manager_type, "default")
     await runtime.add_subscription(
         TypeSubscription(
             topic_type=insider_agent_type.type,
             agent_type=insider_agent_type.type,
         )
     )
-    await runtime.add_subscription(
-        TypeSubscription(
-            topic_type=trader_agent_type.type,
-            agent_type=trader_agent_type.type,
-        )
-    )
-    await runtime.add_subscription(
-        TypeSubscription(
-            topic_type=overseer_manager_type.type,
-            agent_type=overseer_manager_type.type,
-        )
-    )
-    await runtime.add_subscription(
-        TypeSubscription(
-            topic_type=manager_type.type,
-            agent_type=manager_type.type,
-        )
-    )
-    runtime.start()
-    await runtime.send_message(RequestToSpeak(), manager_id)
 
-    # Wait for the message to be processed and then stop the runtime.
+    runtime.start()
+
+    # Start messaging chain by triggering manager
+    await runtime.send_message(
+        message=RequestToSpeak(),
+        recipient=AgentId(manager_type, "default"),
+    )
+
     await runtime.stop_when_idle()
 
 
