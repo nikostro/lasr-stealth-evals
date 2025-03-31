@@ -68,7 +68,7 @@ class Manager(RoutedAgent):
             ctx: Message context including the source agent
         """
         assert ctx.sender
-        sys_logger.debug(
+        sys_logger.info(
             f"Manager received request from {ctx.sender.type}. Sending to {self._agent_topics[self._agent_idx]}"
         )
         self._logger.extend(message.log)
@@ -77,10 +77,10 @@ class Manager(RoutedAgent):
             self._agent_idx = 0
             self._current_turn += 1
             self._env.tick()
-        self._agent_idx = (self._agent_idx + 1) % len(self._agent_topics)
+        self._agent_idx %= len(self._agent_topics)
         if self._current_turn >= self._num_turns:
             sys_logger.debug("Manager finished")
-            return  # How does this link back to Inspect?
+            return
         await self.publish_message(
             RequestToSpeak(), topic_id=TopicId(type=str(self._agent_topics[self._agent_idx].type), source=str(self.id))
         )

@@ -74,9 +74,12 @@ async def main():
         factory=lambda: Manager(
             description="Manager for the trading agents",
             environment=environment,
-            agent_topics=[AgentType(trader_agent_name)],
+            agent_topics=[
+                AgentType(trader_agent_name),
+                AgentType(insider_agent_name),
+            ],
             logger=logger,
-            num_turns=10,
+            num_turns=1,
         ),
     )
 
@@ -134,6 +137,7 @@ async def main():
             logger=logger,
             environment=environment,
             system_message=SystemMessage(content=prompts["insider"]),
+            _use_tools=[],
         ),
     )
 
