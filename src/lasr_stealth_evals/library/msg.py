@@ -12,7 +12,7 @@ class RequestToSpeak(BaseModel):
 
 
 class Message(BaseModel):
-    log: List[LogItem]  # TODO: Define who creates the LogItems vs LLMMessages
+    log: List[LogItem]
 
 
 class FunctionCallRequest(BaseModel):
@@ -25,10 +25,12 @@ class FunctionCallRequest(BaseModel):
 
 
 class FunctionCallResponse(BaseModel):
-    id: str
+    model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)  # type: ignore
+
     result: Any
     approved: bool
     reason: str | None
+    _call: FunctionCall
 
 
 class OverseerRequest(BaseModel):
