@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 from autogen_core import FunctionCall
 from autogen_core.tools import FunctionTool
 from pydantic import BaseModel, ConfigDict
