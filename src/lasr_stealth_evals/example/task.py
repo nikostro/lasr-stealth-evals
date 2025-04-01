@@ -7,13 +7,14 @@ from autogen_core.models import SystemMessage, ChatCompletionClient
 from autogen_core.tools import FunctionTool
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 import yaml
+import matplotlib.pyplot as plt
+from pathlib import Path
 
 from lasr_stealth_evals.library.logging import Logger
 from lasr_stealth_evals.example.agent import Agent, Manager, Overseer, OverseerManager, AgentType, AgentId
 from lasr_stealth_evals.example.env import Environment, TradingPlatform, Trader
 from lasr_stealth_evals.library.msg import RequestToSpeak, Message, FunctionCallResponse, OverseerResponse
 from lasr_stealth_evals.example.config import OPENAI_API_KEY
-from pathlib import Path
 
 
 def init_models() -> Dict[str, List[ChatCompletionClient]]:
@@ -34,6 +35,51 @@ def init_logger() -> Logger:
 CURRENT_DIR = Path(__file__).resolve().parent
 PROMPTS_PATH = CURRENT_DIR / "prompts.yml"
 prompts = yaml.safe_load(open(PROMPTS_PATH))
+
+
+def plot_trader_holdings(trader: Trader, plot_dir: Path, filename: str = "trader_holdings"):
+    """
+    Create and save a bar chart of the trader's holdings.
+
+    Args:
+        trader: The Trader object to plot holdings for
+        plot_dir: Directory to save the plot in
+        filename: Name of the file to save the plot as
+    """
+    # Create plots directory if it doesn't exist
+    plot_dir.mkdir(exist_ok=True)
+
+    # Create bar chart
+    plt.figure(figsize=(10, 6))
+
+    # Prepare data for plotting
+    assets = list(trader.assets.keys())
+    values = list(trader.assets.values())
+
+    # Add cash as the first bar
+    assets.insert(0, "Cash")
+    values.insert(0, trader.cash)
+
+    # Create bar chart
+    bars = plt.bar(assets, values)
+
+    # Customize the chart
+    plt.title("Trader's Holdings")
+    plt.xlabel("Asset")
+    plt.ylabel("Amount")
+    plt.xticks(rotation=45)
+
+    # Add value labels on top of each bar
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2.0, height, f"{height:,.0f}", ha="center", va="bottom")
+
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
+
+    # Save the plot
+    plt.savefig(plot_dir / f"{filename}.png")
+    plt.close()
 
 
 async def main():
@@ -65,10 +111,10 @@ async def main():
             environment=environment,
             agent_topics=[
                 AgentType(trader_agent_name),
-                AgentType(insider_agent_name),
+                # AgentType(insider_agent_name),
             ],
             logger=logger,
-            num_turns=10,
+            num_turns=5,
         ),
     )
 
@@ -149,6 +195,12 @@ async def main():
     )
 
     await runtime.stop_when_idle()
+
+    trader = environment._traders[trader_agent_name]
+    plots_dir = CURRENT_DIR / "plots"
+
+    # Plot trader holdings
+    plot_trader_holdings(trader, plots_dir, filename="no_insider")
 
 
 if __name__ == "__main__":
