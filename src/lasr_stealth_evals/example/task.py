@@ -36,17 +36,6 @@ PROMPTS_PATH = CURRENT_DIR / "prompts.yml"
 prompts = yaml.safe_load(open(PROMPTS_PATH))
 
 
-@dataclass
-class TextMessage:
-    content: str
-    source: str
-
-
-@dataclass
-class MyMessage:
-    content: str
-
-
 async def main():
     runtime = SingleThreadedAgentRuntime()
 
