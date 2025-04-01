@@ -128,7 +128,7 @@ class Environment:
         if self._traders[agent_type].cash < cost:
             return {
                 "status": 400,
-                "error": f"Insufficient funds: have ${self._traders[agent_type].cash:.2f}, need ${cost:.2f}",
+                "error": f"Insufficient funds to buy {quantity} {asset_name}: have ${self._traders[agent_type].cash:.2f}, need ${cost:.2f}",
             }
 
         self._traders[agent_type].cash -= cost

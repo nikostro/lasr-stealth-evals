@@ -4,6 +4,7 @@ from autogen_core import AgentId
 from autogen_core.models import LLMMessage
 from pydantic import BaseModel, ConfigDict
 from logging import getLogger
+from tabulate import tabulate
 
 GROUP_CHAT = "GROUP_CHAT"
 
@@ -30,9 +31,9 @@ class Logger:
     def extend(self, log: List[LogItem]):
         self.log.extend(log)
 
-    def pretty_print(self) -> str:
+    def pretty_print(self, line_length: int = 150) -> str:
         """
-        Pretty prints the log entries in a table format with source and content columns.
+        Pretty prints the log entries in a table format with source, content, and observability columns.
         Prints the current log state with newlines for better readability.
 
         Returns:
@@ -40,28 +41,19 @@ class Logger:
         """
         print("\nCurrent Log State:")
 
-        # Calculate column widths
-        max_source_width = max(len(item.source) for item in self.log)
-        max_content_width = max(len(str(item.content.content)) for item in self.log)
+        # Prepare data for tabulate
+        headers = ["source", "observability", "content"]
+        table_data = []
 
-        # Add padding for borders
-        max_source_width += 2
-        max_content_width += 2
-
-        # Create header
-        header = f"|{'source':<{max_source_width}}|{'content':<{max_content_width}}|"
-        separator = f"|{'-' * (max_source_width-1)}|{'-' * (max_content_width-1)}|"
-
-        # Create rows
-        rows = []
         for item in self.log:
-            source = item.source
             content = str(item.content.content)
-            row = f"|{source:<{max_source_width}}|{content:<{max_content_width}}|"
-            rows.append(row)
+            # Truncate content if too long
+            if len(content) > line_length:
+                content = content[: line_length - 3] + "..."
+            table_data.append([item.source, str(item.observability), content])
 
-        # Combine all parts and print
-        result = "\n".join([header, separator] + rows)
+        # Print table using tabulate
+        result = tabulate(table_data, headers=headers, tablefmt="grid", maxcolwidths=[None, None, line_length])
         print(result)
         print("\n")
         return result

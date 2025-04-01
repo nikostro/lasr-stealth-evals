@@ -140,6 +140,7 @@ async def main():
             environment=environment,
             system_message=SystemMessage(content=prompts["insider"]),
             _use_tools=["send_message"],
+            _allow_thought=True,
         ),
     )
 

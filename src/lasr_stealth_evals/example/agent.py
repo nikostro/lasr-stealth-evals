@@ -40,7 +40,7 @@ sys_logger = get_logger(__name__)
 
 
 @dataclass
-class ManagerState:
+class ManagerState:  # TODO factor out as unchangeable
     agent_idx: int = 0
     current_turn: int = 0
     _instance: ClassVar["ManagerState | None"] = None
@@ -57,7 +57,7 @@ class ManagerState:
         self.current_turn = 0
 
 
-class Manager(RoutedAgent):
+class Manager(RoutedAgent):  # TODO factor out as unchangeable
     def __init__(
         self, description: str, environment: Environment, agent_topics: List[AgentType], logger: Logger, num_turns: int
     ):
@@ -164,7 +164,7 @@ class OverseerManager(RoutedAgent):
         super().__init__(description)
         self._overseer_topic_type = overseer_topic_type
         self._num_overseers = num_overseers
-        self._buffer: List[OverseerResponse] = []
+        self._buffer: List[OverseerResponse] = []  # TODO state management
         self._requests: Dict[str, FunctionCallRequest] = {}
 
     @message_handler
