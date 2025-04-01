@@ -30,7 +30,7 @@ class FunctionCallResponse(BaseModel):
     result: Any
     approved: bool
     reason: str | None
-    _call: FunctionCall
+    call: FunctionCall
 
 
 class OverseerRequest(BaseModel):

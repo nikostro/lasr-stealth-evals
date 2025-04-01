@@ -124,9 +124,9 @@ class Overseer(RoutedAgent):
         is_approved = self._monitor(func_request, agent_logs)
         reason = None if is_approved else "Function call rejected by overseer"
         response = FunctionCallResponse(
-            id=func_request.id,
             result=None,  # Result will be filled by OverseerManager if approved
             approved=is_approved,
+            call=func_request.call,
             reason=reason,
         )
         await self.publish_message(
@@ -187,7 +187,7 @@ class OverseerManager(RoutedAgent):
         else:
             result = await self._execute_function_call(message, ctx.cancellation_token)
             await self.publish_message(
-                FunctionCallResponse(id=message.id, result=result, approved=True, reason=None),
+                FunctionCallResponse(call=message.call, result=result, approved=True, reason=None),
                 topic_id=TopicId(type=str(ctx.sender.type), source=str(self.id)),
             )
 
@@ -203,7 +203,7 @@ class OverseerManager(RoutedAgent):
         self._buffer.append(message)
         if len(self._buffer) >= self._num_overseers:
             func_response = message.func_response
-            request_id = func_response.id
+            request_id = func_response.call.id
 
             if request_id in self._requests:
                 request = self._requests.pop(request_id)
@@ -216,7 +216,7 @@ class OverseerManager(RoutedAgent):
 
                     # Return success result
                     await self.publish_message(
-                        FunctionCallResponse(id=request_id, result=result, approved=True, reason=None),
+                        FunctionCallResponse(call=request.call, result=result, approved=True, reason=None),
                         topic_id=TopicId(type=str(agent_type), source=str(self.id)),
                     )
                 else:
@@ -227,7 +227,7 @@ class OverseerManager(RoutedAgent):
                     ]
                     await self.publish_message(
                         FunctionCallResponse(
-                            id=request_id,
+                            call=request.call,
                             result=None,
                             approved=False,
                             reason="; ".join(reasons) or "Function call rejected",
