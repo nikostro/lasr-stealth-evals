@@ -2,7 +2,27 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from lasr_stealth_evals.example.env import Trader
 
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+from typing import Dict, List
+from lasr_stealth_evals.example.config import OPENAI_API_KEY
+from autogen_core.models import ChatCompletionClient
 
+
+# Initialisations
+
+
+def init_models() -> Dict[str, List[ChatCompletionClient]]:
+    return {
+        "openai": [
+            OpenAIChatCompletionClient(
+                model="gpt-4o-mini",
+                api_key=OPENAI_API_KEY,
+            )
+        ]
+    }
+
+
+# Plotting
 def plot_trader_holdings(trader: Trader, plot_dir: Path, filename: str = "trader_holdings.png"):
     """
     Create and save a bar chart of the trader's holdings.
