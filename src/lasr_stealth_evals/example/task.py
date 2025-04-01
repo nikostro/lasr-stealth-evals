@@ -1,21 +1,18 @@
 import asyncio
-import os
-from typing import Any, Dict, List
-from dataclasses import dataclass
-from autogen_core import TopicId, DefaultTopicId, TypeSubscription, SingleThreadedAgentRuntime
-from autogen_core.models import SystemMessage, ChatCompletionClient
-from autogen_core.tools import FunctionTool
-from autogen_ext.models.openai import OpenAIChatCompletionClient
-import yaml
-import matplotlib.pyplot as plt
 from pathlib import Path
+from typing import Dict, List
 
-from lasr_stealth_evals.library.logging import Logger
-from lasr_stealth_evals.example.agent import Agent, Manager, Overseer, OverseerManager, AgentType, AgentId
-from lasr_stealth_evals.example.env import Environment, TradingPlatform, Trader
-from lasr_stealth_evals.library.msg import RequestToSpeak, Message, FunctionCallResponse, OverseerResponse
+import yaml
+from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
+from autogen_core.models import ChatCompletionClient, SystemMessage
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, OverseerManager
 from lasr_stealth_evals.example.config import OPENAI_API_KEY
+from lasr_stealth_evals.example.env import Environment, TradingPlatform
 from lasr_stealth_evals.example.utils import plot_trader_holdings
+from lasr_stealth_evals.library.logging import Logger
+from lasr_stealth_evals.library.msg import RequestToSpeak
 
 
 def init_models() -> Dict[str, List[ChatCompletionClient]]:
@@ -36,6 +33,7 @@ def init_logger() -> Logger:
 CURRENT_DIR = Path(__file__).resolve().parent
 PROMPTS_PATH = CURRENT_DIR / "prompts.yml"
 prompts = yaml.safe_load(open(PROMPTS_PATH))
+plots_dir = CURRENT_DIR / "plots"
 
 
 async def main():
@@ -67,7 +65,7 @@ async def main():
             environment=environment,
             agent_topics=[
                 AgentType(trader_agent_name),
-                # AgentType(insider_agent_name),
+                AgentType(insider_agent_name),
             ],
             logger=logger,
             num_turns=5,
@@ -153,7 +151,6 @@ async def main():
     await runtime.stop_when_idle()
 
     trader = environment._traders[trader_agent_name]
-    plots_dir = CURRENT_DIR / "plots"
 
     # Plot trader holdings
     plot_trader_holdings(trader, plots_dir, filename="no_insider")
