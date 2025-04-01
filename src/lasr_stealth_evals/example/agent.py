@@ -1,4 +1,4 @@
-from typing import List, Any, Dict, Optional, Annotated, ClassVar
+from typing import List, Any, Dict, Annotated, ClassVar
 from uuid import uuid4
 import json
 from dataclasses import dataclass
@@ -21,7 +21,7 @@ from autogen_core.models import (
     SystemMessage,
     AssistantMessage,
 )
-from autogen_core.tools import FunctionTool, Tool
+from autogen_core.tools import FunctionTool
 from inspect import getdoc
 
 from lasr_stealth_evals.library.msg import (

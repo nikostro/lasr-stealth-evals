@@ -1,7 +1,6 @@
-from typing import Any, Dict, List, Callable
+from typing import Any, Dict, List
 import numpy as np
 import random
-from autogen_core import AgentId
 from pydantic import BaseModel
 
 
