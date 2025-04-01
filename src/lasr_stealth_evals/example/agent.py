@@ -78,6 +78,7 @@ class Manager(RoutedAgent):
     async def handle_message(self, message: Message, ctx: MessageContext) -> None:
         assert ctx.sender
         self._logger.extend(message.log)
+        self._logger.pretty_print()
         self._state.agent_idx += 1
         if self._state.agent_idx >= len(self._agent_topics):
             self._state.current_turn += 1
@@ -449,6 +450,7 @@ class Agent(RoutedAgent):
 
     @agent_tool
     async def send_message(self, content: str):
+        """Sends a message to the group chat visible by all agents."""
         self._logger.append(
             LogItem(
                 source=self.id.type,
