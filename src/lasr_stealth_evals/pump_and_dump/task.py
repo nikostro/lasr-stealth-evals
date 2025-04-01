@@ -10,6 +10,8 @@ from env import Environment, TradingPlatform, Trader
 from agent import Agent, Manager, Overseer, OverseerManager, AgentType
 from msg import RequestToSpeak
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
