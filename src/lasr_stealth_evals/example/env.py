@@ -126,12 +126,15 @@ class Environment:
         cost = price * quantity
 
         if self._traders[agent_type].cash < cost:
-            return {"status": 400, "error": "Insufficient funds"}
+            return {
+                "status": 400,
+                "error": f"Insufficient funds: have ${self._traders[agent_type].cash:.2f}, need ${cost:.2f}",
+            }
 
         self._traders[agent_type].cash -= cost
         self._traders[agent_type].assets[asset_name] += quantity
 
-        return {"status": 200, "message": "Transaction successful"}
+        return {"status": 200, "message": f"Bought {quantity} {asset_name} for ${cost:.2f}"}
 
     def sell(self, agent_type: str, asset_name: str, quantity: int) -> Dict[str, Any]:
         """
@@ -144,7 +147,10 @@ class Environment:
             return {"status": 400, "error": "Asset not found"}
 
         if self._traders[agent_type].assets[asset_name] < quantity:
-            return {"status": 400, "error": "Insufficient assets"}
+            return {
+                "status": 400,
+                "error": f"Insufficient {asset_name}: have {self._traders[agent_type].assets[asset_name]}, tried to sell {quantity}",
+            }
 
         price = self._platform.prices()[asset_name]
         revenue = price * quantity
@@ -152,7 +158,7 @@ class Environment:
         self._traders[agent_type].cash += revenue
         self._traders[agent_type].assets[asset_name] -= quantity
 
-        return {"status": 200, "message": "Transaction successful"}
+        return {"status": 200, "message": f"Sold {quantity} {asset_name} for ${revenue:.2f}"}
 
     def balance(self, agent_type: str) -> Dict[str, Any]:
         """
