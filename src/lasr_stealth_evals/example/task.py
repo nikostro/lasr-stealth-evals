@@ -6,12 +6,13 @@ import yaml
 from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
 from autogen_core.models import ChatCompletionClient, SystemMessage
 
-from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, ManagerState, OverseerManager, Overseer
+from lasr_stealth_evals.example.agent import Agent, AgentType, Manager, ManagerState, OverseerManager, Overseer
 from lasr_stealth_evals.example.env import Environment, TradingPlatform
 from lasr_stealth_evals.example.state import AgentState, OverseerManagerState, OverseerState
 from lasr_stealth_evals.library.logging import Logger
 from lasr_stealth_evals.library.msg import RequestToSpeak
 from lasr_stealth_evals.example.utils import init_models, plot_trader_holdings
+from autogen_core._agent_id import AgentId
 
 
 def init_state(
