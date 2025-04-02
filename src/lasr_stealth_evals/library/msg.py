@@ -1,4 +1,5 @@
-from typing import Any, List
+from typing import Any, List, Optional
+
 from autogen_core import FunctionCall
 from autogen_core.models import LLMMessage
 from autogen_core.tools import FunctionTool
@@ -18,10 +19,10 @@ class Message(BaseModel):
 class FunctionCallRequest(BaseModel):
     model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)  # type: ignore
 
-    id: str
+    agent_type: str
+    thought: Optional[str]
     call: FunctionCall
     tool: FunctionTool
-    agent_id: str
 
 
 class FunctionCallResponse(BaseModel):

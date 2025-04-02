@@ -111,7 +111,7 @@ async def main():
             environment=environment,
             agent_topics=[
                 AgentType(trader_agent_name),
-                # AgentType(insider_agent_name),
+                AgentType(insider_agent_name),
             ],
             logger=logger,
             num_turns=5,
