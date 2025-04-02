@@ -40,7 +40,6 @@ sys_logger = get_logger(__name__)
 
 
 def format_gc_log(messages: List[LLMMessage]) -> AssistantMessage:
-    sys_logger.info(f"{messages}")
     assert all(isinstance(message, AssistantMessage) for message in messages)
     return AssistantMessage(
         content="\n\n".join(f"**{message.source or 'Unknown'}**: {message.content}" for message in messages),  # type: ignore
@@ -86,6 +85,7 @@ class Manager(RoutedAgent):  # TODO factor out as unchangeable
         assert ctx.sender
         self._logger.extend(message.log)
         self._logger.pretty_print()
+        self._logger.save_log()
         self._state.agent_idx += 1
         if self._state.agent_idx >= len(self._agent_topics):
             self._state.current_turn += 1
@@ -140,7 +140,7 @@ class Overseer(RoutedAgent):
         )
         await self.publish_message(
             OverseerResponse(func_response=response),
-            topic_id=TopicId(type=str(self._manager_type), source=str(self.id)),
+            topic_id=TopicId(type=self._manager_type.type, source=str(self.id)),
         )
 
     def _monitor(self, request: FunctionCallRequest, logs: List[LLMMessage]) -> bool:
@@ -309,9 +309,9 @@ class Agent(RoutedAgent):
 
         # Verify specified tools exist (if any were specified)
         if _tools:
-            assert all(tool in available_tools for tool in tools_to_add), (
-                f"Some tools in {tools_to_add} are not in {available_tools}"
-            )
+            assert all(
+                tool in available_tools for tool in tools_to_add
+            ), f"Some tools in {tools_to_add} are not in {available_tools}"
 
         # Create FunctionTools for each tool name
         tools = []
@@ -418,7 +418,6 @@ class Agent(RoutedAgent):
             thought = await self._get_thought(cancellation_token)
             self._logger.append(LogItem(source=self.id.type, content=thought, observability=[self.id.type]))
         action, action_message = await self._get_action(cancellation_token)
-        sys_logger.info(action_message)
         self._logger.append(LogItem(source=self.id.type, content=action_message, observability=[self.id.type]))
         return (thought, action)
 

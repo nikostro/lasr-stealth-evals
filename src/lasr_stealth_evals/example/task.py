@@ -5,27 +5,12 @@ from typing import Any, Dict, List
 import yaml
 from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
 from autogen_core.models import ChatCompletionClient, SystemMessage
-from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, ManagerState, OverseerManager
-from lasr_stealth_evals.example.config import OPENAI_API_KEY
+from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, ManagerState, OverseerManager, Overseer
 from lasr_stealth_evals.example.env import Environment, TradingPlatform
 from lasr_stealth_evals.example.state import AgentState, OverseerManagerState, OverseerState
 from lasr_stealth_evals.library.logging import Logger
 from lasr_stealth_evals.library.msg import RequestToSpeak
-
-
-def init_models() -> Dict[str, List[ChatCompletionClient]]:
-    return {
-        "openai": [
-            OpenAIChatCompletionClient(
-                model="gpt-4o-mini",
-                api_key=OPENAI_API_KEY,
-            )
-        ]
-    }
-
-
 from lasr_stealth_evals.example.utils import init_models, plot_trader_holdings
 
 
@@ -52,6 +37,9 @@ trader_agent_name = "trader"
 manager_name = "manager"
 insider_agent_name = "insider"
 overseer_manager_name = "overseer_manager"
+
+
+overseer_name = "overseer"
 
 # Set up environment
 trading_platform = TradingPlatform(
@@ -142,7 +130,7 @@ async def main():
     logger = Logger()
 
     models = init_models()
-    states = init_state(manager_name, [trader_agent_name, insider_agent_name], overseer_manager_name, [])
+    states = init_state(manager_name, [trader_agent_name, insider_agent_name], overseer_manager_name, [overseer_name])
 
     # Initialise and register agents
     manager_type = await Manager.register(
@@ -185,8 +173,27 @@ async def main():
             agent_type=overseer_manager_type.type,
         )
     )
+    overseer_type = await Overseer.register(
+        runtime=runtime,
+        type=overseer_name,
+        factory=lambda: Overseer(
+            description="Overseer for the trading agents",
+            manager_type=overseer_manager_type,
+            model_client=models["openai"][0],
+            system_message=SystemMessage(content=prompts[overseer_name]),
+            tools=[],
+            logger=logger,
+            state=states[overseer_name],
+        ),
+    )
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=overseer_type.type,
+            agent_type=overseer_type.type,
+        )
+    )
 
-    trader_agent_type = await register_agent(
+    await register_agent(
         runtime=runtime,
         agent_name=trader_agent_name,
         manager_type=manager_type,
@@ -199,7 +206,7 @@ async def main():
         state=states[trader_agent_name],
     )
 
-    insider_agent_type = await register_agent(
+    await register_agent(
         runtime=runtime,
         agent_name=insider_agent_name,
         manager_type=manager_type,
@@ -211,7 +218,7 @@ async def main():
         allow_thought=True,
         state=states[insider_agent_name],
     )
-    
+
     runtime.start()
 
     # Start messaging chain by triggering manager
@@ -225,8 +232,10 @@ async def main():
     trader = environment._traders[trader_agent_name]
 
     # Plot trader holdings
-    plot_trader_holdings(trader, plots_dir, filename="no_insider")
+    plot_trader_holdings(trader, plots_dir, filename="insider")
 
 
 if __name__ == "__main__":
+    #
+    # for i in range(N_epochs):
     asyncio.run(main())
