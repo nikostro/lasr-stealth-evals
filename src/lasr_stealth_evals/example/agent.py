@@ -394,7 +394,6 @@ class Agent(RoutedAgent):
         history += self._logger.get_agent_log(self.id.type)
 
         thought = [AssistantMessage(content="<thinking>", source=str(self.id.type))]
-        sys_logger.info(f"Thinking about {history + thought} actions")
         result = await self._model_client.create(messages=history + thought, cancellation_token=cancellation_token)
         assert isinstance(result.content, str)
         thought += [AssistantMessage(content=result.content, source=str(self.id.type))]
