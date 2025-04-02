@@ -1,20 +1,22 @@
 import asyncio
 import os
-from typing import Any, Dict, List
 from dataclasses import dataclass
-from autogen_core import TopicId, DefaultTopicId, TypeSubscription, SingleThreadedAgentRuntime
-from autogen_core.models import SystemMessage, ChatCompletionClient
+from pathlib import Path
+from typing import Any, Dict, List
+
+import matplotlib.pyplot as plt
+import yaml
+from autogen_core import DefaultTopicId, SingleThreadedAgentRuntime, TopicId, TypeSubscription
+from autogen_core.models import ChatCompletionClient, SystemMessage
 from autogen_core.tools import FunctionTool
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-import yaml
-import matplotlib.pyplot as plt
-from pathlib import Path
 
-from lasr_stealth_evals.library.logging import Logger
-from lasr_stealth_evals.example.agent import Agent, Manager, Overseer, OverseerManager, AgentType, AgentId
-from lasr_stealth_evals.example.env import Environment, TradingPlatform, Trader
-from lasr_stealth_evals.library.msg import RequestToSpeak, Message, FunctionCallResponse, OverseerResponse
+from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, ManagerState, Overseer, OverseerManager
 from lasr_stealth_evals.example.config import OPENAI_API_KEY
+from lasr_stealth_evals.example.env import Environment, Trader, TradingPlatform
+from lasr_stealth_evals.example.state import AgentState, OverseerManagerState, OverseerState
+from lasr_stealth_evals.library.logging import Logger
+from lasr_stealth_evals.library.msg import FunctionCallResponse, Message, OverseerResponse, RequestToSpeak
 
 
 def init_models() -> Dict[str, List[ChatCompletionClient]]:
@@ -30,6 +32,19 @@ def init_models() -> Dict[str, List[ChatCompletionClient]]:
 
 def init_logger() -> Logger:
     return Logger()
+
+
+def init_state(
+    manager_type: str, agent_types: List[str], overseer_manager_type: str, overseer_types: List[str]
+) -> Dict[str, Any]:
+    states = {}
+    states[manager_type] = ManagerState()
+    for agent_type in agent_types:
+        states[agent_type] = AgentState()
+    states[overseer_manager_type] = OverseerManagerState()
+    for overseer_type in overseer_types:
+        states[overseer_type] = OverseerState()
+    return states
 
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -101,6 +116,7 @@ async def main():
     logger = Logger()
 
     models = init_models()
+    states = init_state(manager_name, [trader_agent_name, insider_agent_name], overseer_manager_name, [])
 
     # Initialise and register agents
     manager_type = await Manager.register(
@@ -115,6 +131,7 @@ async def main():
             ],
             logger=logger,
             num_turns=5,
+            state=states[manager_name],
         ),
     )
 
@@ -129,7 +146,10 @@ async def main():
         runtime=runtime,
         type=overseer_manager_name,
         factory=lambda: OverseerManager(
-            description="Manager for the overseers", overseer_topic_type="overseer", num_overseers=0
+            description="Manager for the overseers",
+            overseer_topic_type="overseer",
+            num_overseers=0,
+            state=states[overseer_manager_name],
         ),
     )
 
@@ -153,6 +173,7 @@ async def main():
             system_message=SystemMessage(content=prompts["trader"]),
             _use_tools=[],
             _allow_thought=True,
+            state=states[trader_agent_name],
         ),
     )
 
@@ -176,6 +197,7 @@ async def main():
             system_message=SystemMessage(content=prompts["insider"]),
             _use_tools=["send_message"],
             _allow_thought=True,
+            state=states[insider_agent_name],
         ),
     )
 
