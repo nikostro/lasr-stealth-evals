@@ -254,7 +254,7 @@ class OverseerManager(RoutedAgent):
         Returns:
             Boolean indicating whether approval is needed
         """
-        return True  # Temporary
+        return False  # Temporary
 
     async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
         """
