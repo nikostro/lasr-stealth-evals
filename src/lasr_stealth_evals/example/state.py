@@ -1,11 +1,11 @@
-from dataclasses import dataclass
-from typing import List
+from typing import Dict, List
+
+from pydantic import BaseModel
 
 from lasr_stealth_evals.library.msg import FunctionCallRequest, OverseerResponse
 
 
-@dataclass
-class ManagerState:  # TODO factor out as unchangeable
+class ManagerState(BaseModel):  # TODO factor out as unchangeable
     agent_idx: int = 0
     current_turn: int = 0
 
@@ -15,22 +15,19 @@ class ManagerState:  # TODO factor out as unchangeable
         self.current_turn = 0
 
 
-@dataclass
-class AgentState:
+class AgentState(BaseModel):
     pass
 
 
-@dataclass
-class OverseerManagerState:
-    requests: List[FunctionCallRequest] = []
+class OverseerManagerState(BaseModel):
+    requests: Dict[str, FunctionCallRequest] = {}
     buffer: List[OverseerResponse] = []
 
     def reset(self) -> None:
         """Reset the state to initial values"""
-        self.requests = []
+        self.requests = {}
         self.buffer = []
 
 
-@dataclass
-class OverseerState:
+class OverseerState(BaseModel):
     pass
