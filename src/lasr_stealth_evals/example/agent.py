@@ -1,3 +1,4 @@
+from typing import List, Any, Dict, Annotated, ClassVar
 import json
 from dataclasses import dataclass
 from inspect import getdoc
@@ -22,7 +23,6 @@ from autogen_core.models import (
     FunctionExecutionResultMessage,
     LLMMessage,
     SystemMessage,
-    UserMessage,
 )
 from autogen_core.tools import FunctionTool, Tool
 from pydantic import BaseModel
@@ -315,9 +315,9 @@ class Agent(RoutedAgent):
 
         # Verify specified tools exist (if any were specified)
         if _tools:
-            assert all(tool in available_tools for tool in tools_to_add), (
-                f"Some tools in {tools_to_add} are not in {available_tools}"
-            )
+            assert all(
+                tool in available_tools for tool in tools_to_add
+            ), f"Some tools in {tools_to_add} are not in {available_tools}"
 
         # Create FunctionTools for each tool name
         tools = []

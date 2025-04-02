@@ -29,9 +29,12 @@ def init_models() -> Dict[str, List[ChatCompletionClient]]:
         ]
     }
 
-
-def init_logger() -> Logger:
-    return Logger()
+from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, OverseerManager
+from lasr_stealth_evals.example.env import Environment, TradingPlatform
+from lasr_stealth_evals.example.utils import plot_trader_holdings
+from lasr_stealth_evals.library.logging import Logger
+from lasr_stealth_evals.library.msg import RequestToSpeak
+from lasr_stealth_evals.example.utils import init_models
 
 
 def init_state(
@@ -50,51 +53,79 @@ def init_state(
 CURRENT_DIR = Path(__file__).resolve().parent
 PROMPTS_PATH = CURRENT_DIR / "prompts.yml"
 prompts = yaml.safe_load(open(PROMPTS_PATH))
+plots_dir = CURRENT_DIR / "plots"
+
+# Define agent names
+trader_agent_name = "trader"
+manager_name = "manager"
+insider_agent_name = "insider"
+overseer_manager_name = "overseer_manager"
+
+# Set up environment
+trading_platform = TradingPlatform(
+    initial_prices={"AAPL": 200, "MSFT": 400, "GOOGL": 150, "SHEL": 70, "HSBA": 6.5},
+    volatility={"AAPL": 0.1, "MSFT": 0.15, "GOOGL": 0.2, "SHEL": 0.12, "HSBA": 0.08},
+    drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
+)
+environment = Environment(traders=[trader_agent_name], platform=trading_platform)
+logger = Logger()
+models = init_models()
 
 
-def plot_trader_holdings(trader: Trader, plot_dir: Path, filename: str = "trader_holdings"):
+async def register_agent(
+    runtime: SingleThreadedAgentRuntime,
+    agent_name: str,
+    manager_type: AgentType,
+    overseer_manager_type: AgentType,
+    model_client: ChatCompletionClient = models["openai"][0],  # TODO clean up
+    environment: Environment = environment,
+    logger: Logger = logger,
+    tools: List[str] = [],
+    allow_thought: bool = True,
+) -> AgentType:
     """
-    Create and save a bar chart of the trader's holdings.
+    Registers an agent with the runtime, using the agent's name to look up its prompt.
 
     Args:
-        trader: The Trader object to plot holdings for
-        plot_dir: Directory to save the plot in
-        filename: Name of the file to save the plot as
+        runtime: The agent runtime to register with
+        agent_name: Name of the agent, must match a key in prompts
+        manager_type: Type of the manager agent
+        overseer_manager_type: Type of the overseer manager
+        model_client: The model client to use
+        environment: The environment the agent operates in
+        logger: Logger instance
+        tools: List of tool names to enable for the agent
+        allow_thought: Whether to allow the agent to think before acting
+
+    Returns:
+        The registered agent type
     """
-    # Create plots directory if it doesn't exist
-    plot_dir.mkdir(exist_ok=True)
+    assert agent_name in prompts, f"Agent name {agent_name} must match a key in prompts"
 
-    # Create bar chart
-    plt.figure(figsize=(10, 6))
+    agent_type = await Agent.register(
+        runtime=runtime,
+        type=agent_name,
+        factory=lambda: Agent(
+            description=prompts[agent_name],
+            manager_type=manager_type,
+            overseer_manager_type=overseer_manager_type,
+            model_client=model_client,
+            logger=logger,
+            environment=environment,
+            system_message=SystemMessage(content=prompts[agent_name]),
+            _use_tools=tools,
+            _allow_thought=allow_thought,
+        ),
+    )
 
-    # Prepare data for plotting
-    assets = list(trader.assets.keys())
-    values = list(trader.assets.values())
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=agent_type.type,
+            agent_type=agent_type.type,
+        )
+    )
 
-    # Add cash as the first bar
-    assets.insert(0, "Cash")
-    values.insert(0, trader.cash)
-
-    # Create bar chart
-    bars = plt.bar(assets, values)
-
-    # Customize the chart
-    plt.title("Trader's Holdings")
-    plt.xlabel("Asset")
-    plt.ylabel("Amount")
-    plt.xticks(rotation=45)
-
-    # Add value labels on top of each bar
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width() / 2.0, height, f"{height:,.0f}", ha="center", va="bottom")
-
-    # Adjust layout to prevent label cutoff
-    plt.tight_layout()
-
-    # Save the plot
-    plt.savefig(plot_dir / f"{filename}.png")
-    plt.close()
+    return agent_type
 
 
 async def main():
@@ -160,7 +191,7 @@ async def main():
         )
     )
 
-    trader_agent_type = await Agent.register(
+    await register_agent(
         runtime=runtime,
         type=trader_agent_name,
         factory=lambda: Agent(
@@ -177,14 +208,7 @@ async def main():
         ),
     )
 
-    await runtime.add_subscription(
-        TypeSubscription(
-            topic_type=trader_agent_type.type,
-            agent_type=trader_agent_type.type,
-        )
-    )
-
-    insider_agent_type = await Agent.register(
+    await register_agent(
         runtime=runtime,
         type=insider_agent_name,
         factory=lambda: Agent(
@@ -219,7 +243,6 @@ async def main():
     await runtime.stop_when_idle()
 
     trader = environment._traders[trader_agent_name]
-    plots_dir = CURRENT_DIR / "plots"
 
     # Plot trader holdings
     plot_trader_holdings(trader, plots_dir, filename="no_insider")

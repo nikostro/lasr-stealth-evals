@@ -1,9 +1,7 @@
 from typing import List
 
-from autogen_core import AgentId
 from autogen_core.models import LLMMessage
-from pydantic import BaseModel, ConfigDict
-from logging import getLogger
+from pydantic import BaseModel
 from tabulate import tabulate
 
 GROUP_CHAT = "GROUP_CHAT"
