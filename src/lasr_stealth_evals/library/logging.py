@@ -57,16 +57,14 @@ class Logger:
         print(result)
         print("\n")
         return result
-    
 
-    def save_log(self, path:str='logger.json'):
-
+    def save_log(self, path: str = "logger.json"):
         """
         Save the logs to the json file.
         """
 
         if os.path.exists(path):
-            with open(path, 'r') as file:
+            with open(path, "r") as file:
                 table_data = json.load(file)
         else:
             table_data = []
@@ -74,17 +72,9 @@ class Logger:
         for item in self.log:
             content = str(item.content.content)
             # Truncate content if too long
-            #if len(content) > line_length:
+            # if len(content) > line_length:
             #    content = content[: line_length - 3] + "..."
-            table_data.append({
-                "source":item.source, 
-                "observability":str(item.observability), 
-                "content":content}
-                )
+            table_data.append({"source": item.source, "observability": str(item.observability), "content": content})
 
         with open(path, "w") as file:
             json.dump(table_data, file, indent=4)
-
-
-
-

@@ -41,7 +41,6 @@ sys_logger = get_logger(__name__)
 
 
 def format_gc_log(messages: List[LLMMessage]) -> AssistantMessage:
-    sys_logger.info(f"{messages}")
     assert all(isinstance(message, AssistantMessage) for message in messages)
     return AssistantMessage(
         content="\n\n".join(f"**{message.source or 'Unknown'}**: {message.content}" for message in messages),  # type: ignore
@@ -152,7 +151,7 @@ class Overseer(RoutedAgent):
         )
         await self.publish_message(
             OverseerResponse(func_response=response),
-            topic_id=TopicId(type=str(self._manager_type), source=str(self.id)),
+            topic_id=TopicId(type=self._manager_type.type, source=str(self.id)),
         )
 
     def _monitor(self, request: FunctionCallRequest, logs: List[LLMMessage]) -> bool:
@@ -267,7 +266,7 @@ class OverseerManager(RoutedAgent):
         Returns:
             Boolean indicating whether approval is needed
         """
-        return False  # Temporary
+        return True  # Temporary
 
     async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
         """
@@ -429,7 +428,6 @@ class Agent(RoutedAgent):
             thought = await self._get_thought(cancellation_token)
             self._logger.append(LogItem(source=self.id.type, content=thought, observability=[self.id.type]))
         action, action_message = await self._get_action(cancellation_token)
-        sys_logger.info(action_message)
         self._logger.append(LogItem(source=self.id.type, content=action_message, observability=[self.id.type]))
         return (thought, action)
 

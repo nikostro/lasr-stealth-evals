@@ -6,13 +6,12 @@ import yaml
 from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
 from autogen_core.models import ChatCompletionClient, SystemMessage
 
-from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, OverseerManager
+from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, OverseerManager, Overseer
 from lasr_stealth_evals.example.env import Environment, TradingPlatform
 from lasr_stealth_evals.example.utils import plot_trader_holdings
 from lasr_stealth_evals.library.logging import Logger
 from lasr_stealth_evals.library.msg import RequestToSpeak
 from lasr_stealth_evals.example.utils import init_models
-
 
 CURRENT_DIR = Path(__file__).resolve().parent
 PROMPTS_PATH = CURRENT_DIR / "prompts.yml"
@@ -24,6 +23,9 @@ trader_agent_name = "trader"
 manager_name = "manager"
 insider_agent_name = "insider"
 overseer_manager_name = "overseer_manager"
+
+
+overseer_name = "overseer"
 
 # Set up environment
 trading_platform = TradingPlatform(
@@ -132,6 +134,24 @@ async def main():
             agent_type=overseer_manager_type.type,
         )
     )
+    overseer_type = await Overseer.register(
+        runtime=runtime,
+        type=overseer_name,
+        factory=lambda: Overseer(
+            description="Overseer for the trading agents",
+            manager_type=overseer_manager_type,
+            model_client=models["openai"][0],
+            system_message=SystemMessage(content=prompts[overseer_name]),
+            tools=[],
+            logger=logger,
+        ),
+    )
+    await runtime.add_subscription(
+        TypeSubscription(
+            topic_type=overseer_type.type,
+            agent_type=overseer_type.type,
+        )
+    )
 
     await register_agent(
         runtime=runtime,
@@ -161,8 +181,10 @@ async def main():
     trader = environment._traders[trader_agent_name]
 
     # Plot trader holdings
-    plot_trader_holdings(trader, plots_dir, filename="no_insider")
+    plot_trader_holdings(trader, plots_dir, filename="insider")
 
 
 if __name__ == "__main__":
+    #
+    # for i in range(N_epochs):
     asyncio.run(main())
