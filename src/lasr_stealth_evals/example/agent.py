@@ -3,7 +3,6 @@ from inspect import getdoc
 from typing import Annotated, Any, Dict, List, Optional, Sequence, Tuple
 
 from autogen_core import (
-    AgentId,
     AgentType,
     CancellationToken,
     DefaultTopicId,
@@ -154,7 +153,7 @@ class Overseer(RoutedAgent):
         Returns:
             Boolean indicating whether the function call is approved
         """
-        return True
+        return False
 
     ## TODO: Add tools for overseer
 
@@ -215,7 +214,7 @@ class OverseerManager(RoutedAgent):
 
             if request_id in self._state.requests:
                 request = self._state.requests.pop(request_id)
-                agent_type = AgentId.from_str(request.agent_type).type
+                agent_type = request.agent_type
                 is_approved = all(resp.func_response.approved for resp in self._state.buffer)
 
                 if is_approved:
@@ -254,7 +253,7 @@ class OverseerManager(RoutedAgent):
         Returns:
             Boolean indicating whether approval is needed
         """
-        return False  # Temporary
+        return hasattr(request.tool._func, "_is_monitored")
 
     async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
         """
@@ -273,6 +272,12 @@ class OverseerManager(RoutedAgent):
 def agent_tool(f: Any) -> Any:
     """Mark functions in the agent as tools"""
     f._is_agent_tool = True
+    return f
+
+
+def monitored_tool(f: Any) -> Any:
+    """Mark agent tools that are subject to monitoring."""
+    f._is_monitored = True
     return f
 
 
@@ -484,6 +489,7 @@ class Agent(RoutedAgent):
         assert self._env
         return self._env.prices()
 
+    @monitored_tool
     @agent_tool
     async def send_message(self, content: str):
         """Sends a message to the group chat visible by all agents."""
