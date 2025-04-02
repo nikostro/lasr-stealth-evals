@@ -2,7 +2,8 @@ from typing import List, Any, Dict, Annotated, ClassVar
 import json
 from dataclasses import dataclass
 from inspect import getdoc
-from typing import Optional, Sequence, Tuple
+from typing import Annotated, Any, ClassVar, Dict, List, Mapping, Optional, Sequence, Tuple
+from uuid import uuid4
 
 from autogen_core import (
     AgentId,
@@ -23,9 +24,11 @@ from autogen_core.models import (
     LLMMessage,
     SystemMessage,
 )
-from autogen_core.tools import FunctionTool
+from autogen_core.tools import FunctionTool, Tool
+from pydantic import BaseModel
 
 from lasr_stealth_evals.example.env import Environment
+from lasr_stealth_evals.example.state import AgentState, ManagerState, OverseerManagerState, OverseerState
 from lasr_stealth_evals.library.logging import GROUP_CHAT, Logger, LogItem
 from lasr_stealth_evals.library.msg import (
     FunctionCallRequest,
@@ -59,34 +62,22 @@ def join_messages(messages: Sequence[LLMMessage], source: str) -> LLMMessage:
     )
 
 
-@dataclass
-class ManagerState:  # TODO factor out as unchangeable
-    agent_idx: int = 0
-    current_turn: int = 0
-    _instance: ClassVar["ManagerState | None"] = None
-
-    @classmethod
-    def get_instance(cls) -> "ManagerState":
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    def reset(self) -> None:
-        """Reset the state to initial values"""
-        self.agent_idx = 0
-        self.current_turn = 0
-
-
 class Manager(RoutedAgent):  # TODO factor out as unchangeable
     def __init__(
-        self, description: str, environment: Environment, agent_topics: List[AgentType], logger: Logger, num_turns: int
+        self,
+        description: str,
+        environment: Environment,
+        agent_topics: List[AgentType],
+        logger: Logger,
+        num_turns: int,
+        state: ManagerState,
     ):
         super().__init__(description)
         self._agent_topics = agent_topics
         self._env = environment
         self._logger = logger
         self._num_turns = num_turns
-        self._state = ManagerState.get_instance()
+        self._state = state
 
     @message_handler
     async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
@@ -121,6 +112,7 @@ class Overseer(RoutedAgent):
         system_message: SystemMessage | None,
         tools: List[FunctionTool],
         logger: Logger,
+        state: OverseerState,
     ):
         super().__init__(description)
         self._manager_type = manager_type
@@ -128,6 +120,7 @@ class Overseer(RoutedAgent):
         self._system_message = system_message
         self._use_tools = tools
         self._logger = logger
+        self._state = state
 
     @message_handler
     async def handle_message(self, message: OverseerRequest, ctx: MessageContext) -> None:
@@ -180,12 +173,13 @@ class Overseer(RoutedAgent):
 
 
 class OverseerManager(RoutedAgent):
-    def __init__(self, description: str, overseer_topic_type: str, num_overseers: int):
+    def __init__(self, description: str, overseer_topic_type: str, num_overseers: int, state: OverseerManagerState):
         super().__init__(description)
         self._overseer_topic_type = overseer_topic_type
         self._num_overseers = num_overseers
         self._buffer: List[OverseerResponse] = []  # TODO state management
         self._requests: Dict[str, FunctionCallRequest] = {}
+        self._state = state
 
     @message_handler
     async def handle_agent(self, message: FunctionCallRequest, ctx: MessageContext) -> None:
@@ -298,6 +292,7 @@ class Agent(RoutedAgent):
         environment: Environment | None,
         system_message: SystemMessage,
         logger: Logger,
+        state: AgentState,
         _use_tools: List[str] = [],
         _allow_thought: bool = True,
     ):
@@ -310,6 +305,7 @@ class Agent(RoutedAgent):
         self._system_message = system_message
         self._tools = self._init_tools(_use_tools)
         self._allow_thought = _allow_thought
+        self._state = state
 
     def _init_tools(self, _tools: list[str]) -> List[FunctionTool]:
         available_tools = self.get_agent_tool_names()
