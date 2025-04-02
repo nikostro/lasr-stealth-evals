@@ -294,6 +294,7 @@ class Agent(RoutedAgent):
         state: AgentState,
         _use_tools: List[str] = [],
         _allow_thought: bool = True,
+        num_actions: int = 3,
     ):
         super().__init__(description)
         self._manager_type = manager_type
@@ -304,6 +305,7 @@ class Agent(RoutedAgent):
         self._system_message = system_message
         self._tools = self._init_tools(_use_tools)
         self._allow_thought = _allow_thought
+        self._num_actions = num_actions
         self._state = state
 
     def _init_tools(self, _tools: list[str]) -> List[FunctionTool]:
@@ -314,9 +316,9 @@ class Agent(RoutedAgent):
 
         # Verify specified tools exist (if any were specified)
         if _tools:
-            assert all(
-                tool in available_tools for tool in tools_to_add
-            ), f"Some tools in {tools_to_add} are not in {available_tools}"
+            assert all(tool in available_tools for tool in tools_to_add), (
+                f"Some tools in {tools_to_add} are not in {available_tools}"
+            )
 
         # Create FunctionTools for each tool name
         tools = []
@@ -326,6 +328,17 @@ class Agent(RoutedAgent):
                 description = getdoc(tool_method) or f"Execute the {tool_name} function"
                 tools.append(FunctionTool(tool_method, description=description))
         return tools
+
+    async def _interact(self, cancellation_token: CancellationToken) -> FunctionCallRequest:
+        thought, call = await self._invoke(cancellation_token)
+        request = FunctionCallRequest(
+            call=call,
+            tool=self._get_tool_for_action(call),
+            agent_type=str(self.id.type),
+            thought=thought.content if thought else None,  # type: ignore
+        )
+        self._state.actions_taken += 1
+        return request
 
     @message_handler
     async def handle_group_manager(self, message: RequestToSpeak, ctx: MessageContext) -> None:
@@ -337,13 +350,7 @@ class Agent(RoutedAgent):
             ctx: Message context
         """
         assert ctx.sender
-        thought, call = await self._invoke(ctx.cancellation_token)
-        request = FunctionCallRequest(
-            call=call,
-            tool=self._get_tool_for_action(call),
-            agent_type=str(self.id.type),
-            thought=thought.content if thought else None,  # type: ignore
-        )
+        request = await self._interact(ctx.cancellation_token)
         await self.publish_message(
             request, topic_id=DefaultTopicId(str(self._overseer_manager_type.type), str(self.id))
         )
@@ -371,14 +378,23 @@ class Agent(RoutedAgent):
                 observability=[self.id.type],
             )
         ]
-        logs = Message(log=logs)
-        await self.publish_message(logs, topic_id=TopicId(self._manager_type.type, str(self.id)))
+        if self._state.actions_taken >= self._num_actions:
+            logs = Message(log=logs)
+            self._state.reset()
+            await self.publish_message(logs, topic_id=TopicId(self._manager_type.type, str(self.id)))
+        else:
+            self._logger.extend(logs)
+            request = await self._interact(ctx.cancellation_token)
+            await self.publish_message(
+                request, topic_id=DefaultTopicId(str(self._overseer_manager_type.type), str(self.id))
+            )
 
     async def _get_thought(self, cancellation_token: CancellationToken) -> AssistantMessage:
         history = [self._system_message] + [format_gc_log(self._logger.get_gc_log())]
         history += self._logger.get_agent_log(self.id.type)
 
         thought = [AssistantMessage(content="<thinking>", source=str(self.id.type))]
+        sys_logger.info(f"Thinking about {history + thought} actions")
         result = await self._model_client.create(messages=history + thought, cancellation_token=cancellation_token)
         assert isinstance(result.content, str)
         thought += [AssistantMessage(content=result.content, source=str(self.id.type))]

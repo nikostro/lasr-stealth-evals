@@ -16,7 +16,11 @@ class ManagerState(BaseModel):  # TODO factor out as unchangeable
 
 
 class AgentState(BaseModel):
-    pass
+    actions_taken: int = 0
+
+    def reset(self) -> None:
+        """Reset the state to initial values"""
+        self.actions_taken = 0
 
 
 class OverseerManagerState(BaseModel):
