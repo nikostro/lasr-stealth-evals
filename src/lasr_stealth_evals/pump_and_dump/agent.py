@@ -268,10 +268,20 @@ class Agent(RoutedAgent):
             message: The function call response
             ctx: Message context
         """
-
-        # Create a message to signal end of turn
-        logs = [SimpleMessage(sender=str(self.id), content=str(message))]
-        await self.publish_message(logs[0], topic_id=DefaultTopicId(self._manager_type.type, str(self.id)))
+        if message.approved:
+            # Execute the function call and get the result
+            result = await message.tool.run_json(json.loads(message.call.arguments), ctx.cancellation_token)
+            # Send the result back to the manager
+            await self.publish_message(
+                SimpleMessage(sender=str(self.id), content=f"Function executed successfully: {result}"),
+                topic_id=DefaultTopicId(type=self._manager_type.type, source=str(self.id))
+            )
+        else:
+            # Send rejection message back to the manager
+            await self.publish_message(
+                SimpleMessage(sender=str(self.id), content=f"Function call rejected: {message.reason}"),
+                topic_id=DefaultTopicId(type=self._manager_type.type, source=str(self.id))
+            )
 
 
     sys_logger = logging.getLogger(__name__)
