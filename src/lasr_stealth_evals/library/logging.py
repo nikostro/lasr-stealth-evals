@@ -3,6 +3,8 @@ from typing import List
 from autogen_core.models import LLMMessage
 from pydantic import BaseModel
 from tabulate import tabulate
+import json
+import os
 
 GROUP_CHAT = "GROUP_CHAT"
 
@@ -55,3 +57,34 @@ class Logger:
         print(result)
         print("\n")
         return result
+    
+
+    def save_log(self, path:str='logger.json'):
+
+        """
+        Save the logs to the json file.
+        """
+
+        if os.path.exists(path):
+            with open(path, 'r') as file:
+                table_data = json.load(file)
+        else:
+            table_data = []
+
+        for item in self.log:
+            content = str(item.content.content)
+            # Truncate content if too long
+            #if len(content) > line_length:
+            #    content = content[: line_length - 3] + "..."
+            table_data.append({
+                "source":item.source, 
+                "observability":str(item.observability), 
+                "content":content}
+                )
+
+        with open(path, "w") as file:
+            json.dump(table_data, file, indent=4)
+
+
+
+

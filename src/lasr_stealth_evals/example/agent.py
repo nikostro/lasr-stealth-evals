@@ -99,6 +99,7 @@ class Manager(RoutedAgent):  # TODO factor out as unchangeable
         assert ctx.sender
         self._logger.extend(message.log)
         self._logger.pretty_print()
+        self._logger.save_log()
         self._state.agent_idx += 1
         if self._state.agent_idx >= len(self._agent_topics):
             self._state.current_turn += 1
