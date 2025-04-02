@@ -1,9 +1,6 @@
-from typing import List, Any, Dict, Annotated, ClassVar
 import json
-from dataclasses import dataclass
 from inspect import getdoc
-from typing import Annotated, Any, ClassVar, Dict, List, Mapping, Optional, Sequence, Tuple
-from uuid import uuid4
+from typing import Annotated, Any, Dict, List, Optional, Sequence, Tuple
 
 from autogen_core import (
     AgentId,
@@ -24,8 +21,7 @@ from autogen_core.models import (
     LLMMessage,
     SystemMessage,
 )
-from autogen_core.tools import FunctionTool, Tool
-from pydantic import BaseModel
+from autogen_core.tools import FunctionTool
 
 from lasr_stealth_evals.example.env import Environment
 from lasr_stealth_evals.example.state import AgentState, ManagerState, OverseerManagerState, OverseerState
@@ -177,8 +173,6 @@ class OverseerManager(RoutedAgent):
         super().__init__(description)
         self._overseer_topic_type = overseer_topic_type
         self._num_overseers = num_overseers
-        self._buffer: List[OverseerResponse] = []  # TODO state management
-        self._requests: Dict[str, FunctionCallRequest] = {}
         self._state = state
 
     @message_handler
@@ -192,8 +186,8 @@ class OverseerManager(RoutedAgent):
         """
         assert ctx.sender
         if self.needs_approval(message):
-            self._requests[message.call.id] = message
-            self._buffer = []
+            self._state.requests[message.call.id] = message
+            self._state.buffer = []
             await self.publish_message(
                 OverseerRequest(func_request=message),
                 topic_id=TopicId(type=self._overseer_topic_type, source=str(self.id)),
@@ -214,15 +208,15 @@ class OverseerManager(RoutedAgent):
             message: The overseer's response
             ctx: Message context
         """
-        self._buffer.append(message)
-        if len(self._buffer) >= self._num_overseers:
+        self._state.buffer.append(message)
+        if len(self._state.buffer) >= self._num_overseers:
             func_response = message.func_response
             request_id = func_response.call.id
 
-            if request_id in self._requests:
-                request = self._requests.pop(request_id)
+            if request_id in self._state.requests:
+                request = self._state.requests.pop(request_id)
                 agent_type = AgentId.from_str(request.agent_type).type
-                is_approved = all(resp.func_response.approved for resp in self._buffer)
+                is_approved = all(resp.func_response.approved for resp in self._state.buffer)
 
                 if is_approved:
                     # Execute the function call
@@ -236,7 +230,7 @@ class OverseerManager(RoutedAgent):
                 else:
                     reasons = [
                         resp.func_response.reason
-                        for resp in self._buffer
+                        for resp in self._state.buffer
                         if not resp.func_response.approved and resp.func_response.reason
                     ]
                     await self.publish_message(
@@ -248,7 +242,7 @@ class OverseerManager(RoutedAgent):
                         ),
                         topic_id=TopicId(type=str(agent_type), source=str(self.id)),
                     )
-            self.buffer = []
+            self._state.buffer = []
 
     def needs_approval(self, request: FunctionCallRequest) -> bool:
         """
@@ -315,9 +309,9 @@ class Agent(RoutedAgent):
 
         # Verify specified tools exist (if any were specified)
         if _tools:
-            assert all(
-                tool in available_tools for tool in tools_to_add
-            ), f"Some tools in {tools_to_add} are not in {available_tools}"
+            assert all(tool in available_tools for tool in tools_to_add), (
+                f"Some tools in {tools_to_add} are not in {available_tools}"
+            )
 
         # Create FunctionTools for each tool name
         tools = []

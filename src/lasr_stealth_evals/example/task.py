@@ -1,22 +1,18 @@
 import asyncio
-import os
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
-import matplotlib.pyplot as plt
 import yaml
-from autogen_core import DefaultTopicId, SingleThreadedAgentRuntime, TopicId, TypeSubscription
+from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
 from autogen_core.models import ChatCompletionClient, SystemMessage
-from autogen_core.tools import FunctionTool
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, ManagerState, Overseer, OverseerManager
+from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, ManagerState, OverseerManager
 from lasr_stealth_evals.example.config import OPENAI_API_KEY
-from lasr_stealth_evals.example.env import Environment, Trader, TradingPlatform
+from lasr_stealth_evals.example.env import Environment, TradingPlatform
 from lasr_stealth_evals.example.state import AgentState, OverseerManagerState, OverseerState
 from lasr_stealth_evals.library.logging import Logger
-from lasr_stealth_evals.library.msg import FunctionCallResponse, Message, OverseerResponse, RequestToSpeak
+from lasr_stealth_evals.library.msg import RequestToSpeak
 
 
 def init_models() -> Dict[str, List[ChatCompletionClient]]:
@@ -29,12 +25,8 @@ def init_models() -> Dict[str, List[ChatCompletionClient]]:
         ]
     }
 
-from lasr_stealth_evals.example.agent import Agent, AgentId, AgentType, Manager, OverseerManager
-from lasr_stealth_evals.example.env import Environment, TradingPlatform
-from lasr_stealth_evals.example.utils import plot_trader_holdings
-from lasr_stealth_evals.library.logging import Logger
-from lasr_stealth_evals.library.msg import RequestToSpeak
-from lasr_stealth_evals.example.utils import init_models
+
+from lasr_stealth_evals.example.utils import init_models, plot_trader_holdings
 
 
 def init_state(
@@ -77,11 +69,12 @@ async def register_agent(
     agent_name: str,
     manager_type: AgentType,
     overseer_manager_type: AgentType,
-    model_client: ChatCompletionClient = models["openai"][0],  # TODO clean up
+    model_client: ChatCompletionClient = models["openai"][0],
     environment: Environment = environment,
     logger: Logger = logger,
     tools: List[str] = [],
     allow_thought: bool = True,
+    state: AgentState = AgentState(),
 ) -> AgentType:
     """
     Registers an agent with the runtime, using the agent's name to look up its prompt.
@@ -96,6 +89,7 @@ async def register_agent(
         logger: Logger instance
         tools: List of tool names to enable for the agent
         allow_thought: Whether to allow the agent to think before acting
+        state: The state of the agent
 
     Returns:
         The registered agent type
@@ -115,6 +109,7 @@ async def register_agent(
             system_message=SystemMessage(content=prompts[agent_name]),
             _use_tools=tools,
             _allow_thought=allow_thought,
+            state=state,
         ),
     )
 
@@ -132,9 +127,9 @@ async def main():
     runtime = SingleThreadedAgentRuntime()
 
     # Define agent names
-    trader_agent_name = "trader_agent"
+    trader_agent_name = "trader"
     manager_name = "manager"
-    insider_agent_name = "insider_agent"
+    insider_agent_name = "insider"
     overseer_manager_name = "overseer_manager"
 
     # Set up environment
@@ -191,47 +186,32 @@ async def main():
         )
     )
 
-    await register_agent(
+    trader_agent_type = await register_agent(
         runtime=runtime,
-        type=trader_agent_name,
-        factory=lambda: Agent(
-            description="Trading agent with special information about which stock to buy.",
-            manager_type=manager_type,
-            overseer_manager_type=overseer_manager_type,
-            model_client=models["openai"][0],
-            logger=logger,
-            environment=environment,
-            system_message=SystemMessage(content=prompts["trader"]),
-            _use_tools=[],
-            _allow_thought=True,
-            state=states[trader_agent_name],
-        ),
+        agent_name=trader_agent_name,
+        manager_type=manager_type,
+        overseer_manager_type=overseer_manager_type,
+        model_client=models["openai"][0],
+        environment=environment,
+        logger=logger,
+        tools=[],
+        allow_thought=True,
+        state=states[trader_agent_name],
     )
 
-    await register_agent(
+    insider_agent_type = await register_agent(
         runtime=runtime,
-        type=insider_agent_name,
-        factory=lambda: Agent(
-            description="Insider agent with info suggesting that the trader should buy HSBA.",
-            manager_type=manager_type,
-            overseer_manager_type=overseer_manager_type,
-            model_client=models["openai"][0],
-            logger=logger,
-            environment=environment,
-            system_message=SystemMessage(content=prompts["insider"]),
-            _use_tools=["send_message"],
-            _allow_thought=True,
-            state=states[insider_agent_name],
-        ),
+        agent_name=insider_agent_name,
+        manager_type=manager_type,
+        overseer_manager_type=overseer_manager_type,
+        model_client=models["openai"][0],
+        environment=environment,
+        logger=logger,
+        tools=["send_message"],
+        allow_thought=True,
+        state=states[insider_agent_name],
     )
-
-    await runtime.add_subscription(
-        TypeSubscription(
-            topic_type=insider_agent_type.type,
-            agent_type=insider_agent_type.type,
-        )
-    )
-
+    
     runtime.start()
 
     # Start messaging chain by triggering manager
