@@ -1,4 +1,5 @@
-from typing import Any, List
+from typing import Any, List, Optional
+
 from autogen_core import FunctionCall
 from autogen_core.models import LLMMessage
 from autogen_core.tools import FunctionTool
@@ -12,23 +13,25 @@ class RequestToSpeak(BaseModel):
 
 
 class Message(BaseModel):
-    log: List[LogItem]  # TODO: Define who creates the LogItems vs LLMMessages
+    log: List[LogItem]
 
 
 class FunctionCallRequest(BaseModel):
     model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)  # type: ignore
 
-    id: str
+    agent_type: str
+    thought: Optional[str]
     call: FunctionCall
     tool: FunctionTool
-    agent_id: str
 
 
 class FunctionCallResponse(BaseModel):
-    id: str
+    model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)  # type: ignore
+
     result: Any
     approved: bool
     reason: str | None
+    call: FunctionCall
 
 
 class OverseerRequest(BaseModel):
