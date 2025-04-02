@@ -1,42 +1,62 @@
 from typing import List, Any, Dict, Annotated, ClassVar
-from uuid import uuid4
 import json
 from dataclasses import dataclass
+from inspect import getdoc
+from typing import Optional, Sequence, Tuple
+
 from autogen_core import (
     AgentId,
+    AgentType,
     CancellationToken,
+    DefaultTopicId,
     FunctionCall,
-    message_handler,
     MessageContext,
     RoutedAgent,
-    DefaultTopicId,
-    AgentType,
     TopicId,
+    message_handler,
 )
 from autogen_core.models import (
-    LLMMessage,
+    AssistantMessage,
     ChatCompletionClient,
     FunctionExecutionResult,
-    UserMessage,
+    FunctionExecutionResultMessage,
+    LLMMessage,
     SystemMessage,
-    AssistantMessage,
 )
 from autogen_core.tools import FunctionTool
-from inspect import getdoc
 
+from lasr_stealth_evals.example.env import Environment
+from lasr_stealth_evals.library.logging import GROUP_CHAT, Logger, LogItem
 from lasr_stealth_evals.library.msg import (
-    Message,
-    RequestToSpeak,
     FunctionCallRequest,
     FunctionCallResponse,
+    Message,
     OverseerRequest,
     OverseerResponse,
+    RequestToSpeak,
 )
-from lasr_stealth_evals.library.logging import LogItem, GROUP_CHAT, Logger
-from lasr_stealth_evals.example.env import Environment
 from lasr_stealth_evals.library.system_logger import get_logger
 
 sys_logger = get_logger(__name__)
+
+
+def format_gc_log(messages: List[LLMMessage]) -> AssistantMessage:
+    sys_logger.info(f"{messages}")
+    assert all(isinstance(message, AssistantMessage) for message in messages)
+    return AssistantMessage(
+        content="\n\n".join(f"**{message.source or 'Unknown'}**: {message.content}" for message in messages),  # type: ignore
+        source="group_chat",
+    )
+
+
+def join_messages(messages: Sequence[LLMMessage], source: str) -> LLMMessage:
+    return AssistantMessage(
+        content="\n".join(
+            str(message.content) if isinstance(message.content, (str, list)) else repr(message.content)
+            for message in messages
+        ),
+        source=source,
+    )
 
 
 @dataclass
@@ -124,9 +144,9 @@ class Overseer(RoutedAgent):
         is_approved = self._monitor(func_request, agent_logs)
         reason = None if is_approved else "Function call rejected by overseer"
         response = FunctionCallResponse(
-            id=func_request.id,
             result=None,  # Result will be filled by OverseerManager if approved
             approved=is_approved,
+            call=func_request.call,
             reason=reason,
         )
         await self.publish_message(
@@ -178,7 +198,7 @@ class OverseerManager(RoutedAgent):
         """
         assert ctx.sender
         if self.needs_approval(message):
-            self._requests[message.id] = message
+            self._requests[message.call.id] = message
             self._buffer = []
             await self.publish_message(
                 OverseerRequest(func_request=message),
@@ -187,7 +207,7 @@ class OverseerManager(RoutedAgent):
         else:
             result = await self._execute_function_call(message, ctx.cancellation_token)
             await self.publish_message(
-                FunctionCallResponse(id=message.id, result=result, approved=True, reason=None),
+                FunctionCallResponse(call=message.call, result=result, approved=True, reason=None),
                 topic_id=TopicId(type=str(ctx.sender.type), source=str(self.id)),
             )
 
@@ -203,11 +223,11 @@ class OverseerManager(RoutedAgent):
         self._buffer.append(message)
         if len(self._buffer) >= self._num_overseers:
             func_response = message.func_response
-            request_id = func_response.id
+            request_id = func_response.call.id
 
             if request_id in self._requests:
                 request = self._requests.pop(request_id)
-                agent_type = AgentId.from_str(request.agent_id).type
+                agent_type = AgentId.from_str(request.agent_type).type
                 is_approved = all(resp.func_response.approved for resp in self._buffer)
 
                 if is_approved:
@@ -216,7 +236,7 @@ class OverseerManager(RoutedAgent):
 
                     # Return success result
                     await self.publish_message(
-                        FunctionCallResponse(id=request_id, result=result, approved=True, reason=None),
+                        FunctionCallResponse(call=request.call, result=result, approved=True, reason=None),
                         topic_id=TopicId(type=str(agent_type), source=str(self.id)),
                     )
                 else:
@@ -227,7 +247,7 @@ class OverseerManager(RoutedAgent):
                     ]
                     await self.publish_message(
                         FunctionCallResponse(
-                            id=request_id,
+                            call=request.call,
                             result=None,
                             approved=False,
                             reason="; ".join(reasons) or "Function call rejected",
@@ -288,7 +308,6 @@ class Agent(RoutedAgent):
         self._logger = logger
         self._env = environment
         self._system_message = system_message
-        self._function_call_responses = []
         self._tools = self._init_tools(_use_tools)
         self._allow_thought = _allow_thought
 
@@ -323,12 +342,12 @@ class Agent(RoutedAgent):
             ctx: Message context
         """
         assert ctx.sender
-        call = await self._invoke(ctx.cancellation_token)
+        thought, call = await self._invoke(ctx.cancellation_token)
         request = FunctionCallRequest(
-            id=f"{uuid4()}",
-            call=call[0],  # TODO: Handle multiple calls
-            tool=self._get_tool_for_action(call[0]),
-            agent_id=str(self.id.type),
+            call=call,
+            tool=self._get_tool_for_action(call),
+            agent_type=str(self.id.type),
+            thought=thought.content if thought else None,  # type: ignore
         )
         await self.publish_message(
             request, topic_id=DefaultTopicId(str(self._overseer_manager_type.type), str(self.id))
@@ -345,19 +364,56 @@ class Agent(RoutedAgent):
         """
         assert ctx.sender
         # Create a message to signal end of turn
-        logs = [FunctionExecutionResult(content=str(message), name="dummy", call_id="dummy", is_error=False)]
+        is_error = message.approved is False
+        content = message.reason or "Function call rejected" if is_error else str(message.result)
+        result = FunctionExecutionResult(
+            content=content, name=message.call.name, call_id=message.call.id, is_error=is_error
+        )
         logs = [
             LogItem(
                 source=self.id.type,
-                content=UserMessage(content=log.content, source=str(self.id.type)),
+                content=FunctionExecutionResultMessage(content=[result]),
                 observability=[self.id.type],
             )
-            for log in logs
         ]
         logs = Message(log=logs)
         await self.publish_message(logs, topic_id=TopicId(self._manager_type.type, str(self.id)))
 
-    async def _invoke(self, cancellation_token: CancellationToken) -> List[FunctionCall]:
+    async def _get_thought(self, cancellation_token: CancellationToken) -> AssistantMessage:
+        history = [self._system_message] + [format_gc_log(self._logger.get_gc_log())]
+        history += self._logger.get_agent_log(self.id.type)
+
+        thought = [AssistantMessage(content="<thinking>", source=str(self.id.type))]
+        result = await self._model_client.create(messages=history + thought, cancellation_token=cancellation_token)
+        assert isinstance(result.content, str)
+        thought += [AssistantMessage(content=result.content, source=str(self.id.type))]
+        thought += [AssistantMessage(content="</thinking>", source=str(self.id.type))]
+        thought = join_messages(thought, str(self.id.type))
+
+        return thought  # type: ignore
+
+    async def _get_action(self, cancellation_token: CancellationToken) -> Tuple[FunctionCall, AssistantMessage]:
+        """
+        Generates an action based on chat history.
+        """
+        history = [self._system_message] + [format_gc_log(self._logger.get_gc_log())]
+        history += self._logger.get_agent_log(self.id.type)
+
+        result = await self._model_client.create(
+            messages=history + [AssistantMessage(content="<action>", source=str(self.id.type))],
+            tools=self._tools,
+            cancellation_token=cancellation_token,
+        )
+        if isinstance(result.content, str):
+            sys_logger.warning(f"Expected list of function calls, got string: {result.content}")
+        assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
+        if len(result.content) != 1:
+            sys_logger.warning(f"Expected 1 action, got {len(result.content)}")
+        action = [AssistantMessage(content=[result.content[0]], source="tools_calls")]
+
+        return result.content[0], action[0]
+
+    async def _invoke(self, cancellation_token: CancellationToken) -> Tuple[Optional[AssistantMessage], FunctionCall]:
         """
         Generates an action based on chat history.
 
@@ -367,23 +423,14 @@ class Agent(RoutedAgent):
         Returns:
             A function call object
         """
-        history = [self._system_message] + self._logger.get_agent_log(self.id.type) + self._logger.get_gc_log()
+        thought = None
         if self._allow_thought:
-            history += [AssistantMessage(content="<thinking>", source=str(self.id.type))]
-            result = await self._model_client.create(messages=history, cancellation_token=cancellation_token)
-            history += [AssistantMessage(content=result.content, source=str(self.id.type))]
-            history += [AssistantMessage(content="</thinking>", source=str(self.id.type))]
-        history += [AssistantMessage(content="<actions>", source=str(self.id.type))]
-
-        result = await self._model_client.create(
-            messages=history,
-            tools=self._tools,
-            cancellation_token=cancellation_token,
-        )
-        assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
-        history += [AssistantMessage(content=result.content, source=str(self.id.type))]
-        history += [AssistantMessage(content="</actions>", source=str(self.id.type))]
-        return result.content
+            thought = await self._get_thought(cancellation_token)
+            self._logger.append(LogItem(source=self.id.type, content=thought, observability=[self.id.type]))
+        action, action_message = await self._get_action(cancellation_token)
+        sys_logger.info(action_message)
+        self._logger.append(LogItem(source=self.id.type, content=action_message, observability=[self.id.type]))
+        return (thought, action)
 
     def _get_tool_for_action(self, action: FunctionCall) -> FunctionTool:
         """
@@ -454,7 +501,7 @@ class Agent(RoutedAgent):
         self._logger.append(
             LogItem(
                 source=self.id.type,
-                content=UserMessage(
+                content=AssistantMessage(
                     content=content,
                     source=str(self.id.type),
                 ),
