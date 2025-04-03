@@ -129,8 +129,7 @@ class Overseer(RoutedAgent):
         assert ctx.sender
         func_request = message.func_request
         agent_logs = self._logger.get_agent_log(ctx.sender.type)
-        is_approved = self._monitor(func_request, agent_logs)
-        reason = None if is_approved else "Function call rejected by overseer"
+        is_approved, reason = await self._monitor(func_request, agent_logs, ctx)
         response = FunctionCallResponse(
             result=None,  # Result will be filled by OverseerManager if approved
             approved=is_approved,
@@ -142,20 +141,82 @@ class Overseer(RoutedAgent):
             topic_id=TopicId(type=self._manager_type.type, source=str(self.id)),
         )
 
-    def _monitor(self, request: FunctionCallRequest, logs: List[LLMMessage]) -> bool:
+    async def _monitor(
+        self, request: FunctionCallRequest, logs: List[LLMMessage], ctx: MessageContext
+    ) -> Tuple[bool, str]:
         """
-        Evaluates whether a function call should be allowed based on logs, rules and tools.
+        Evaluates whether a function call should be allowed using the model client.
 
         Args:
             request: The function call request to evaluate
             logs: Historical logs for context
+            ctx: Message context containing cancellation token
 
         Returns:
             Boolean indicating whether the function call is approved
         """
-        return False
+        assert self._model_client
 
-    ## TODO: Add tools for overseer
+        # Create a message describing the function request
+        request_message = AssistantMessage(
+            content=f"Function call request: {request.call.name} with arguments {request.call.arguments}",
+            source="overseer",
+        )
+
+        # Create the approve tool
+        approve_tool = FunctionTool(
+            self.approve,
+            description="Approve or reject a function call. Returns the same boolean value that was passed in.",
+        )
+
+        # Get evaluation from model with the approve tool
+        result = await self._model_client.create(
+            messages=[request_message], tools=[approve_tool], cancellation_token=ctx.cancellation_token
+        )
+
+        # If the model made a function call to approve, execute it
+        if isinstance(result.content, list) and len(result.content) > 0:
+            function_call = result.content[0]
+            if function_call.name == "approve":
+                return await self._execute_function_call(
+                    FunctionCallRequest(
+                        call=function_call, tool=approve_tool, agent_type=str(self.id.type), thought=None
+                    ),
+                    ctx.cancellation_token,
+                )
+
+        raise ValueError("Model did not make a valid approve function call")
+
+    async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
+        """
+        Executes an approved function call.
+
+        Args:
+            request: The approved function call request
+            cancellation_token: Cancellation token
+
+        Returns:
+            The result of the function call
+        """
+        return await request.tool.run_json(json.loads(request.call.arguments), cancellation_token)
+
+    async def approve(
+        self,
+        should_approve: Annotated[bool, "Whether to approve or reject the function call"],
+        reason: Annotated[str, "The model's explanation for why the function call should be approved or rejected"],
+    ) -> Tuple[bool, str]:
+        """
+        Tool for approving or rejecting function calls.
+
+        Args:
+            should_approve: Boolean indicating whether to approve the function call
+            reason: The model's explanation for why the function call should be approved or rejected
+
+        Returns:
+            A tuple containing (should_approve, reason) where should_approve is the boolean decision
+            and reason is the explanation for that decision
+        """
+        return should_approve, reason
 
     async def flag(self, message: str):
         """
@@ -165,6 +226,8 @@ class Overseer(RoutedAgent):
             message: The message to flag
         """
         return message
+
+    ## TODO: Add tools for overseer
 
 
 class OverseerManager(RoutedAgent):
@@ -316,9 +379,9 @@ class Agent(RoutedAgent):
 
         # Verify specified tools exist (if any were specified)
         if _tools:
-            assert all(tool in available_tools for tool in tools_to_add), (
-                f"Some tools in {tools_to_add} are not in {available_tools}"
-            )
+            assert all(
+                tool in available_tools for tool in tools_to_add
+            ), f"Some tools in {tools_to_add} are not in {available_tools}"
 
         # Create FunctionTools for each tool name
         tools = []
