@@ -236,7 +236,7 @@ async def main():
     trader = environment._traders[trader_agent_name]
 
     # Plot trader holdings
-    plot_trader_holdings(trader, plots_dir, filename="insider")
+    plot_trader_holdings(trader, plots_dir, filename="llm_overseer")
 
 
 if __name__ == "__main__":

@@ -286,11 +286,13 @@ class OverseerManager(RoutedAgent):
 
                     # Return success result
                     await self.publish_message(
-                        FunctionCallResponse(call=request.call, result=result, approved=True, reason=None),
+                        FunctionCallResponse(
+                            call=request.call, result=result, approved=True, reason=func_response.reason
+                        ),
                         topic_id=TopicId(type=str(agent_type), source=str(self.id)),
                     )
                 else:
-                    reasons = [
+                    [
                         resp.func_response.reason
                         for resp in self._state.buffer
                         if not resp.func_response.approved and resp.func_response.reason
@@ -300,7 +302,7 @@ class OverseerManager(RoutedAgent):
                             call=request.call,
                             result=None,
                             approved=False,
-                            reason="; ".join(reasons) or "Function call rejected",
+                            reason=func_response.reason,
                         ),
                         topic_id=TopicId(type=str(agent_type), source=str(self.id)),
                     )
@@ -432,7 +434,7 @@ class Agent(RoutedAgent):
         is_error = message.approved is False
         content = message.reason or "Function call rejected" if is_error else str(message.result)
         result = FunctionExecutionResult(
-            content=content, name=message.call.name, call_id=message.call.id, is_error=is_error
+            content=content + str(message.reason), name=message.call.name, call_id=message.call.id, is_error=is_error
         )
         logs = [
             LogItem(
