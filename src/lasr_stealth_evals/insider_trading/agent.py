@@ -23,7 +23,7 @@ from autogen_core.models import (
 from autogen_core.tools import FunctionTool
 
 from lasr_stealth_evals.insider_trading.env import Environment
-from lasr_stealth_evals.insider_trading.state import AgentState, ManagerState, OverseerManagerState, OverseerState
+from lasr_stealth_evals.insider_trading.state import AgentState, OverseerManagerState, OverseerState
 from lasr_stealth_evals.library.logging import GROUP_CHAT, Logger, LogItem
 from lasr_stealth_evals.library.msg import (
     FunctionCallRequest,
@@ -54,48 +54,6 @@ def join_messages(messages: Sequence[LLMMessage], source: str) -> LLMMessage:
         ),
         source=source,
     )
-
-
-class Manager(RoutedAgent):  # TODO factor out as unchangeable
-    def __init__(
-        self,
-        description: str,
-        environment: Environment,
-        agent_topics: List[AgentType],
-        logger: Logger,
-        num_turns: int,
-        state: ManagerState,
-    ):
-        super().__init__(description)
-        self._agent_topics = agent_topics
-        self._env = environment
-        self._logger = logger
-        self._num_turns = num_turns
-        self._state = state
-
-    @message_handler
-    async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
-        await self.publish_message(
-            RequestToSpeak(), topic_id=TopicId(type=self._agent_topics[self._state.agent_idx].type, source="default")
-        )
-
-    @message_handler
-    async def handle_message(self, message: Message, ctx: MessageContext) -> None:
-        assert ctx.sender
-        self._logger.extend(message.log)
-        self._logger.pretty_print()
-        self._logger.save_log()
-        self._state.agent_idx += 1
-        if self._state.agent_idx >= len(self._agent_topics):
-            self._state.current_turn += 1
-            self._env.tick()
-        self._state.agent_idx %= len(self._agent_topics)
-        if self._state.current_turn >= self._num_turns:
-            return
-        await self.publish_message(
-            RequestToSpeak(),
-            topic_id=TopicId(type=str(self._agent_topics[self._state.agent_idx].type), source=str(self.id)),
-        )
 
 
 class Overseer(RoutedAgent):
