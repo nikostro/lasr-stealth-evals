@@ -32,6 +32,9 @@ CURRENT_DIR = Path(__file__).resolve().parent
 PROMPTS_PATH = CURRENT_DIR / "prompts.yml"
 prompts = yaml.safe_load(open(PROMPTS_PATH))
 plots_dir = CURRENT_DIR / "plots"
+plots_dir.mkdir(parents=True, exist_ok=True)
+log_dir = CURRENT_DIR / "logs"
+log_dir.mkdir(parents=True, exist_ok=True)
 
 # Define agent names
 trader_agent_name = "trader"
@@ -49,7 +52,7 @@ trading_platform = TradingPlatform(
     drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
 )
 environment = Environment(traders=[trader_agent_name], platform=trading_platform)
-logger = Logger()
+logger = Logger(log_dir)
 models = init_models()
 
 
@@ -128,7 +131,7 @@ async def main():
         drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
     )
     environment = Environment(traders=[trader_agent_name], platform=trading_platform)
-    logger = Logger()
+    logger = Logger(log_dir)
 
     models = init_models()
     states = init_state(manager_name, [trader_agent_name, insider_agent_name], overseer_manager_name, [overseer_name])

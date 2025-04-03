@@ -1,10 +1,11 @@
 from typing import List
+from datetime import datetime
 
 from autogen_core.models import LLMMessage
 from pydantic import BaseModel
 from tabulate import tabulate
 import json
-import os
+from pathlib import Path
 
 GROUP_CHAT = "GROUP_CHAT"
 
@@ -16,8 +17,14 @@ class LogItem(BaseModel):
 
 
 class Logger:
-    def __init__(self):
+    def __init__(self, log_dir: Path):
         self.log: List[LogItem] = []
+        self.log_dir = log_dir
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create a unique log file name using a concise timestamp
+        timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
+        self.log_file = self.log_dir / f"{timestamp}.json"
 
     def get_agent_log(self, agent_type: str) -> List[LLMMessage]:
         return [item.content for item in self.log if agent_type in item.observability]
@@ -58,23 +65,16 @@ class Logger:
         print("\n")
         return result
 
-    def save_log(self, path: str = "logger.json"):
+    def save_log(self):
         """
-        Save the logs to the json file.
+        Save the logs to a uniquely named json file in the specified log directory.
         """
-
-        if os.path.exists(path):
-            with open(path, "r") as file:
-                table_data = json.load(file)
-        else:
-            table_data = []
+        # Since we're using a unique filename for each run, we don't need to load existing data
+        table_data = []
 
         for item in self.log:
             content = str(item.content.content)
-            # Truncate content if too long
-            # if len(content) > line_length:
-            #    content = content[: line_length - 3] + "..."
             table_data.append({"source": item.source, "observability": str(item.observability), "content": content})
 
-        with open(path, "w") as file:
+        with open(self.log_file, "w") as file:
             json.dump(table_data, file, indent=4)
