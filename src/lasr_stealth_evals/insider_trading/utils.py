@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
-from lasr_stealth_evals.example.env import Trader
+from lasr_stealth_evals.insider_trading.env import Trader
 
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from typing import Dict, List
-from lasr_stealth_evals.example.config import OPENAI_API_KEY
+from lasr_stealth_evals.insider_trading.config import OPENAI_API_KEY
 from autogen_core.models import ChatCompletionClient
 
 

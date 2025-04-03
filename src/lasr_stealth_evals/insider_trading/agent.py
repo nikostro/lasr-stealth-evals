@@ -22,8 +22,8 @@ from autogen_core.models import (
 )
 from autogen_core.tools import FunctionTool
 
-from lasr_stealth_evals.example.env import Environment
-from lasr_stealth_evals.example.state import AgentState, ManagerState, OverseerManagerState, OverseerState
+from lasr_stealth_evals.insider_trading.env import Environment
+from lasr_stealth_evals.insider_trading.state import AgentState, ManagerState, OverseerManagerState, OverseerState
 from lasr_stealth_evals.library.logging import GROUP_CHAT, Logger, LogItem
 from lasr_stealth_evals.library.msg import (
     FunctionCallRequest,
@@ -434,7 +434,10 @@ class Agent(RoutedAgent):
         is_error = message.approved is False
         content = message.reason or "Function call rejected" if is_error else str(message.result)
         result = FunctionExecutionResult(
-            content=content + str(message.reason), name=message.call.name, call_id=message.call.id, is_error=is_error
+            content=content + str(message.reason),
+            name=message.call.name,
+            call_id=message.call.id,
+            is_error=is_error,  # TODO present the reason nicely
         )
         logs = [
             LogItem(
