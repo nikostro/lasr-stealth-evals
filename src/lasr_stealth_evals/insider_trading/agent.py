@@ -344,7 +344,7 @@ class Agent(RoutedAgent):
             ), f"Some tools in {tools_to_add} are not in {available_tools}"
 
         # Create FunctionTools for each tool name
-        tools = []
+        tools: List[FunctionTool] = []
         for tool_name in tools_to_add:
             tool_method = getattr(self, tool_name)
             if hasattr(tool_method, "_is_agent_tool"):
