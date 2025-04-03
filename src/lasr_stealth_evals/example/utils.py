@@ -50,7 +50,7 @@ def plot_trader_holdings(trader: Trader, plot_dir: Path, filename: str = "trader
     bars = plt.bar(assets, values)
 
     # Customize the chart
-    plt.title("Trader's Holdings")
+    plt.title(Path(filename).stem.replace("_", " ").title())
     plt.xlabel("Asset")
     plt.ylabel("Amount")
     plt.xticks(rotation=45)
