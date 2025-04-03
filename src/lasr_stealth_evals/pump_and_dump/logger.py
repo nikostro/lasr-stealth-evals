@@ -1,48 +1,80 @@
+from typing import List
 from datetime import datetime
-from channels import MessagingChannels
-from typing import List, Dict
+
 from autogen_core.models import LLMMessage
-from autogen_core import AgentId
+from pydantic import BaseModel
+from tabulate import tabulate
+import json
+from pathlib import Path
+
+GROUP_CHAT = "GROUP_CHAT"
 
 
-def current_time() -> str:
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+class LogItem(BaseModel):
+    source: str
+    content: LLMMessage
+    observability: List[str]
 
 
 class Logger:
-    def __init__(self):
-        self.public_channel: List[str] = []
-        self.agent_dms: Dict[str, List[str]] = {}
-        self.overseer_dms: Dict[str, List[str]] = {}
-        self.agent_logs: Dict[str, List[LLMMessage]] = {}
-        self.general_chat_log: List[LLMMessage] = []
+    def __init__(self, log_dir: Path):
+        self.log: List[LogItem] = []
+        self.log_dir = log_dir
+        self.log_dir.mkdir(parents=True, exist_ok=True)
 
-    def log_public(self, agent_id: str, content: str, platform_time: int):
-        entry = f"[Iter: {platform_time} | {current_time()}] {agent_id}: {content}"
-        self.public_channel.append(entry)
+        # Create a unique log file name using a concise timestamp
+        timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
+        self.log_file = self.log_dir / f"{timestamp}.json"
 
-    def log_agent_dm(self, sender: str, receiver: str, content: str, platform_time: int):
-        topic = MessagingChannels.agent_dm(sender, receiver)
-        entry = f"[Iter: {platform_time} | {current_time()}] {sender} → {receiver}: {content}"
-        self.agent_dms.setdefault(topic, []).append(entry)
-
-    def log_overseer_dm(self, sender: str, content: str, platform_time: int):
-        topic = MessagingChannels.overseer_dm(sender)
-        entry = f"[Iter: {platform_time} | {current_time()}] {sender} → Overseer: {content}"
-        self.overseer_dms.setdefault(topic, []).append(entry)
+    def get_agent_log(self, agent_type: str) -> List[LLMMessage]:
+        return [item.content for item in self.log if agent_type in item.observability]
 
     def get_gc_log(self) -> List[LLMMessage]:
-        """Retrieve the general chat log."""
-        return self.general_chat_log
+        return [item.content for item in self.log if GROUP_CHAT in item.observability]
 
-    def get_agent_log(self, agent_id: str) -> List[LLMMessage]:
-        """Retrieve logs for a specific agent."""
-        return self.agent_logs.get(agent_id, [])
+    def append(self, log: LogItem):
+        self.extend([log])
 
-    def add_to_agent_log(self, agent_id: str, message: LLMMessage):
-        """Utility to add messages directly into agent logs."""
-        self.agent_logs.setdefault(agent_id, []).append(message)
+    def extend(self, log: List[LogItem]):
+        self.log.extend(log)
 
-    def add_to_general_log(self, message: LLMMessage):
-        """Utility to add messages directly into general logs."""
-        self.general_chat_log.append(message)
+    def pretty_print(self, line_length: int = 150) -> str:
+        """
+        Pretty prints the log entries in a table format with source, content, and observability columns.
+        Prints the current log state with newlines for better readability.
+
+        Returns:
+            A formatted string containing the log entries in a table format
+        """
+        print("\nCurrent Log State:")
+
+        # Prepare data for tabulate
+        headers = ["source", "observability", "content"]
+        table_data = []
+
+        for item in self.log:
+            content = str(item.content.content)
+            # Truncate content if too long
+            if len(content) > line_length:
+                content = content[: line_length - 3] + "..."
+            table_data.append([item.source, str(item.observability), content])
+
+        # Print table using tabulate
+        result = tabulate(table_data, headers=headers, tablefmt="grid", maxcolwidths=[None, None, line_length])
+        print(result)
+        print("\n")
+        return result
+
+    def save_log(self):
+        """
+        Save the logs to a uniquely named json file in the specified log directory.
+        """
+        # Since we're using a unique filename for each run, we don't need to load existing data
+        table_data = []
+
+        for item in self.log:
+            content = str(item.content.content)
+            table_data.append({"source": item.source, "observability": str(item.observability), "content": content})
+
+        with open(self.log_file, "w") as file:
+            json.dump(table_data, file, indent=4)

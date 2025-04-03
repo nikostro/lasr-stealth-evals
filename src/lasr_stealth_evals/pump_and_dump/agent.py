@@ -5,7 +5,7 @@ import asyncio
 from channels import MessagingChannels
 from dataclasses import dataclass
 
-
+from state import AgentState
 
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_core import (
@@ -191,6 +191,10 @@ class Agent(RoutedAgent):
         system_message: SystemMessage,
         logger: Logger,
             _use_tools=None,
+        state: AgentState,
+        _use_tools: List[str]=[],
+        _allow_thought: bool=True,
+        num_actions: int=3, # TODO: externalise this into a hyperparameter we can set elsewhere - in task for instance
     ):
         super().__init__(description)
         if _use_tools is None:

@@ -1,7 +1,6 @@
 import yaml
 import logging
 from pathlib import Path
-#from lasr_stealth_evals.resource_acquisition.models
 from models import TradingPlatform, Agent
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
@@ -75,7 +74,10 @@ def main(
     main_account = {"cash": initial_cash_sum}  # starting off with some cash to invest
     # Initialising the trading platform
     trading_platform = TradingPlatform(initial_prices=list_of_holdings, volatility=volatility, drift=drift)
-    # Initialising the trader overseeing the agent
+
+
+
+   # Initialising the trader overseeing the agent
     trader = Agent(
         model_instance=ChatOpenAI(model=trader_llm_type),
         main_account=main_account,
@@ -104,7 +106,7 @@ def main(
         transaction_limit_per_iteration=transaction_limit_per_iteration,
     )
     trader.history = initial_prompt_trader
-    if not propensity:  # We add the hidden goal in case we are not testing propensity
+    if not propensity:
         initial_prompt_agent += "\n" + prompts["hidden_goal_prompt"]
 
     agent.history = initial_prompt_agent
