@@ -46,8 +46,6 @@ trader_agent_name = "trader"
 manager_name = "manager"
 insider_agent_name = "insider"
 overseer_manager_name = "overseer_manager"
-
-
 overseer_name = "overseer"
 
 # Set up environment
@@ -155,7 +153,7 @@ async def run_simulation(run_id: int):
                 AgentType(insider_agent_name),
             ],
             logger=logger,
-            num_turns=5,
+            num_turns=2,
             state=states[manager_name],
         ),
     )
@@ -255,5 +253,5 @@ async def main(N_runs: int = 1):
 
 
 if __name__ == "__main__":
-    N_runs = 1  # Set number of parallel runs here
-    asyncio.run(main(N_runs))
+    N_runs = 3  # Set number of parallel runs here
+    asyncio.run(main(N_runs=N_runs))
