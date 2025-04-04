@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 import numpy as np
 import random
 from pydantic import BaseModel
+from lasr_stealth_evals.library.env import BaseEnvironment
 
 
 class TradingPlatform:
@@ -108,7 +109,7 @@ class Trader(BaseModel):
     assets: Dict[str, float] = {}
 
 
-class Environment:
+class Environment(BaseEnvironment):
     def __init__(self, traders: List[str], platform: TradingPlatform):
         self._platform = platform
         assets = {asset: 0.0 for asset in self._platform.price_history.keys()}

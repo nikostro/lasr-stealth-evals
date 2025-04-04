@@ -8,8 +8,8 @@ from autogen_core import (
     message_handler,
 )
 
-from lasr_stealth_evals.insider_trading.env import Environment
-from lasr_stealth_evals.insider_trading.state import ManagerState
+from lasr_stealth_evals.library.env import BaseEnvironment
+from lasr_stealth_evals.library.state import ManagerState
 from lasr_stealth_evals.library.logging import Logger
 from lasr_stealth_evals.library.msg import (
     Message,
@@ -35,7 +35,7 @@ class Manager(RoutedAgent):
     def __init__(
         self,
         description: str,
-        environment: Environment,
+        environment: BaseEnvironment,
         agent_topics: List[AgentType],
         logger: Logger,
         num_turns: int,
