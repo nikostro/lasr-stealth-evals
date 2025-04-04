@@ -34,4 +34,5 @@ class OverseerManagerState(BaseModel):
 
 
 class OverseerState(BaseModel):
-    pass
+    is_thought: bool = False
+    is_action: bool = False

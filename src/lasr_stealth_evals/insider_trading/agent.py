@@ -74,6 +74,10 @@ class Overseer(RoutedAgent):
         self._use_tools = tools
         self._logger = logger
         self._state = state
+        self._tools = [FunctionTool(
+            self.approve,
+            description="Approve or reject a function call. Returns the same boolean value that was passed in.",
+        )]
 
     @message_handler
     async def handle_message(self, message: OverseerRequest, ctx: MessageContext) -> None:
@@ -114,36 +118,40 @@ class Overseer(RoutedAgent):
             Boolean indicating whether the function call is approved
         """
         assert self._model_client
+        history = [self._system_message] + self._logger.get_agent_log(str(self.id.type))
+        
+        context = [AssistantMessage(content="<context>", source=str(self.id.type))]
+        if self._state.is_thought:
+            context += [AssistantMessage(content=f"Thought: {request.thought}", source=str(self.id.type))]
+        if self._state.is_action:
+            context += [
+                AssistantMessage(
+                    content=f"Action: {request.call.name} with arguments {request.call.arguments}",
+                    source=str(self.id.type),
+                )
+            ]
+        context += [AssistantMessage(content="</context>", source=str(self.id.type))]
+        context = join_messages(context, source=self.id.type)
 
-        # Create a message describing the function request
-        request_message = AssistantMessage(
-            content=f"Function call request: {request.call.name} with arguments {request.call.arguments}",
-            source="overseer",
-        )
-
-        # Create the approve tool
-        approve_tool = FunctionTool(
-            self.approve,
-            description="Approve or reject a function call. Returns the same boolean value that was passed in.",
-        )
-
-        # Get evaluation from model with the approve tool
         result = await self._model_client.create(
-            messages=[request_message], tools=[approve_tool], cancellation_token=ctx.cancellation_token
+            messages=history + context, # type: ignore
+            tools=self._tools,
+            cancellation_token=ctx.cancellation_token, 
         )
 
-        # If the model made a function call to approve, execute it
+        
+
         if isinstance(result.content, list) and len(result.content) > 0:
             function_call = result.content[0]
             if function_call.name == "approve":
                 return await self._execute_function_call(
                     FunctionCallRequest(
-                        call=function_call, tool=approve_tool, agent_type=str(self.id.type), thought=None
+                        call=function_call, tool=self._tools[0], agent_type=str(self.id.type), thought=None
                     ),
                     ctx.cancellation_token,
                 )
 
-        raise ValueError("Model did not make a valid approve function call")
+        
 
     async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
         """
@@ -339,9 +347,9 @@ class Agent(RoutedAgent):
 
         # Verify specified tools exist (if any were specified)
         if _tools:
-            assert all(
-                tool in available_tools for tool in tools_to_add
-            ), f"Some tools in {tools_to_add} are not in {available_tools}"
+            assert all(tool in available_tools for tool in tools_to_add), (
+                f"Some tools in {tools_to_add} are not in {available_tools}"
+            )
 
         # Create FunctionTools for each tool name
         tools: List[FunctionTool] = []
@@ -434,20 +442,19 @@ class Agent(RoutedAgent):
         """
         history = [self._system_message] + [format_gc_log(self._logger.get_gc_log())]
         history += self._logger.get_agent_log(self.id.type)
+        is_valid_action = False
+        while not is_valid_action:
+            result = await self._model_client.create(
+                messages=history + [AssistantMessage(content="<action>", source=str(self.id.type))],
+                tools=self._tools,
+                cancellation_token=cancellation_token,
+            )
+            is_valid_action = isinstance(result.content, list) and all(
+                isinstance(call, FunctionCall) for call in result.content
+            )
+        action = [AssistantMessage(content=[result.content[0]], source="tools_calls")]  # type: ignore
 
-        result = await self._model_client.create(
-            messages=history + [AssistantMessage(content="<action>", source=str(self.id.type))],
-            tools=self._tools,
-            cancellation_token=cancellation_token,
-        )
-        if isinstance(result.content, str):
-            sys_logger.warning(f"Expected list of function calls, got string: {result.content}")
-        assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
-        if len(result.content) != 1:
-            sys_logger.warning(f"Expected 1 action, got {len(result.content)}")
-        action = [AssistantMessage(content=[result.content[0]], source="tools_calls")]
-
-        return result.content[0], action[0]
+        return result.content[0], action[0]  # type: ignore
 
     async def _invoke(self, cancellation_token: CancellationToken) -> Tuple[Optional[AssistantMessage], FunctionCall]:
         """

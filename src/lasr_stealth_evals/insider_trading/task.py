@@ -4,17 +4,17 @@ from typing import Any, Dict, List
 
 import yaml
 from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
+from autogen_core._agent_id import AgentId
 from autogen_core.models import ChatCompletionClient, SystemMessage
 
-from lasr_stealth_evals.insider_trading.agent import Agent, AgentType, OverseerManager, Overseer
+from lasr_stealth_evals.insider_trading.agent import Agent, AgentType, Overseer, OverseerManager
 from lasr_stealth_evals.insider_trading.env import Environment, TradingPlatform
 from lasr_stealth_evals.insider_trading.state import AgentState, OverseerManagerState, OverseerState
+from lasr_stealth_evals.insider_trading.utils import init_models, plot_trader_holdings
 from lasr_stealth_evals.library.logging import Logger
 from lasr_stealth_evals.library.manager import Manager
-from lasr_stealth_evals.library.state import ManagerState
 from lasr_stealth_evals.library.msg import RequestToSpeak
-from lasr_stealth_evals.insider_trading.utils import init_models, plot_trader_holdings
-from autogen_core._agent_id import AgentId
+from lasr_stealth_evals.library.state import ManagerState
 
 
 def init_state(
@@ -26,7 +26,10 @@ def init_state(
         states[agent_type] = AgentState()
     states[overseer_manager_type] = OverseerManagerState()
     for overseer_type in overseer_types:
-        states[overseer_type] = OverseerState()
+        states[overseer_type] = OverseerState(
+            is_thought=True,
+            is_action=True,
+        )
     return states
 
 
@@ -251,5 +254,5 @@ async def main(N_runs: int = 1):
 
 
 if __name__ == "__main__":
-    N_runs = 5  # Set number of parallel runs here
+    N_runs = 1  # Set number of parallel runs here
     asyncio.run(main(N_runs))
