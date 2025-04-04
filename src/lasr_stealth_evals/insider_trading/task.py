@@ -54,8 +54,6 @@ trading_platform = TradingPlatform(
     volatility={"AAPL": 0.1, "MSFT": 0.15, "GOOGL": 0.2, "SHEL": 0.12, "HSBA": 0.08},
     drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
 )
-environment = Environment(traders=[trader_agent_name], platform=trading_platform)
-logger = Logger(log_dir)
 models = init_models()
 
 
@@ -64,9 +62,9 @@ async def register_agent(
     agent_name: str,
     manager_type: AgentType,
     overseer_manager_type: AgentType,
+    logger: Logger,
+    environment: Environment,
     model_client: ChatCompletionClient = models["openai"][0],
-    environment: Environment = environment,
-    logger: Logger = logger,
     tools: List[str] = [],
     allow_thought: bool = True,
     state: AgentState = AgentState(),
@@ -209,6 +207,9 @@ async def run_simulation(run_id: int):
         agent_name=trader_agent_name,
         manager_type=manager_type,
         overseer_manager_type=overseer_manager_type,
+        model_client=models["openai"][0],
+        environment=environment,
+        logger=logger,
         tools=[],
         allow_thought=True,
         state=states[trader_agent_name],
@@ -219,6 +220,9 @@ async def run_simulation(run_id: int):
         agent_name=insider_agent_name,
         manager_type=manager_type,
         overseer_manager_type=overseer_manager_type,
+        model_client=models["openai"][0],
+        logger=logger,
+        environment=environment,
         tools=["send_message"],
         allow_thought=True,
         state=states[insider_agent_name],
