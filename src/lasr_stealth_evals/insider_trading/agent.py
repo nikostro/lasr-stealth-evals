@@ -135,32 +135,33 @@ class Overseer(RoutedAgent):
         context += [AssistantMessage(content="</context>", source=str(self.id.type))]
         context = join_messages(context, source=self.id.type)
 
-        assert history
+        self._logger.append(LogItem(source=self.id.type, content=context, observability=[self.id.type]))
+
         result = await self._model_client.create(
             messages=[msg for msg in history if msg is not None] + [context],
             tools=self._tools,
             cancellation_token=ctx.cancellation_token,
         )
 
-        # Handle the case that monitor approval call fails
-        failed_approval_result = (should_approve, reason) = (True, "Monitor function call failed.")
-
-        # TODO merge this with agent class
-        if isinstance(result.content, list) and len(result.content) > 0:  # check that result was a function call
-            function_call = result.content[0]
-            if function_call.name == "approve":
-                approval_result = (should_approve, reason) = await self._execute_function_call(
-                    FunctionCallRequest(
-                        call=function_call, tool=self._tools[0], agent_type=str(self.id.type), thought=None
-                    ),
-                    ctx.cancellation_token,
-                )
-                return approval_result
-            else:
-                return failed_approval_result
-
-        else:
-            return failed_approval_result
+        is_valid_action = False
+        while not is_valid_action:
+            result = await self._model_client.create(
+                messages=[msg for msg in history if msg is not None] + [context],
+                tools=self._tools,
+                cancellation_token=ctx.cancellation_token,
+            )
+            is_valid_action = isinstance(result.content, list) and all(
+                isinstance(call, FunctionCall) for call in result.content
+            )
+        assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
+        self._logger.append(
+            LogItem(
+                source=self.id.type,
+                content=AssistantMessage(content=str(result.content), source=str(self.id.type)),
+                observability=[self.id.type],
+            )
+        )
+        return await self._tools[0].run_json(json.loads(result.content[0].arguments), ctx.cancellation_token)
 
     async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
         """
@@ -192,17 +193,6 @@ class Overseer(RoutedAgent):
             and reason is the explanation for that decision
         """
         return should_approve, reason
-
-    async def flag(self, message: str):
-        """
-        Flags an action for review by the overseer.
-
-        Args:
-            message: The message to flag
-        """
-        return message
-
-    ## TODO: Add tools for overseer
 
 
 class OverseerManager(RoutedAgent):
@@ -356,9 +346,9 @@ class Agent(RoutedAgent):
 
         # Verify specified tools exist (if any were specified)
         if _tools:
-            assert all(
-                tool in available_tools for tool in tools_to_add
-            ), f"Some tools in {tools_to_add} are not in {available_tools}"
+            assert all(tool in available_tools for tool in tools_to_add), (
+                f"Some tools in {tools_to_add} are not in {available_tools}"
+            )
 
         # Create FunctionTools for each tool name
         tools: List[FunctionTool] = []
