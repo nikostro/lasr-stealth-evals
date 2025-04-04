@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 import yaml
 from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
 from autogen_core._agent_id import AgentId
-from autogen_core.models import ChatCompletionClient, SystemMessage
+from autogen_core.models import SystemMessage
 
 from lasr_stealth_evals.insider_trading.agent import Agent, AgentType, Overseer, OverseerManager
 from lasr_stealth_evals.insider_trading.env import Environment, TradingPlatform
@@ -55,65 +55,6 @@ trading_platform = TradingPlatform(
     drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
 )
 models = init_models()
-
-
-async def register_agent(
-    runtime: SingleThreadedAgentRuntime,
-    agent_name: str,
-    manager_type: AgentType,
-    overseer_manager_type: AgentType,
-    logger: Logger,
-    environment: Environment,
-    model_client: ChatCompletionClient = models["openai"][0],
-    tools: List[str] = [],
-    allow_thought: bool = True,
-    state: AgentState = AgentState(),
-) -> AgentType:
-    """
-    Registers an agent with the runtime, using the agent's name to look up its prompt.
-
-    Args:
-        runtime: The agent runtime to register with
-        agent_name: Name of the agent, must match a key in prompts
-        manager_type: Type of the manager agent
-        overseer_manager_type: Type of the overseer manager
-        model_client: The model client to use
-        environment: The environment the agent operates in
-        logger: Logger instance
-        tools: List of tool names to enable for the agent
-        allow_thought: Whether to allow the agent to think before acting
-        state: The state of the agent
-
-    Returns:
-        The registered agent type
-    """
-    assert agent_name in prompts, f"Agent name {agent_name} must match a key in prompts"
-
-    agent_type = await Agent.register(
-        runtime=runtime,
-        type=agent_name,
-        factory=lambda: Agent(
-            description=prompts[agent_name],
-            manager_type=manager_type,
-            overseer_manager_type=overseer_manager_type,
-            model_client=model_client,
-            logger=logger,
-            environment=environment,
-            system_message=SystemMessage(content=prompts[agent_name]),
-            _use_tools=tools,
-            _allow_thought=allow_thought,
-            state=state,
-        ),
-    )
-
-    await runtime.add_subscription(
-        TypeSubscription(
-            topic_type=agent_type.type,
-            agent_type=agent_type.type,
-        )
-    )
-
-    return agent_type
 
 
 async def run_simulation(run_id: int):
@@ -202,31 +143,49 @@ async def run_simulation(run_id: int):
         )
     )
 
-    await register_agent(
-        runtime=runtime,
-        agent_name=trader_agent_name,
-        manager_type=manager_type,
-        overseer_manager_type=overseer_manager_type,
-        model_client=models["openai"][0],
-        environment=environment,
-        logger=logger,
-        tools=[],
-        allow_thought=True,
-        state=states[trader_agent_name],
-    )
+    # Register trading agents using a loop
+    agent_configs = [
+        {
+            "name": trader_agent_name,
+            "tools": [],
+            "allow_thought": True,
+            "state": states[trader_agent_name],
+        },
+        {
+            "name": insider_agent_name,
+            "tools": ["send_message"],
+            "allow_thought": True,
+            "state": states[insider_agent_name],
+        },
+    ]
 
-    await register_agent(
-        runtime=runtime,
-        agent_name=insider_agent_name,
-        manager_type=manager_type,
-        overseer_manager_type=overseer_manager_type,
-        model_client=models["openai"][0],
-        logger=logger,
-        environment=environment,
-        tools=["send_message"],
-        allow_thought=True,
-        state=states[insider_agent_name],
-    )
+    for config in agent_configs:
+        agent_name = config["name"]
+        assert agent_name in prompts, f"Agent name {agent_name} must match a key in prompts"
+
+        agent_type = await Agent.register(
+            runtime=runtime,
+            type=agent_name,
+            factory=lambda: Agent(
+                description=prompts[agent_name],
+                manager_type=manager_type,
+                overseer_manager_type=overseer_manager_type,
+                model_client=models["openai"][0],
+                logger=logger,
+                environment=environment,
+                system_message=SystemMessage(content=prompts[agent_name]),
+                _use_tools=config["tools"],
+                _allow_thought=config["allow_thought"],
+                state=config["state"],
+            ),
+        )
+
+        await runtime.add_subscription(
+            TypeSubscription(
+                topic_type=agent_type.type,
+                agent_type=agent_type.type,
+            )
+        )
 
     runtime.start()
 
