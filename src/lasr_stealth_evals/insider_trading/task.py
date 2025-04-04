@@ -6,10 +6,12 @@ import yaml
 from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
 from autogen_core.models import ChatCompletionClient, SystemMessage
 
-from lasr_stealth_evals.insider_trading.agent import Agent, AgentType, Manager, ManagerState, OverseerManager, Overseer
+from lasr_stealth_evals.insider_trading.agent import Agent, AgentType, OverseerManager, Overseer
 from lasr_stealth_evals.insider_trading.env import Environment, TradingPlatform
 from lasr_stealth_evals.insider_trading.state import AgentState, OverseerManagerState, OverseerState
 from lasr_stealth_evals.library.logging import Logger
+from lasr_stealth_evals.library.manager import Manager
+from lasr_stealth_evals.library.state import ManagerState
 from lasr_stealth_evals.library.msg import RequestToSpeak
 from lasr_stealth_evals.insider_trading.utils import init_models, plot_trader_holdings
 from autogen_core._agent_id import AgentId
