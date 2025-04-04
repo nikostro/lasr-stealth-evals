@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from autogen_core.models import LLMMessage
@@ -17,14 +17,16 @@ class LogItem(BaseModel):
 
 
 class Logger:
-    def __init__(self, log_dir: Path):
+    def __init__(self, log_dir: Path, filename: Optional[str] = None):
         self.log: List[LogItem] = []
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
         # Create a unique log file name using a concise timestamp
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
-        self.log_file = self.log_dir / f"{timestamp}.json"
+        if not filename:
+            filename = f"{timestamp}.json"
+        self.log_file = self.log_dir / filename
 
     def get_agent_log(self, agent_type: str) -> List[LLMMessage]:
         return [item.content for item in self.log if agent_type in item.observability]

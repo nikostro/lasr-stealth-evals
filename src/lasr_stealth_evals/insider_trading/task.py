@@ -117,16 +117,17 @@ async def register_agent(
     return agent_type
 
 
-async def main():
+async def run_simulation(run_id: int):
+    """Run a single simulation instance with a unique run_id."""
     runtime = SingleThreadedAgentRuntime()
 
-    # Define agent names
+    # Set up environment with unique trader name for this run
     trader_agent_name = "trader"
     manager_name = "manager"
     insider_agent_name = "insider"
     overseer_manager_name = "overseer_manager"
+    overseer_name = "overseer"
 
-    # Set up environment
     trading_platform = TradingPlatform(
         initial_prices={"AAPL": 200, "MSFT": 400, "GOOGL": 150, "SHEL": 70, "HSBA": 6.5},
         volatility={"AAPL": 0.1, "MSFT": 0.15, "GOOGL": 0.2, "SHEL": 0.12, "HSBA": 0.08},
@@ -167,7 +168,7 @@ async def main():
         type=overseer_manager_name,
         factory=lambda: OverseerManager(
             description="Manager for the overseers",
-            overseer_topic_type="overseer",
+            overseer_topic_type=overseer_name,
             num_overseers=0,
             state=states[overseer_manager_name],
         ),
@@ -179,6 +180,7 @@ async def main():
             agent_type=overseer_manager_type.type,
         )
     )
+
     overseer_type = await Overseer.register(
         runtime=runtime,
         type=overseer_name,
@@ -192,6 +194,7 @@ async def main():
             state=states[overseer_name],
         ),
     )
+
     await runtime.add_subscription(
         TypeSubscription(
             topic_type=overseer_type.type,
@@ -237,11 +240,16 @@ async def main():
 
     trader = environment._traders[trader_agent_name]
 
-    # Plot trader holdings
-    plot_trader_holdings(trader, plots_dir, filename="llm_overseer")
+    # Plot trader holdings with unique filename
+    plot_trader_holdings(trader, plots_dir, filename=f"llm_overseer_run_{run_id}")
+
+
+async def main(N_runs: int = 1):
+    """Run N_runs simulations in parallel."""
+    tasks = [run_simulation(run_id) for run_id in range(N_runs)]
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":
-    #
-    # for i in range(N_epochs):
-    asyncio.run(main())
+    N_runs = 5  # Set number of parallel runs here
+    asyncio.run(main(N_runs))
