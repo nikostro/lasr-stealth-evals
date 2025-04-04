@@ -253,5 +253,5 @@ async def main(N_runs: int = 1):
 
 
 if __name__ == "__main__":
-    N_runs = 3  # Set number of parallel runs here
+    N_runs = 1  # Set number of parallel runs here
     asyncio.run(main(N_runs=N_runs))

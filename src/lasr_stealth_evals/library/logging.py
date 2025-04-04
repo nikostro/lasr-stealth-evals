@@ -1,11 +1,11 @@
-from typing import List, Optional
+import json
 from datetime import datetime
+from pathlib import Path
+from typing import List, Optional
 
 from autogen_core.models import LLMMessage
 from pydantic import BaseModel
 from tabulate import tabulate
-import json
-from pathlib import Path
 
 GROUP_CHAT = "GROUP_CHAT"
 
@@ -18,6 +18,8 @@ class LogItem(BaseModel):
 
 class Logger:
     def __init__(self, log_dir: Path, run_id: Optional[int] = None):
+        self.ts = 0
+
         self.log: List[LogItem] = []
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
@@ -27,11 +29,14 @@ class Logger:
         filename = f"{timestamp}_{run_id}.json" if run_id is not None else f"{timestamp}.json"
         self.log_file = self.log_dir / filename
 
+    def tick(self):
+        self.ts += 1
+
     def get_agent_log(self, agent_type: str) -> List[LLMMessage]:
         return [item.content for item in self.log if agent_type in item.observability]
 
     def get_gc_log(self) -> List[LLMMessage]:
-        return [item.content for item in self.log if GROUP_CHAT in item.observability]
+        return self.get_agent_log(GROUP_CHAT)
 
     def append(self, log: LogItem):
         self.extend([log])
