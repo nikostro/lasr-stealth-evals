@@ -461,7 +461,7 @@ class Agent(RoutedAgent):
             is_valid_action = isinstance(result.content, list) and all(
                 isinstance(call, FunctionCall) for call in result.content
             )
-        action = [AssistantMessage(content=[result.content[0]], source="tools_calls")]  # type: ignore
+        action = [AssistantMessage(content=[result.content[0]], source="tool_calls")]  # type: ignore
 
         return result.content[0], action[0]  # type: ignore
 
