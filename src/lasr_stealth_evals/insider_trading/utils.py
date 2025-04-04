@@ -4,7 +4,7 @@ from lasr_stealth_evals.insider_trading.env import Trader
 
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from typing import Dict, List
-from lasr_stealth_evals.insider_trading.config import OPENAI_API_KEY
+from lasr_stealth_evals.library.config import OPENAI_API_KEY
 from autogen_core.models import ChatCompletionClient
 
 

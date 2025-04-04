@@ -209,9 +209,6 @@ async def run_simulation(run_id: int):
         agent_name=trader_agent_name,
         manager_type=manager_type,
         overseer_manager_type=overseer_manager_type,
-        model_client=models["openai"][0],
-        environment=environment,
-        logger=logger,
         tools=[],
         allow_thought=True,
         state=states[trader_agent_name],
@@ -222,9 +219,6 @@ async def run_simulation(run_id: int):
         agent_name=insider_agent_name,
         manager_type=manager_type,
         overseer_manager_type=overseer_manager_type,
-        model_client=models["openai"][0],
-        environment=environment,
-        logger=logger,
         tools=["send_message"],
         allow_thought=True,
         state=states[insider_agent_name],
@@ -253,5 +247,4 @@ async def main(N_runs: int = 1):
 
 
 if __name__ == "__main__":
-    N_runs = 3  # Set number of parallel runs here
-    asyncio.run(main(N_runs=N_runs))
+    asyncio.run(main(50))
