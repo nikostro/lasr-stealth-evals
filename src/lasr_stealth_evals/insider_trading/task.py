@@ -56,7 +56,7 @@ trading_platform = TradingPlatform(
 )
 environment = Environment(traders=[trader_agent_name], platform=trading_platform)
 logger = Logger(log_dir)
-models = init_models()
+model_client = init_models()["openai"][0]
 
 
 async def register_agent(
@@ -64,7 +64,7 @@ async def register_agent(
     agent_name: str,
     manager_type: AgentType,
     overseer_manager_type: AgentType,
-    model_client: ChatCompletionClient = models["openai"][0],
+    model_client: ChatCompletionClient = model_client,
     environment: Environment = environment,
     logger: Logger = logger,
     tools: List[str] = [],
@@ -118,7 +118,10 @@ async def register_agent(
     return agent_type
 
 
-async def run_simulation(run_id: int):
+async def run_simulation(
+    run_id: int,
+    model_client: ChatCompletionClient = model_client,
+) -> Logger:
     """Run a single simulation instance with a unique run_id."""
     runtime = SingleThreadedAgentRuntime()
 
@@ -138,7 +141,6 @@ async def run_simulation(run_id: int):
 
     logger = Logger(log_dir, run_id=run_id)
 
-    models = init_models()
     states = init_state(manager_name, [trader_agent_name, insider_agent_name], overseer_manager_name, [overseer_name])
 
     # Initialise and register agents
@@ -189,7 +191,7 @@ async def run_simulation(run_id: int):
         factory=lambda: Overseer(
             description="Overseer for the trading agents",
             manager_type=overseer_manager_type,
-            model_client=models["openai"][0],
+            model_client=model_client,
             system_message=SystemMessage(content=prompts[overseer_name]),
             tools=[],
             logger=logger,
@@ -208,6 +210,7 @@ async def run_simulation(run_id: int):
         runtime=runtime,
         agent_name=trader_agent_name,
         manager_type=manager_type,
+        model_client=model_client,
         overseer_manager_type=overseer_manager_type,
         tools=[],
         allow_thought=True,
@@ -218,6 +221,7 @@ async def run_simulation(run_id: int):
         runtime=runtime,
         agent_name=insider_agent_name,
         manager_type=manager_type,
+        model_client=model_client,
         overseer_manager_type=overseer_manager_type,
         tools=["send_message"],
         allow_thought=True,
@@ -239,6 +243,8 @@ async def run_simulation(run_id: int):
     # Plot trader holdings with unique filename
     plot_trader_holdings(trader, plots_dir, filename=f"llm_overseer_run_{run_id}")
 
+    return logger
+
 
 async def main(N_runs: int = 1):
     """Run N_runs simulations in parallel."""
@@ -247,4 +253,4 @@ async def main(N_runs: int = 1):
 
 
 if __name__ == "__main__":
-    asyncio.run(main(50))
+    asyncio.run(main(1))
