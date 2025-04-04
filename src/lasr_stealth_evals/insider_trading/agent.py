@@ -74,10 +74,12 @@ class Overseer(RoutedAgent):
         self._use_tools = tools
         self._logger = logger
         self._state = state
-        self._tools = [FunctionTool(
-            self.approve,
-            description="Approve or reject a function call. Returns the same boolean value that was passed in.",
-        )]
+        self._tools = [
+            FunctionTool(
+                self.approve,
+                description="Approve or reject a function call. Returns the same boolean value that was passed in.",
+            )
+        ]
 
     @message_handler
     async def handle_message(self, message: OverseerRequest, ctx: MessageContext) -> None:
@@ -119,7 +121,7 @@ class Overseer(RoutedAgent):
         """
         assert self._model_client
         history = [self._system_message] + self._logger.get_agent_log(str(self.id.type))
-        
+
         context = [AssistantMessage(content="<context>", source=str(self.id.type))]
         if self._state.is_thought:
             context += [AssistantMessage(content=f"Thought: {request.thought}", source=str(self.id.type))]
@@ -133,25 +135,32 @@ class Overseer(RoutedAgent):
         context += [AssistantMessage(content="</context>", source=str(self.id.type))]
         context = join_messages(context, source=self.id.type)
 
+        assert history
         result = await self._model_client.create(
-            messages=history + context, # type: ignore
+            messages=[msg for msg in history if msg is not None] + [context],
             tools=self._tools,
-            cancellation_token=ctx.cancellation_token, 
+            cancellation_token=ctx.cancellation_token,
         )
 
-        
+        # Handle the case that monitor approval call fails
+        failed_approval_result = (should_approve, reason) = (True, "Monitor function call failed.")
 
-        if isinstance(result.content, list) and len(result.content) > 0:
+        # TODO merge this with agent class
+        if isinstance(result.content, list) and len(result.content) > 0:  # check that result was a function call
             function_call = result.content[0]
             if function_call.name == "approve":
-                return await self._execute_function_call(
+                approval_result = (should_approve, reason) = await self._execute_function_call(
                     FunctionCallRequest(
                         call=function_call, tool=self._tools[0], agent_type=str(self.id.type), thought=None
                     ),
                     ctx.cancellation_token,
                 )
+                return approval_result
+            else:
+                return failed_approval_result
 
-        
+        else:
+            return failed_approval_result
 
     async def _execute_function_call(self, request: FunctionCallRequest, cancellation_token: CancellationToken) -> Any:
         """
@@ -347,9 +356,9 @@ class Agent(RoutedAgent):
 
         # Verify specified tools exist (if any were specified)
         if _tools:
-            assert all(tool in available_tools for tool in tools_to_add), (
-                f"Some tools in {tools_to_add} are not in {available_tools}"
-            )
+            assert all(
+                tool in available_tools for tool in tools_to_add
+            ), f"Some tools in {tools_to_add} are not in {available_tools}"
 
         # Create FunctionTools for each tool name
         tools: List[FunctionTool] = []
