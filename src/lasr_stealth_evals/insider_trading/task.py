@@ -247,4 +247,5 @@ async def main(N_runs: int = 1):
 
 
 if __name__ == "__main__":
-    asyncio.run(main(50))
+    N_runs = 1  # Set number of parallel runs here
+    asyncio.run(main(N_runs=N_runs))
