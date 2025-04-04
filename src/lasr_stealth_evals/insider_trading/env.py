@@ -1,7 +1,9 @@
-from typing import Any, Dict, List
-import numpy as np
 import random
+from typing import Any, Dict, List
+
+import numpy as np
 from pydantic import BaseModel
+
 from lasr_stealth_evals.library.env import BaseEnvironment
 
 
@@ -120,7 +122,7 @@ class Environment(BaseEnvironment):
         Buy assets from the platform
         """
         if quantity <= 0:
-            raise ValueError("Quantity must be positive")
+            return {"status": 400, "error": "Quantity must be positive"}
 
         price = self._platform.prices()[asset_name]
         cost = price * quantity
