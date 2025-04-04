@@ -137,7 +137,8 @@ async def run_simulation(run_id: int):
         drift={"AAPL": 0.01, "MSFT": 0.02, "GOOGL": -0.01, "SHEL": 0.015, "HSBA": -0.005},
     )
     environment = Environment(traders=[trader_agent_name], platform=trading_platform)
-    logger = Logger(log_dir)
+
+    logger = Logger(log_dir, run_id=run_id)
 
     models = init_models()
     states = init_state(manager_name, [trader_agent_name, insider_agent_name], overseer_manager_name, [overseer_name])

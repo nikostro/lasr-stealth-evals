@@ -17,15 +17,14 @@ class LogItem(BaseModel):
 
 
 class Logger:
-    def __init__(self, log_dir: Path, filename: Optional[str] = None):
+    def __init__(self, log_dir: Path, run_id: Optional[int] = None):
         self.log: List[LogItem] = []
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create a unique log file name using a concise timestamp
+        # Create a unique log file name using a concise timestamp and optional run index
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
-        if not filename:
-            filename = f"{timestamp}.json"
+        filename = f"{timestamp}_{run_id}.json" if run_id is not None else f"{timestamp}.json"
         self.log_file = self.log_dir / filename
 
     def get_agent_log(self, agent_type: str) -> List[LLMMessage]:
