@@ -28,7 +28,9 @@ def my_agent():
             for i, item in enumerate(logger.log)
         }
 
-        return {"output": str(log_dict)}
+        return {
+            "output": str(log_dict)
+        }  # use messages https://github.com/UKGovernmentBEIS/inspect_ai/blob/74ca4c53516ff6d32b9d3d7c44cc5a9dc8a2cb5f/src/inspect_ai/agent/_bridge/bridge.py#L28
 
     return run
 
