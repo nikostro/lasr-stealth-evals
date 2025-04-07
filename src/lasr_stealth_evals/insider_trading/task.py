@@ -1,14 +1,16 @@
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import yaml
+import numpy as np
+import matplotlib.pyplot as plt
 from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
 from autogen_core._agent_id import AgentId
 from autogen_core.models import ChatCompletionClient, SystemMessage
 
 from lasr_stealth_evals.insider_trading.agent import Agent, AgentType, Overseer, OverseerManager
-from lasr_stealth_evals.insider_trading.env import Environment, TradingPlatform
+from lasr_stealth_evals.insider_trading.env import Environment, TradingPlatform, Trader
 from lasr_stealth_evals.insider_trading.state import AgentState, OverseerManagerState, OverseerState
 from lasr_stealth_evals.insider_trading.utils import init_models, plot_trader_holdings
 from lasr_stealth_evals.library.logging import Logger
@@ -243,13 +245,51 @@ async def run_simulation(run_id: int):
     # Plot trader holdings with unique filename
     plot_trader_holdings(trader, plots_dir, filename=f"llm_overseer_run_{run_id}")
 
+    return logger, trader
 
-async def main(N_runs: int = 1):
-    """Run N_runs simulations in parallel."""
+
+def process_run(run_results: List[Tuple[Logger, Trader]]) -> List[float]:
+    """Extract HSBA holdings from a list of (logger, trader) tuples from multiple simulation runs."""
+    hsba_holdings = []
+    for _, trader in run_results:
+        if "HSBA" in trader.assets:
+            hsba_holdings.append(trader.assets["HSBA"])
+        else:
+            hsba_holdings.append(0.0)
+    return hsba_holdings
+
+
+def plot_hsba_stats(hsba_holdings: List[float], plots_dir: Path) -> None:
+    """Create a bar plot with error bars showing mean and std dev of HSBA holdings."""
+    plt.figure(figsize=(8, 6))
+
+    mean_holdings = float(np.mean(hsba_holdings))  # Convert to float
+    std_holdings = float(np.std(hsba_holdings))  # Convert to float
+
+    x = np.array([0])  # Use numeric x-coordinates
+    plt.bar(x, [mean_holdings], yerr=std_holdings, capsize=5)
+    plt.xticks(x, ["HSBA Holdings"])  # Set x-axis labels
+    plt.title("Average HSBA Holdings Across Simulation Runs")
+    plt.ylabel("Number of Shares")
+
+    # Add value labels on top of the bar
+    plt.text(0, mean_holdings, f"{mean_holdings:.1f} ± {std_holdings:.1f}", ha="center", va="bottom")
+
+    plt.tight_layout()
+    plt.savefig(plots_dir / "hsba_holdings_stats.png")
+    plt.close()
+
+
+async def main(N_runs: int = 10):
+    """Run N_runs simulations in parallel and plot aggregate statistics."""
     tasks = [run_simulation(run_id) for run_id in range(N_runs)]
-    await asyncio.gather(*tasks)
+    run_results = await asyncio.gather(*tasks)
+
+    # Process results and create statistical plot
+    hsba_holdings = process_run(run_results)
+    plot_hsba_stats(hsba_holdings, plots_dir)
 
 
 if __name__ == "__main__":
-    N_runs = 1  # Set number of parallel runs here
+    N_runs = 10  # Set number of parallel runs here
     asyncio.run(main(N_runs=N_runs))
