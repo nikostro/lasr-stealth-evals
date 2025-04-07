@@ -42,7 +42,7 @@ def format_gc_log(messages: List[LLMMessage]) -> AssistantMessage:
     assert all(isinstance(message, AssistantMessage) for message in messages)
     return AssistantMessage(
         content="\n\n".join(f"**{message.source or 'Unknown'}**: {message.content}" for message in messages),  # type: ignore
-        source="group_chat",
+        source=GROUP_CHAT,
     )
 
 

@@ -84,6 +84,7 @@ class Manager(RoutedAgent):
         self._state.agent_idx += 1
         if self._state.agent_idx >= len(self._agent_topics):
             self._state.current_turn += 1
+            self._logger.tick(self._env.state())
             self._env.tick()
         self._state.agent_idx %= len(self._agent_topics)
         if self._state.current_turn >= self._num_turns:

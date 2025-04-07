@@ -1,9 +1,12 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Any, DefaultDict
+from collections import defaultdict
+from copy import deepcopy
 
 from autogen_core.models import LLMMessage
+
 from pydantic import BaseModel
 from tabulate import tabulate
 
@@ -20,7 +23,7 @@ class Logger:
     def __init__(self, log_dir: Path, run_id: Optional[int] = None):
         self.ts = 0
 
-        self.log: List[LogItem] = []
+        self.log: dict[str, Any] = {"days": [{"ts": self.ts, "messages": [], "state": None}]}
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -29,20 +32,33 @@ class Logger:
         filename = f"{timestamp}_{run_id}.json" if run_id is not None else f"{timestamp}.json"
         self.log_file = self.log_dir / filename
 
-    def tick(self):
+    def tick(self, state: dict[str, Any]):
+        self.log["days"][-1]["state"] = deepcopy(state)
         self.ts += 1
+        self.log["days"].append(
+            {
+                "ts": self.ts,
+                "messages": [],
+                "state": {},
+            }
+        )
 
     def get_agent_log(self, agent_type: str) -> List[LLMMessage]:
-        return [item.content for item in self.log if agent_type in item.observability]
+        messages = []
+        for day in self.log["days"]:
+            for message in day["messages"]:
+                if agent_type in message.observability:
+                    messages.append(message.content)
+        return messages
 
     def get_gc_log(self) -> List[LLMMessage]:
         return self.get_agent_log(GROUP_CHAT)
 
     def append(self, log: LogItem):
-        self.extend([log])
+        self.log["days"][-1]["messages"].append(log)
 
     def extend(self, log: List[LogItem]):
-        self.log.extend(log)
+        self.log["days"][-1]["messages"].extend(log)
 
     def pretty_print(self, line_length: int = 150) -> str:
         """
@@ -58,7 +74,7 @@ class Logger:
         headers = ["source", "observability", "content"]
         table_data = []
 
-        for item in self.log:
+        for item in self.log["days"][-1]["messages"]:
             content = str(item.content.content)
             # Truncate content if too long
             if len(content) > line_length:
@@ -78,7 +94,7 @@ class Logger:
         # Since we're using a unique filename for each run, we don't need to load existing data
         table_data = []
 
-        for item in self.log:
+        for item in self.log["days"][-1]["messages"]:
             content = str(item.content.content)
             table_data.append({"source": item.source, "observability": str(item.observability), "content": content})
 

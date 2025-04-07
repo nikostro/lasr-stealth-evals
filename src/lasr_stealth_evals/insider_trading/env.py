@@ -177,3 +177,12 @@ class Environment(BaseEnvironment):
         Time step for the environment
         """
         self._platform.tick()
+
+    def state(self) -> Dict[str, Any]:
+        """
+        Get the state of the environment
+        """
+        return {
+            "prices": self._platform.prices(),
+            "traders": {agent_type: trader.model_dump() for agent_type, trader in self._traders.items()}
+        }
