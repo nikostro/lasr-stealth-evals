@@ -9,12 +9,12 @@ from autogen_core import (
 )
 
 from lasr_stealth_evals.library.env import BaseEnvironment
-from lasr_stealth_evals.library.state import ManagerState
 from lasr_stealth_evals.library.logging import Logger
 from lasr_stealth_evals.library.msg import (
     Message,
     RequestToSpeak,
 )
+from lasr_stealth_evals.library.state import ManagerState
 
 
 class Manager(RoutedAgent):
@@ -79,15 +79,15 @@ class Manager(RoutedAgent):
         """
         assert ctx.sender
         self._logger.extend(message.log)
-        self._logger.pretty_print()
-        self._logger.save_log()
         self._state.agent_idx += 1
         if self._state.agent_idx >= len(self._agent_topics):
             self._state.current_turn += 1
-            self._logger.tick(self._env.state())
+            self._logger.pretty_print()
+            self._logger.tick(self._env.state())  # NOTE: tick for logging must happen before env tick
             self._env.tick()
         self._state.agent_idx %= len(self._agent_topics)
         if self._state.current_turn >= self._num_turns:
+            self._logger.save_log()
             return
         await self.publish_message(
             RequestToSpeak(),

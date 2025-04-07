@@ -92,11 +92,19 @@ class Logger:
         Save the logs to a uniquely named json file in the specified log directory.
         """
         # Since we're using a unique filename for each run, we don't need to load existing data
-        table_data = []
 
-        for item in self.log["days"][-1]["messages"]:
-            content = str(item.content.content)
-            table_data.append({"source": item.source, "observability": str(item.observability), "content": content})
+        log_copy = deepcopy(self.log)
+        log_copy["days"].pop() # TODO: remove this once we have a better way to handle the last day
 
+        for day in log_copy["days"]:
+            print(day["messages"])
+            day["messages"] = [
+                {
+                    "source": message.source,
+                    "observability": message.observability,
+                    "content": str(message.content.content),
+                }
+                for message in day["messages"]
+            ]
         with open(self.log_file, "w") as file:
-            json.dump(table_data, file, indent=4)
+            json.dump(log_copy, file, indent=4)
