@@ -174,6 +174,7 @@ async def run_simulation(agents: dict[str, str], run_id: int):
             logger=logger,
             num_turns=2,
             state=states[manager_name],
+            pretty_print=False,
         ),
     )
 
