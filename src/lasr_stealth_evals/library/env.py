@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from typing import Any
 
 class BaseEnvironment(ABC):
     """Abstract base class for all environments in the LASR stealth evaluations framework.
@@ -13,5 +13,11 @@ class BaseEnvironment(ABC):
         """Advance the environment by one time step.
 
         This method should update the environment's state according to its dynamics.
+        """
+        pass
+
+    @abstractmethod
+    def state(self) -> dict[str, Any]:
+        """Get the current state of the environment.
         """
         pass
