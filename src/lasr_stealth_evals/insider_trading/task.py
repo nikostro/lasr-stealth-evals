@@ -27,11 +27,28 @@ def init_state(
     for agent_type in agent_types:
         states[agent_type] = AgentState()
     states[overseer_manager_type] = OverseerManagerState()
-    for overseer_type in overseer_types:
-        states[overseer_type] = OverseerState(
-            is_thought=True,
-            is_action=True,
-        )
+
+    # Overseer states TODO clean this up
+    states["overseer"] = OverseerState(
+        is_thought=True,
+        is_action=True,
+    )
+
+    states["overseer_cot"] = OverseerState(
+        is_thought=True,
+        is_action=False,
+    )
+
+    states["overseer_action"] = OverseerState(
+        is_thought=False,
+        is_action=True,
+    )
+
+    states["no_overseer"] = OverseerState(
+        is_thought=False,
+        is_action=False,
+    )
+
     return states
 
 
@@ -322,5 +339,5 @@ async def main(N_runs: int = 10):
 
 
 if __name__ == "__main__":
-    N_runs = 10  # Set number of parallel runs here
+    N_runs = 1  # Set number of parallel runs here
     asyncio.run(main(N_runs=N_runs))
