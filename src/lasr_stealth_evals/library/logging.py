@@ -1,8 +1,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Any, DefaultDict
-from collections import defaultdict
+from typing import List, Optional, Any
 from copy import deepcopy
 
 from autogen_core.models import LLMMessage
@@ -20,16 +19,29 @@ class LogItem(BaseModel):
 
 
 class Logger:
-    def __init__(self, log_dir: Path, run_id: Optional[int] = None):
+    def __init__(
+        self,
+        log_dir: Path,
+        run_id: Optional[int] = None,
+        overseer_name: Optional[str] = None,
+        insider_name: Optional[str] = None,
+    ):  # TODO don't hardcode the overseer and insider_name into the log
         self.ts = 0
 
         self.log: dict[str, Any] = {"days": [{"ts": self.ts, "messages": [], "state": None}]}
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create a unique log file name using a concise timestamp and optional run index
+        # Create a unique log file name using a concise timestamp, overseer name, insider name, and optional run index
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
-        filename = f"{timestamp}_{run_id}.json" if run_id is not None else f"{timestamp}.json"
+        name_parts = [timestamp]
+        if overseer_name:
+            name_parts.append(overseer_name)
+        if insider_name:
+            name_parts.append(insider_name)
+        if run_id is not None:
+            name_parts.append(str(run_id))
+        filename = "_".join(name_parts) + ".json"
         self.log_file = self.log_dir / filename
 
     def tick(self, state: dict[str, Any]):
@@ -94,10 +106,10 @@ class Logger:
         # Since we're using a unique filename for each run, we don't need to load existing data
 
         log_copy = deepcopy(self.log)
-        log_copy["days"].pop() # TODO: remove this once we have a better way to handle the last day
+        log_copy["days"].pop()  # TODO: remove this once we have a better way to handle the last day
 
         for day in log_copy["days"]:
-             day["messages"] = [
+            day["messages"] = [
                 {
                     "source": message.source,
                     "observability": message.observability,
