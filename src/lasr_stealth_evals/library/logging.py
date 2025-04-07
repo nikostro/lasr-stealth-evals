@@ -97,8 +97,7 @@ class Logger:
         log_copy["days"].pop() # TODO: remove this once we have a better way to handle the last day
 
         for day in log_copy["days"]:
-            print(day["messages"])
-            day["messages"] = [
+             day["messages"] = [
                 {
                     "source": message.source,
                     "observability": message.observability,

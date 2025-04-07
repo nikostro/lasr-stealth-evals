@@ -123,6 +123,8 @@ class Overseer(RoutedAgent):
         history = [self._system_message] + self._logger.get_agent_log(str(self.id.type))
 
         context = [AssistantMessage(content="<context>", source=str(self.id.type))]
+        if not (self._state.is_thought or self._state.is_action):
+            return True, "Approved by default."
         if self._state.is_thought:
             context += [AssistantMessage(content=f"Thought: {request.thought}", source=str(self.id.type))]
         if self._state.is_action:
