@@ -40,6 +40,7 @@ class Manager(RoutedAgent):
         logger: Logger,
         num_turns: int,
         state: ManagerState,
+        pretty_print: bool = True,
     ):
         super().__init__(description)
         self._agent_topics = agent_topics
@@ -47,6 +48,7 @@ class Manager(RoutedAgent):
         self._logger = logger
         self._num_turns = num_turns
         self._state = state
+        self._pretty_print = pretty_print
 
     @message_handler
     async def start(self, message: RequestToSpeak, ctx: MessageContext) -> None:
@@ -82,7 +84,8 @@ class Manager(RoutedAgent):
         self._state.agent_idx += 1
         if self._state.agent_idx >= len(self._agent_topics):
             self._state.current_turn += 1
-            self._logger.pretty_print()
+            if self._pretty_print:
+                self._logger.pretty_print()
             self._logger.tick(self._env.state())  # NOTE: tick for logging must happen before env tick
             self._env.tick()
         self._state.agent_idx %= len(self._agent_topics)

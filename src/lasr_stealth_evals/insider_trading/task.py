@@ -1,6 +1,7 @@
 import asyncio
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+from datetime import datetime
 
 import yaml
 import numpy as np
@@ -307,7 +308,10 @@ def plot_hsba_stats(hsba_results: List[Tuple[List[float], str]], plots_dir: Path
         plt.text(i, mean, f"{mean:.1f} ± {std:.1f}", ha="center", va="bottom")
 
     plt.tight_layout()
-    plt.savefig(plots_dir / "hsba_holdings_stats_comparison.png")
+
+    # Add timestamp to filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    plt.savefig(plots_dir / f"hsba_holdings_stats_comparison_{timestamp}.png")
     plt.close()
 
 
