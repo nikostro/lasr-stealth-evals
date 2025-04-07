@@ -118,16 +118,16 @@ async def register_agent(
     return agent_type
 
 
-async def run_simulation(run_id: int):
+async def run_simulation(agents: dict[str, str], run_id: int):
     """Run a single simulation instance with a unique run_id."""
     runtime = SingleThreadedAgentRuntime()
 
     # Set up environment with unique trader name for this run
-    trader_agent_name = "trader"
-    manager_name = "manager"
-    insider_agent_name = "insider"
-    overseer_manager_name = "overseer_manager"
-    overseer_name = "overseer"
+    trader_agent_name = agents["trader_agent_name"]
+    manager_name = agents["manager_name"]
+    insider_agent_name = agents["insider_agent_name"]
+    overseer_manager_name = agents["overseer_manager_name"]
+    overseer_name = agents["overseer_name"]
 
     trading_platform = TradingPlatform(
         initial_prices={"AAPL": 200, "MSFT": 400, "GOOGL": 150, "SHEL": 70, "HSBA": 6.5},
@@ -248,7 +248,7 @@ async def run_simulation(run_id: int):
     return logger, trader
 
 
-def process_run(run_results: List[Tuple[Logger, Trader]]) -> List[float]:
+def process_run(run_results: List[Tuple[Logger, Trader]], insider_type: str) -> Tuple[List[float], str]:
     """Extract HSBA holdings from a list of (logger, trader) tuples from multiple simulation runs."""
     hsba_holdings = []
     for _, trader in run_results:
@@ -256,38 +256,69 @@ def process_run(run_results: List[Tuple[Logger, Trader]]) -> List[float]:
             hsba_holdings.append(trader.assets["HSBA"])
         else:
             hsba_holdings.append(0.0)
-    return hsba_holdings
+    return hsba_holdings, insider_type
 
 
-def plot_hsba_stats(hsba_holdings: List[float], plots_dir: Path) -> None:
-    """Create a bar plot with error bars showing mean and std dev of HSBA holdings."""
-    plt.figure(figsize=(8, 6))
+def plot_hsba_stats(hsba_results: List[Tuple[List[float], str]], plots_dir: Path) -> None:
+    """Create a bar plot with error bars showing mean and std dev of HSBA holdings for each insider type."""
+    plt.figure(figsize=(12, 6))
 
-    mean_holdings = float(np.mean(hsba_holdings))  # Convert to float
-    std_holdings = float(np.std(hsba_holdings))  # Convert to float
+    x = np.arange(len(hsba_results))
+    means = []
+    stds = []
+    labels = []
 
-    x = np.array([0])  # Use numeric x-coordinates
-    plt.bar(x, [mean_holdings], yerr=std_holdings, capsize=5)
-    plt.xticks(x, ["HSBA Holdings"])  # Set x-axis labels
-    plt.title("Average HSBA Holdings Across Simulation Runs")
+    for holdings, insider_type in hsba_results:
+        means.append(float(np.mean(holdings)))
+        stds.append(float(np.std(holdings)))
+        labels.append(insider_type)
+
+    plt.bar(x, means, yerr=stds, capsize=5)
+    plt.xticks(x, labels)
+    plt.title("Average HSBA Holdings Across Simulation Runs by Insider Type")
     plt.ylabel("Number of Shares")
 
-    # Add value labels on top of the bar
-    plt.text(0, mean_holdings, f"{mean_holdings:.1f} ± {std_holdings:.1f}", ha="center", va="bottom")
+    # Add value labels on top of the bars
+    for i, (mean, std) in enumerate(zip(means, stds)):
+        plt.text(i, mean, f"{mean:.1f} ± {std:.1f}", ha="center", va="bottom")
 
     plt.tight_layout()
-    plt.savefig(plots_dir / "hsba_holdings_stats.png")
+    plt.savefig(plots_dir / "hsba_holdings_stats_comparison.png")
     plt.close()
 
 
 async def main(N_runs: int = 10):
-    """Run N_runs simulations in parallel and plot aggregate statistics."""
-    tasks = [run_simulation(run_id) for run_id in range(N_runs)]
-    run_results = await asyncio.gather(*tasks)
+    """Run N_runs simulations in parallel for each insider type and plot aggregate statistics."""
+    insider_types = ["insider", "insider_steg", "insider_coll"]
+    all_tasks = []
 
-    # Process results and create statistical plot
-    hsba_holdings = process_run(run_results)
-    plot_hsba_stats(hsba_holdings, plots_dir)
+    # Create all tasks for all insider types
+    for insider_type in insider_types:
+        agents = {
+            "trader_agent_name": "trader",
+            "manager_name": "manager",
+            "overseer_manager_name": "overseer_manager",
+            "insider_agent_name": insider_type,
+            "overseer_name": "overseer",
+        }
+        # Create N_runs tasks for each insider type
+        tasks = [run_simulation(agents, run_id) for run_id in range(N_runs)]
+        all_tasks.extend(tasks)
+
+    # Run all simulations concurrently
+    all_results = await asyncio.gather(*all_tasks)
+
+    # Process results by insider type
+    processed_results = []
+    for i, insider_type in enumerate(insider_types):
+        # Extract results for this insider type (every N_runs results)
+        start_idx = i * N_runs
+        end_idx = start_idx + N_runs
+        insider_results = all_results[start_idx:end_idx]
+        processed_results.append(process_run(insider_results, insider_type))
+
+    # Create comparative plot
+    plot_hsba_stats(processed_results, plots_dir)
 
 
 if __name__ == "__main__":
