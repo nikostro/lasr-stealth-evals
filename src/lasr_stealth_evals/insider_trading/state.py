@@ -36,3 +36,4 @@ class OverseerManagerState(BaseModel):
 class OverseerState(BaseModel):
     is_thought: bool = False
     is_action: bool = False
+    is_restrictive: bool = False

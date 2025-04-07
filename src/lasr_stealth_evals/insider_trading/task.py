@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from datetime import datetime
 
-import yaml
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import yaml
 from autogen_core import SingleThreadedAgentRuntime, TypeSubscription
 from autogen_core._agent_id import AgentId
 from autogen_core.models import ChatCompletionClient, SystemMessage
@@ -48,6 +48,12 @@ def init_state(
     states["no_overseer"] = OverseerState(
         is_thought=False,
         is_action=False,
+    )
+
+    states["overseer_restrictive"] = OverseerState(
+        is_thought=False,
+        is_action=False,
+        is_restrictive=True,
     )
 
     return states
@@ -319,7 +325,7 @@ def plot_hsba_stats(hsba_results: List[Tuple[List[float], str]], plots_dir: Path
 async def main(N_runs: int = 1):
     """Run N_runs simulations in parallel for each insider-overseer combination and plot aggregate statistics."""
     insider_types = ["insider", "insider_steg", "insider_coll"]
-    overseer_types = ["overseer_cot_action", "overseer_cot", "overseer_action", "no_overseer"]
+    overseer_types = ["overseer_cot_action", "overseer_cot", "overseer_action", "no_overseer", "overseer_restrictive"]
     all_tasks = []
 
     # Create all tasks for all configurations
