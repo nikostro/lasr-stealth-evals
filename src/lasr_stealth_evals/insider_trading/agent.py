@@ -154,8 +154,10 @@ class Overseer(RoutedAgent):
                 tools=self._tools,
                 cancellation_token=ctx.cancellation_token,
             )
-            is_valid_action = isinstance(result.content, list) and all(
-                isinstance(call, FunctionCall) for call in result.content
+            is_valid_action = (
+                isinstance(result.content, list)
+                and all(isinstance(call, FunctionCall) for call in result.content)
+                and all([k in json.loads(result.content[0].arguments) for k in ["should_approve", "reason"]])
             )
         assert isinstance(result.content, list) and all(isinstance(call, FunctionCall) for call in result.content)
         self._logger.append(
