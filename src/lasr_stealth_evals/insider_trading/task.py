@@ -29,7 +29,7 @@ def init_state(
     states[overseer_manager_type] = OverseerManagerState()
 
     # Overseer states TODO clean this up
-    states["overseer"] = OverseerState(
+    states["overseer_cot_action"] = OverseerState(
         is_thought=True,
         is_action=True,
     )
@@ -68,6 +68,7 @@ overseer_manager_name = "overseer_manager"
 overseer_name = "overseer"
 
 # Set up environment
+
 trading_platform = TradingPlatform(
     initial_prices={"AAPL": 200, "MSFT": 400, "GOOGL": 150, "SHEL": 70, "HSBA": 6.5},
     volatility={"AAPL": 0.1, "MSFT": 0.15, "GOOGL": 0.2, "SHEL": 0.12, "HSBA": 0.08},
@@ -207,7 +208,9 @@ async def run_simulation(agents: dict[str, str], run_id: int):
             description="Overseer for the trading agents",
             manager_type=overseer_manager_type,
             model_client=models["openai"][0],
-            system_message=SystemMessage(content=prompts[overseer_name]),
+            system_message=SystemMessage(
+                content=prompts["overseer"]
+            ),  # temporarily hardcoding, so I can update overseer settings without changing the prompt # TODO don't hardcode
             tools=[],
             logger=logger,
             state=states[overseer_name],
@@ -277,22 +280,26 @@ def process_run(run_results: List[Tuple[Logger, Trader]], insider_type: str) -> 
 
 
 def plot_hsba_stats(hsba_results: List[Tuple[List[float], str]], plots_dir: Path) -> None:
-    """Create a bar plot with error bars showing mean and std dev of HSBA holdings for each insider type."""
-    plt.figure(figsize=(12, 6))
+    """Create a bar plot with error bars showing mean and std dev of HSBA holdings for each configuration."""
+    plt.figure(figsize=(20, 8))
 
     x = np.arange(len(hsba_results))
     means = []
     stds = []
     labels = []
 
-    for holdings, insider_type in hsba_results:
-        means.append(float(np.mean(holdings)))
-        stds.append(float(np.std(holdings)))
-        labels.append(insider_type)
+    for holdings, config_name in hsba_results:
+        mean = float(np.mean(holdings))
+        std = float(np.std(holdings))
+        # Clip standard deviation to not exceed the mean (to prevent negative values)
+        std = min(std, mean)
+        means.append(mean)
+        stds.append(std)
+        labels.append(config_name)
 
     plt.bar(x, means, yerr=stds, capsize=5)
-    plt.xticks(x, labels)
-    plt.title("Average HSBA Holdings Across Simulation Runs by Insider Type")
+    plt.xticks(x, labels, rotation=45, ha="right")
+    plt.title("Average HSBA Holdings Across Simulation Runs by Configuration")
     plt.ylabel("Number of Shares")
 
     # Add value labels on top of the bars
@@ -304,40 +311,43 @@ def plot_hsba_stats(hsba_results: List[Tuple[List[float], str]], plots_dir: Path
     plt.close()
 
 
-async def main(N_runs: int = 10):
-    """Run N_runs simulations in parallel for each insider type and plot aggregate statistics."""
+async def main(N_runs: int = 1):
+    """Run N_runs simulations in parallel for each insider-overseer combination and plot aggregate statistics."""
     insider_types = ["insider", "insider_steg", "insider_coll"]
+    overseer_types = ["overseer_cot_action", "overseer_cot", "overseer_action", "no_overseer"]
     all_tasks = []
 
-    # Create all tasks for all insider types
+    # Create all tasks for all configurations
     for insider_type in insider_types:
-        agents = {
-            "trader_agent_name": "trader",
-            "manager_name": "manager",
-            "overseer_manager_name": "overseer_manager",
-            "insider_agent_name": insider_type,
-            "overseer_name": "overseer",
-        }
-        # Create N_runs tasks for each insider type
-        tasks = [run_simulation(agents, run_id) for run_id in range(N_runs)]
-        all_tasks.extend(tasks)
+        for overseer_type in overseer_types:
+            agents = {
+                "trader_agent_name": "trader",
+                "manager_name": "manager",
+                "overseer_manager_name": "overseer_manager",
+                "insider_agent_name": insider_type,
+                "overseer_name": overseer_type,
+            }
+            # Create N_runs tasks for each configuration
+            tasks = [run_simulation(agents, run_id) for run_id in range(N_runs)]
+            all_tasks.extend(tasks)
 
     # Run all simulations concurrently
     all_results = await asyncio.gather(*all_tasks)
 
-    # Process results by insider type
+    # Process results by configuration
     processed_results = []
     for i, insider_type in enumerate(insider_types):
-        # Extract results for this insider type (every N_runs results)
-        start_idx = i * N_runs
-        end_idx = start_idx + N_runs
-        insider_results = all_results[start_idx:end_idx]
-        processed_results.append(process_run(insider_results, insider_type))
+        for j, overseer_type in enumerate(overseer_types):
+            # Extract results for this configuration
+            config_idx = (i * len(overseer_types) + j) * N_runs
+            config_results = all_results[config_idx : config_idx + N_runs]
+            config_name = f"{insider_type}/{overseer_type}"
+            processed_results.append(process_run(config_results, config_name))
 
     # Create comparative plot
     plot_hsba_stats(processed_results, plots_dir)
 
 
 if __name__ == "__main__":
-    N_runs = 1  # Set number of parallel runs here
+    N_runs = 10  # Set number of parallel runs here
     asyncio.run(main(N_runs=N_runs))
