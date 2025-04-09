@@ -14,6 +14,7 @@ dependencies = [
     "datasets>=3.3.2",
     "inspect-ai>=0.3.66",
     "langchain>=0.3.20",
+    "langchain-community>=0.3.19",
     "langchain-openai>=0.3.7",
     "openai>=1.64.0",
     "pre-commit>=4.1.0",
