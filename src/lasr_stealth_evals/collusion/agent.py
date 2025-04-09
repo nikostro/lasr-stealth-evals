@@ -1,8 +1,10 @@
 from logging import getLogger
 
+# Note: These private imports are used because there are no public API equivalents
+# for these specific functions in the current version of inspect_ai
 from inspect_ai._util._async import is_callable_coroutine
 from inspect_ai.model._call_tools import execute_tools
-from inspect_ai.model._chat_message import (
+from inspect_ai.model import (
     ChatMessage,
     ChatMessageSystem,
     ChatMessageUser,
@@ -38,6 +40,8 @@ def react_no_submit(
     on_continue: str | AgentContinue | None = None,
 ) -> Agent:
     """Extensible ReAct agent based on the paper [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629).
+
+    NOTE our version of this doesn't hardcode in the submit tool, since we want a different submit tool for the overseer.
 
     Provide a `name` and `description` for the agent if you plan on using it
     in a multi-agent system (this is so other agents can clearly identify
