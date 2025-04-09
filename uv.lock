@@ -1046,6 +1046,7 @@ dependencies = [
     { name = "langchain-openai" },
     { name = "openai" },
     { name = "pre-commit" },
+    { name = "tqdm" },
 ]
 
 [package.dev-dependencies]
@@ -1073,6 +1074,7 @@ requires-dist = [
     { name = "langchain-openai", specifier = ">=0.3.7" },
     { name = "openai", specifier = ">=1.64.0" },
     { name = "pre-commit", specifier = ">=4.1.0" },
+    { name = "tqdm", specifier = ">=4.67.1" },
 ]
 
 [package.metadata.requires-dev]
