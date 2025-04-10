@@ -3,32 +3,37 @@ from logging import getLogger
 # Note: These private imports are used because there are no public API equivalents
 # for these specific functions in the current version of inspect_ai
 from inspect_ai._util._async import is_callable_coroutine
-from inspect_ai.model._call_tools import execute_tools
+from inspect_ai.agent import (
+    Agent,
+    AgentAttempts,
+    AgentContinue,
+    AgentPrompt,
+    AgentState,
+    AgentSubmit,
+    agent,
+    agent_with,
+)
+from inspect_ai.agent._handoff import has_handoff
 from inspect_ai.model import (
     ChatMessage,
     ChatMessageSystem,
     ChatMessageUser,
+    Model,
+    get_model,
 )
-from inspect_ai.model import Model, get_model
+from inspect_ai.model._call_tools import execute_tools
 from inspect_ai.scorer import score
-from inspect_ai.tool import Tool, ToolResult, tool
-from inspect_ai.tool import ToolCall
+from inspect_ai.tool import Tool, ToolCall, ToolResult, tool
 from inspect_ai.tool._tool_info import parse_tool_info
-
-from inspect_ai.agent import Agent, AgentState, agent, agent_with
-from inspect_ai.agent._handoff import has_handoff
-from inspect_ai.agent import (
-    AgentAttempts,
-    AgentContinue,
-    AgentPrompt,
-    AgentSubmit,
-)
+from inspect_ai.tool._tool_with import tool_with
+from inspect_ai.util import store
+from lasr_stealth_evals.collusion.util import update_system_message
 
 logger = getLogger(__name__)
 
 
 @agent
-def react_no_submit(
+def react(
     *,
     name: str | None = None,
     description: str | None = None,
@@ -40,8 +45,6 @@ def react_no_submit(
     on_continue: str | AgentContinue | None = None,
 ) -> Agent:
     """Extensible ReAct agent based on the paper [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629).
-
-    NOTE our version of this doesn't hardcode in the submit tool, since we want a different submit tool for the overseer.
 
     Provide a `name` and `description` for the agent if you plan on using it
     in a multi-agent system (this is so other agents can clearly identify
@@ -114,20 +117,39 @@ def react_no_submit(
     # resolve attempts
     attempts = AgentAttempts(attempts) if isinstance(attempts, int) else attempts
 
+    # submission tool
+    @tool
+    def submit_tool() -> Tool:
+        async def execute(answer: str) -> ToolResult:
+            """Submit an answer for evaluation.
+
+            Args:
+              answer (str): Submitted answer
+            """
+            return answer
+
+        return execute
+
     # helper to see if there is a submit tool call
-    def submitted_answer(tool_calls: list[ToolCall] | None) -> bool | None:
+    def submitted_answer(tool_calls: list[ToolCall] | None) -> str | None:
         for tool_call in tool_calls or []:
             if tool_call.function == submit.name and tool_call.parse_error is None:
-                return tool_call.arguments["answer"]
+                return str(tool_call.arguments["answer"])
         return None
 
     # resolve tools
     tools = tools or []
+    tools.append(tool_with(submit_tool(), submit.name, submit.description))
 
     async def execute(state: AgentState) -> AgentState:
+        """
+        agent_name (str): Name of the agent to retrieve its system message.
+        """
         # prepend system message if we have one
+        sample_metadata = store().get("metadata")
         if system_message:
-            state.messages.insert(0, system_message)
+            new_system_message = update_system_message(sample_metadata, system_message)
+            state.messages.insert(0, new_system_message)
 
         # track attempts
         attempt_count = 0
