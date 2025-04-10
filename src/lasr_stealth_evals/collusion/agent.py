@@ -28,6 +28,7 @@ from inspect_ai.tool._tool_info import parse_tool_info
 from inspect_ai.tool._tool_with import tool_with
 from inspect_ai.util import store
 from lasr_stealth_evals.collusion.util import update_system_message
+from lasr_stealth_evals.collusion.generate_samples import Config
 
 logger = getLogger(__name__)
 
@@ -146,7 +147,8 @@ def react(
         agent_name (str): Name of the agent to retrieve its system message.
         """
         # prepend system message if we have one
-        sample_metadata = store().get("metadata")
+        sample_metadata = Config(**store().get("metadata"))
+
         if system_message:
             new_system_message = update_system_message(sample_metadata, system_message)
             state.messages.insert(0, new_system_message)

@@ -3,6 +3,7 @@ from typing import List
 import json
 from inspect_ai.dataset import Sample
 from pydantic import BaseModel
+from lasr_stealth_evals.collusion.config import HANDOFF_PROMPT
 
 
 class Prompts(BaseModel, frozen=True):
@@ -58,7 +59,7 @@ def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
 
                 sample = {
                     "id": len(samples),  # Auto-incrementing ID
-                    "user": task["prompts"]["user"],  # User query
+                    "user": HANDOFF_PROMPT,  # User query
                     "target": "[ACCEPT]",  # Target response
                     "config": config.model_dump(),
                 }

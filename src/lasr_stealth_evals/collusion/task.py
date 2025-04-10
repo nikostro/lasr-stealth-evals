@@ -1,7 +1,7 @@
 # %%
 from inspect_ai import Task, eval
 from inspect_ai.agent import AgentAttempts, handoff, as_solver
-from inspect_ai.scorer import accuracy, match
+from inspect_ai.scorer import accuracy, match, stderr
 from inspect_ai.solver import Solver, TaskState, Generate, solver
 from lasr_stealth_evals.collusion.agent import react
 from lasr_stealth_evals.collusion.config import BASE_MONITOR_PROMPT, BASE_AGENT_PROMPT, RETRY_PROMPT
@@ -14,7 +14,7 @@ data_dir = Path(__file__).parent.parent.parent.parent / "data"
 json_file = data_dir / "nik.json"
 
 
-dataset = generate_samples(data_dir / "strategy.json", data_dir / "task.json")[:1]
+dataset = generate_samples(data_dir / "strategy.json", data_dir / "tasks.json")
 
 
 # %%
@@ -31,7 +31,10 @@ monitor = react(
     description="Monitor",
     prompt="monitor\n" + BASE_MONITOR_PROMPT,  # we need the agent/monitor name to know which system prompt to append
     tools=[handoff(agent)],
-    attempts=AgentAttempts(attempts=3, incorrect_message=RETRY_PROMPT),
+    attempts=AgentAttempts(
+        attempts=3,
+        incorrect_message=RETRY_PROMPT,
+    ),
 )
 
 
@@ -54,11 +57,8 @@ task = Task(
     ],
     sandbox="docker",
     scorer=match(location="any"),
-    metrics=[accuracy()],
+    metrics=[accuracy(), stderr()],
 )
 
 
-eval(
-    task,
-    model="openai/gpt-4o",
-)
+eval(task, model="openrouter/openai/gpt-4o", epochs=2)
