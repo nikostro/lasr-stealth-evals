@@ -1,4 +1,6 @@
+import json
 import logging
+from datetime import datetime
 
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOpenAI
@@ -53,9 +55,14 @@ class Config(BaseModel):
 
 
 class ExperimentResult(BaseModel):
+    system_prompt: tuple[str, str]
+    strategy: Strategy
+    hint_idx: int
     success: bool
     num_iters: int
     history: list[BaseMessage]
+
+
 class Experiment:
     def __init__(
         self,
@@ -84,22 +91,76 @@ class Experiment:
             monitor_response = self.monitor.respond(history, self.strategy, self.hint_idx)
             history.append(monitor_response)
             if self.is_successful(monitor_response):
-                self._log_history(history)
-                return ExperimentResult(success=True, num_iters=i + 1, history=history)
-        self._log_history(history)
-        return ExperimentResult(success=False, num_iters=self.num_iters, history=history)
+                return ExperimentResult(
+                    system_prompt=(
+                        str(self.agent.format_system_message(self.strategy.description).content),
+                        str(self.monitor.format_system_message(self.strategy.hints[self.hint_idx]).content),
+                    ),
+                    success=True,
+                    num_iters=i + 1,
+                    history=history,
+                    strategy=self.strategy,
+                    hint_idx=self.hint_idx,
+                )
+        return ExperimentResult(
+            system_prompt=(
+                str(self.agent.format_system_message(self.strategy.description).content),
+                str(self.monitor.format_system_message(self.strategy.hints[self.hint_idx]).content),
+            ),
+            success=False,
+            num_iters=self.num_iters,
+            history=history,
+            strategy=self.strategy,
+            hint_idx=self.hint_idx,
+        )
 
-    def _log_history(self, history: list[BaseMessage]): # TODO: make better
-        for message in history:
-            logger.info(f"{message.name}: {message.content}")
-
-    def run(self) -> list[ExperimentResult]:
+    def run(self) -> dict[int, ExperimentResult]:
         logger.info(f"Running experiment {self}...")
-        results = []
-        for _ in tqdm(range(self.trials), desc="Running experiments..."):
+        results = {}
+        for trial in tqdm(range(self.trials), desc="Running experiments..."):
+            if trial not in results:
+                results[trial] = []
             result = self.simulate()
-            results.append(result)
+            results[trial].append(result)
+        self._log_history(results)
         return results
+
+    def _log_history(self, results: dict[int, list[ExperimentResult]]):
+        experiment = {}
+        for i in range(max(results.keys()) + 1):
+            if i not in experiment:
+                experiment[i] = []
+            if i not in results:
+                experiment[i].append(
+                    {
+                        "system_prompt": {
+                            "agent": None,
+                            "monitor": None,
+                        },
+                        "strategy": None,
+                        "hint": None,
+                        "success": False,
+                        "num_iters": 0,
+                        "history": [],
+                    }
+                )
+                continue
+            for result in results[i]:
+                experiment[i].append(
+                    {
+                        "system_prompt": {
+                            "agent": result.system_prompt[0],
+                            "monitor": result.system_prompt[1],
+                        },
+                        "strategy": result.strategy.name,
+                        "hint": result.strategy.hints[result.hint_idx],
+                        "success": result.success,
+                        "num_iters": result.num_iters,
+                        "history": [{"role": message.name, "content": message.content} for message in result.history],
+                    }
+                )
+        with open(f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.json", "w") as f:
+            json.dump(experiment, f, indent=4)
 
     def __str__(self):
         return self.__repr__()
@@ -126,8 +187,7 @@ class Agent:
     def respond(self, history: list[BaseMessage], strategy: Strategy) -> AIMessage:
         system_message = self.format_system_message(strategy.description)
         response = self.model.invoke([system_message] + history)
-        if not isinstance(response, AIMessage):
-            response = AIMessage(content=str(response), name="agent")
+        response = AIMessage(content=response.content, name="agent")
         return response
 
 
@@ -148,8 +208,7 @@ class Monitor:
     def respond(self, history: list[BaseMessage], strategy: Strategy, hint_idx: int) -> AIMessage:
         system_message = self.format_system_message(strategy.hints[hint_idx])
         response = self.model.invoke([system_message] + history)
-        if not isinstance(response, AIMessage):
-            response = AIMessage(content=str(response), name="monitor")
+        response = AIMessage(content=response.content, name="monitor")
         return response
 
 
@@ -171,8 +230,6 @@ def main():
         for hint_idx in range(len(strategy.hints)):
             experiment = Experiment(agent, monitor, strategy, hint_idx, num_iters=10, trials=1)
             results = experiment.run()
-            success_rate = average_results(results)
-            logger.info(f"Strategy: {strategy.name}, Hint: {strategy.hints[hint_idx]}, Success Rate: {success_rate}")
 
 
 if __name__ == "__main__":
