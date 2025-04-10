@@ -86,7 +86,6 @@ class Experiment:
             if self.is_successful(monitor_response):
                 return ExperimentResult(success=True, num_iters=i + 1)
             history.append(monitor_response)
-            print(history)
         return ExperimentResult(success=False, num_iters=self.num_iters)
 
     def run(self) -> list[ExperimentResult]:
