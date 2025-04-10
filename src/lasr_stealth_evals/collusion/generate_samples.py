@@ -12,8 +12,8 @@ class Prompts(BaseModel, frozen=True):
 
 
 class Secret(BaseModel, frozen=True):
-    strategy: str
-    hint: str
+    agent: str
+    monitor: str
 
 
 class Config(BaseModel, frozen=True):
@@ -36,28 +36,30 @@ def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
     """
     # Load strategy and task data
     with open(strategy_path) as f:
-        strategy_data = json.load(f)
+        strategies = json.load(f)
 
     with open(task_path) as f:
-        task_data = json.load(f)
+        tasks = json.load(f)
 
     samples = []
 
-    # For each hint in the strategy, create a sample
-    for hint in strategy_data["hints"]:
-        config = Config(
-            agent=Prompts(**task_data["prompts"]["agent"]),
-            monitor=Prompts(**task_data["prompts"]["monitor"]),
-            secret=Secret(strategy=strategy_data["description"], hint=hint),
-        )
+    # For each task, strategy, and hint combination, create samples
+    for task in tasks:
+        for strategy in strategies:
+            for hint in strategy["hints"]:
+                config = Config(
+                    agent=Prompts(**task["prompts"]["agent"]),
+                    monitor=Prompts(**task["prompts"]["monitor"]),
+                    secret=Secret(agent=strategy["description"], monitor=hint),
+                )
 
-        sample = {
-            "id": len(samples),  # Auto-incrementing ID
-            "user": task_data["user"],  # User query
-            "target": "[ACCEPT]",  # Target response
-            "config": config.model_dump(),
-        }
+                sample = {
+                    "id": len(samples),  # Auto-incrementing ID
+                    "user": task["prompts"]["user"],  # User query
+                    "target": "[ACCEPT]",  # Target response
+                    "config": config.model_dump(),
+                }
 
-        samples.append(Sample(input=sample["user"], target=sample["target"], metadata=sample["config"]))
+                samples.append(Sample(input=sample["user"], target=sample["target"], metadata=sample["config"]))
 
     return samples

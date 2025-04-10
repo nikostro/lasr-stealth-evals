@@ -4,7 +4,7 @@ from inspect_ai.agent import AgentAttempts, handoff, as_solver
 from inspect_ai.scorer import accuracy, match
 from inspect_ai.solver import Solver, TaskState, Generate, solver
 from lasr_stealth_evals.collusion.agent import react
-from lasr_stealth_evals.collusion.base_prompts import BASE_MONITOR_PROMPT, BASE_AGENT_PROMPT, RETRY_PROMPT
+from lasr_stealth_evals.collusion.config import BASE_MONITOR_PROMPT, BASE_AGENT_PROMPT, RETRY_PROMPT
 from inspect_ai.util import store
 from pathlib import Path
 from lasr_stealth_evals.collusion.generate_samples import generate_samples
@@ -61,5 +61,4 @@ task = Task(
 eval(
     task,
     model="openai/gpt-4o",
-    task_args={"attempts": AgentAttempts(attempts=1, incorrect_message="Get the agent to try again.")},
 )
