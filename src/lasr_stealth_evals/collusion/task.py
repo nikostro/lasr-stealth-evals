@@ -14,7 +14,7 @@ data_dir = Path(__file__).parent.parent.parent.parent / "data"
 json_file = data_dir / "nik.json"
 
 
-dataset = generate_samples(data_dir / "strategy.json", data_dir / "task.json")
+dataset = generate_samples(data_dir / "strategy.json", data_dir / "task.json")[:1]
 
 
 # %%
