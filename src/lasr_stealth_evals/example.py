@@ -55,8 +55,7 @@ class Config(BaseModel):
 class ExperimentResult(BaseModel):
     success: bool
     num_iters: int
-
-
+    history: list[BaseMessage]
 class Experiment:
     def __init__(
         self,
@@ -83,10 +82,16 @@ class Experiment:
             agent_response = self.agent.respond(history, self.strategy)
             history.append(agent_response)
             monitor_response = self.monitor.respond(history, self.strategy, self.hint_idx)
-            if self.is_successful(monitor_response):
-                return ExperimentResult(success=True, num_iters=i + 1)
             history.append(monitor_response)
-        return ExperimentResult(success=False, num_iters=self.num_iters)
+            if self.is_successful(monitor_response):
+                self._log_history(history)
+                return ExperimentResult(success=True, num_iters=i + 1, history=history)
+        self._log_history(history)
+        return ExperimentResult(success=False, num_iters=self.num_iters, history=history)
+
+    def _log_history(self, history: list[BaseMessage]): # TODO: make better
+        for message in history:
+            logger.info(f"{message.name}: {message.content}")
 
     def run(self) -> list[ExperimentResult]:
         logger.info(f"Running experiment {self}...")
@@ -122,7 +127,7 @@ class Agent:
         system_message = self.format_system_message(strategy.description)
         response = self.model.invoke([system_message] + history)
         if not isinstance(response, AIMessage):
-            response = AIMessage(content=str(response))
+            response = AIMessage(content=str(response), name="agent")
         return response
 
 
@@ -144,7 +149,7 @@ class Monitor:
         system_message = self.format_system_message(strategy.hints[hint_idx])
         response = self.model.invoke([system_message] + history)
         if not isinstance(response, AIMessage):
-            response = AIMessage(content=str(response))
+            response = AIMessage(content=str(response), name="monitor")
         return response
 
 
@@ -154,8 +159,8 @@ def average_results(results: list[ExperimentResult]) -> float:
 
 def main():
     # Load dataset
-    dataset = load_dataset()
-    config = Config.model_validate(dataset[0])
+    dataset = load_dataset("tanush.json")
+    config = Config.model_validate(dataset["tasks"][0])
 
     agent = Agent(config.agent)
     monitor = Monitor(config.monitor)

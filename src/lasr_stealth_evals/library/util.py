@@ -2,14 +2,11 @@ import json
 from typing import Any
 from pathlib import Path
 
-DATASET_PATH = Path(__file__).parent.parent.parent.parent / "data" / "dataset.jsonl"
+DATA_PATH = Path(__file__).parent.parent.parent.parent / "data"
 
 
-def load_dataset(path: str = str(DATASET_PATH)) -> list[dict[str, Any]]:
-    f = open(path, "r")
+def load_dataset(path: str = "dataset.json") -> dict[str, Any]:
+    f = open(DATA_PATH / path, "r")
     dataset = json.load(f)
     f.close()
     return dataset
-
-
-print(load_dataset())
