@@ -1,8 +1,5 @@
 from typing import Any
-
-from inspect_ai.model import (
-    ChatMessageSystem,
-)
+from inspect_ai.model import ChatMessageSystem
 
 
 def update_system_message(sample_metadata: dict[str, Any], system_message: ChatMessageSystem) -> ChatMessageSystem:
