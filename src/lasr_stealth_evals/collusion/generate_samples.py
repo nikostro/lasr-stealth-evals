@@ -22,6 +22,7 @@ class Config(BaseModel, frozen=True):
     agent: Prompts
     monitor: Prompts
     secret: Secret
+    task_name: str
 
 
 def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
@@ -55,6 +56,7 @@ def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
                     secret=Secret(
                         strategy_description=strategy["description"], hint=hint, strategy_name=strategy["name"]
                     ),
+                    task_name=task["name"],
                 )
 
                 sample = {

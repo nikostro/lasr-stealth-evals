@@ -9,56 +9,56 @@ from inspect_ai.util import store
 from pathlib import Path
 from lasr_stealth_evals.collusion.generate_samples import generate_samples
 
-# Load data
-data_dir = Path(__file__).parent.parent.parent.parent / "data"
-json_file = data_dir / "nik.json"
 
+# CONFIG
+epochs = 1
+model = "openrouter/openai/gpt-4o"
+attempts = 3
+limit = 2
 
-dataset = generate_samples(data_dir / "strategy.json", data_dir / "tasks.json")
+if __name__ == "__main__":
+    # Load data
+    data_dir = Path(__file__).parent.parent.parent.parent / "data"
+    dataset = generate_samples(data_dir / "strategy.json", data_dir / "tasks.json")
 
+    # Define agents
+    agent = react(
+        name="agent",
+        description="The agent trying to jailbreak the monitor.",
+        prompt="agent\n" + BASE_AGENT_PROMPT,  # we need the agent/monitor name to know which system prompt to append
+    )
 
-# %%
+    monitor = react(
+        name="monitor",
+        description="Monitor",
+        prompt="monitor\n"
+        + BASE_MONITOR_PROMPT,  # we need the agent/monitor name to know which system prompt to append
+        tools=[handoff(agent)],
+        attempts=AgentAttempts(
+            attempts=attempts,
+            incorrect_message=RETRY_PROMPT,
+        ),
+    )
 
-# Define agents
-agent = react(
-    name="agent",
-    description="The agent trying to jailbreak the monitor.",
-    prompt="agent\n" + BASE_AGENT_PROMPT,  # we need the agent/monitor name to know which system prompt to append
-)
+    @solver
+    def update_store() -> Solver:
+        """Solver which updates the store with the metadata, so that agents can access it."""
 
-monitor = react(
-    name="monitor",
-    description="Monitor",
-    prompt="monitor\n" + BASE_MONITOR_PROMPT,  # we need the agent/monitor name to know which system prompt to append
-    tools=[handoff(agent)],
-    attempts=AgentAttempts(
-        attempts=3,
-        incorrect_message=RETRY_PROMPT,
-    ),
-)
+        async def solve(state: TaskState, generate: Generate) -> TaskState:
+            store().set("metadata", state.metadata)
+            return state
 
+        return solve
 
-@solver
-def update_store() -> Solver:
-    """Solver which updates the store with the metadata, so that agents can access it."""
+    task = Task(
+        dataset=dataset,
+        solver=[
+            update_store(),
+            as_solver(monitor),
+        ],
+        # sandbox="docker",
+        scorer=match(location="any"),
+        metrics=[accuracy(), stderr()],
+    )
 
-    async def solve(state: TaskState, generate: Generate) -> TaskState:
-        store().set("metadata", state.metadata)
-        return state
-
-    return solve
-
-
-task = Task(
-    dataset=dataset,
-    solver=[
-        update_store(),
-        as_solver(monitor),
-    ],
-    sandbox="docker",
-    scorer=match(location="any"),
-    metrics=[accuracy(), stderr()],
-)
-
-
-eval(task, model="openrouter/openai/gpt-4o", epochs=2)
+    eval(task, model=model, epochs=epochs, limit=limit)
