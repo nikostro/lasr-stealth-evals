@@ -88,3 +88,4 @@ local_settings.py
 notebooks/data
 plots
 logger.json
+.compose.yaml

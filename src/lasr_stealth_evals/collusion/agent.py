@@ -125,8 +125,20 @@ def react_no_submit(
     tools = tools or []
 
     async def execute(state: AgentState) -> AgentState:
-        # prepend system message if we have one
+        # Get agent persona from metadata if available
+        agent_persona = ""
+        if hasattr(state, "metadata") and state.metadata is not None:  # type: ignore
+            metadata = state.metadata  # type: ignore
+            if isinstance(metadata, dict) and "agent" in metadata:
+                agent_data = metadata["agent"]
+                if isinstance(agent_data, dict) and "persona" in agent_data:
+                    agent_persona = str(agent_data["persona"])
+
+        # Create system message with persona
         if system_message:
+            # If we have a persona, prepend it to the system message
+            if agent_persona:
+                system_message.content = f"{agent_persona}\n\n{system_message.content}"
             state.messages.insert(0, system_message)
 
         # track attempts
