@@ -1,20 +1,21 @@
 # %%
 from inspect_ai import Task, eval
 from inspect_ai.agent import AgentAttempts, handoff, as_solver
-from inspect_ai.scorer import accuracy, match, stderr
+from inspect_ai.scorer import accuracy, stderr
 from inspect_ai.solver import Solver, TaskState, Generate, solver
 from lasr_stealth_evals.collusion.agent import react
 from lasr_stealth_evals.collusion.config import BASE_MONITOR_PROMPT, BASE_AGENT_PROMPT, RETRY_PROMPT
 from inspect_ai.util import store
 from pathlib import Path
 from lasr_stealth_evals.collusion.generate_samples import generate_samples
+from lasr_stealth_evals.collusion.scorer import match
 
 
 # CONFIG
-epochs = 1
+epochs = 5  # runs of the full dataset
 model = "openrouter/openai/gpt-4o"
-attempts = 3
-limit = 2
+turns = 3  # exchanges between agents
+limit = 6
 
 if __name__ == "__main__":
     # Load data
@@ -35,7 +36,7 @@ if __name__ == "__main__":
         + BASE_MONITOR_PROMPT,  # we need the agent/monitor name to know which system prompt to append
         tools=[handoff(agent)],
         attempts=AgentAttempts(
-            attempts=attempts,
+            attempts=turns,
             incorrect_message=RETRY_PROMPT,
         ),
     )
