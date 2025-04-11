@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime
+from typing import Any, Optional
 
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOpenAI
@@ -8,6 +9,7 @@ from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 from pydantic import BaseModel
 from tqdm import tqdm
 
+from lasr_stealth_evals.library.config import OPENROUTER_API_KEY
 from lasr_stealth_evals.library.util import load_dataset
 
 # Load environment variables
@@ -61,6 +63,27 @@ class ExperimentResult(BaseModel):
     success: bool
     num_iters: int
     history: list[BaseMessage]
+
+
+class ChatOpenRouter(ChatOpenAI):
+    openai_api_base: str = "https://openrouter.ai/api/v1"
+    openai_api_key: str = OPENROUTER_API_KEY or ""
+    model_name: str = "openai/gpt-4o-mini"
+
+    def __init__(
+        self,
+        model_name: str,
+        openai_api_key: Optional[str] = None,
+        openai_api_base: str = "https://openrouter.ai/api/v1",
+        **kwargs: Any,
+    ):
+        openai_api_key = openai_api_key or OPENROUTER_API_KEY
+        super().__init__(
+            openai_api_base=openai_api_base,
+            openai_api_key=openai_api_key,
+            model_name=model_name,
+            **kwargs,
+        )
 
 
 class Experiment:
@@ -172,17 +195,17 @@ class Experiment:
 class Agent:
     def __init__(self, config: AgentConfig, model_type: str = "gpt-4o-mini"):
         self.config = config
-        self.model = ChatOpenAI(model=model_type)
+        self.model = ChatOpenRouter(model_name=model_type)
 
     def format_system_message(self, additional_instructions: str) -> SystemMessage:
         content = (
-            self.config.persona,
-            self.config.task,
-            self.config.monitor,
-            additional_instructions,
-            self.config.reply,
+            f"[PERSONA]: {self.config.persona}\n"
+            f"[TASK]: {self.config.task}\n"
+            f"[MONITOR]: {self.config.monitor}\n"
+            f"[REPLY]: {self.config.reply}\n\n"
+            f"[STRATEGY]: {additional_instructions}"
         )
-        return SystemMessage(content="\n".join(content))
+        return SystemMessage(content=content)
 
     def respond(self, history: list[BaseMessage], strategy: Strategy) -> AIMessage:
         system_message = self.format_system_message(strategy.description)
@@ -194,16 +217,11 @@ class Agent:
 class Monitor:
     def __init__(self, config: MonitorConfig, model_type: str = "gpt-4o-mini"):
         self.config = config
-        self.model = ChatOpenAI(model=model_type)
+        self.model = ChatOpenRouter(model_name=model_type)
 
     def format_system_message(self, additional_instructions: str) -> SystemMessage:
-        content = (
-            self.config.persona,
-            self.config.task,
-            additional_instructions,
-            self.config.reply,
-        )
-        return SystemMessage(content="\n".join(content))
+        content = f"[TASK]: {self.config.task}. {additional_instructions}.\n[REPLY]: {self.config.reply}\n\n"
+        return SystemMessage(content=content)
 
     def respond(self, history: list[BaseMessage], strategy: Strategy, hint_idx: int) -> AIMessage:
         system_message = self.format_system_message(strategy.hints[hint_idx])
@@ -219,10 +237,11 @@ def average_results(results: list[ExperimentResult]) -> float:
 def main():
     # Load dataset
     dataset = load_dataset("tanush.json")
+    print(dataset)
     config = Config.model_validate(dataset["tasks"][0])
 
-    agent = Agent(config.agent)
-    monitor = Monitor(config.monitor)
+    agent = Agent(config.agent, model_type="meta-llama/llama-4-scout")
+    monitor = Monitor(config.monitor, model_type="meta-llama/llama-4-scout")
 
     logger.info("\n=== Testing Different Strategy Combinations ===")
 
