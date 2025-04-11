@@ -89,3 +89,6 @@ notebooks/data
 plots
 logger.json
 .compose.yaml
+
+# nik's testing file
+nik.ipynb

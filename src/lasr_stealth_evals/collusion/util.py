@@ -1,5 +1,7 @@
-from inspect_ai.model import ChatMessageSystem
+from inspect_ai.model import ChatMessageSystem, ChatMessage, ChatMessageUser
+from typing import List
 from lasr_stealth_evals.collusion.generate_samples import Config, Prompts
+from lasr_stealth_evals.collusion.config import METADATA_TAG
 
 
 def update_system_message(sample_metadata: Config, system_message: ChatMessageSystem) -> ChatMessageSystem:
@@ -27,3 +29,20 @@ def update_system_message(sample_metadata: Config, system_message: ChatMessageSy
 
     content = "\n".join([instructions] + content_list[1:])
     return system_message.model_copy(update={"content": content})
+
+
+def filter_first_user_message(messages: List[ChatMessage], metadata_tag: str = METADATA_TAG) -> List[ChatMessage]:
+    """Remove user messages that contain the metadata tag from the chat history.
+
+    Args:
+       messages: Messages to filter.
+       metadata_tag: Tag to identify metadata messages.
+
+    Returns:
+       Messages without metadata-tagged user messages.
+    """
+    return [
+        message
+        for message in messages
+        if not (isinstance(message, ChatMessageUser) and metadata_tag in message.content)
+    ]

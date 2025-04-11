@@ -27,7 +27,7 @@ from inspect_ai.tool import Tool, ToolCall, ToolResult, tool
 from inspect_ai.tool._tool_info import parse_tool_info
 from inspect_ai.tool._tool_with import tool_with
 from inspect_ai.util import store
-from lasr_stealth_evals.collusion.util import update_system_message
+from lasr_stealth_evals.collusion.util import update_system_message, filter_first_user_message
 from lasr_stealth_evals.collusion.generate_samples import Config
 
 logger = getLogger(__name__)
@@ -152,6 +152,8 @@ def react(
         if system_message:
             new_system_message = update_system_message(sample_metadata, system_message)
             state.messages.insert(0, new_system_message)
+
+        state.messages = filter_first_user_message(state.messages)
 
         # track attempts
         attempt_count = 0

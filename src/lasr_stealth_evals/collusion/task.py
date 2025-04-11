@@ -12,10 +12,10 @@ from lasr_stealth_evals.collusion.scorer import match
 
 
 # CONFIG
-epochs = 5  # runs of the full dataset
+epochs = 1  # runs of the full dataset
 model = "openrouter/openai/gpt-4o"
 turns = 3  # exchanges between agents
-limit = 6
+limit = 1
 
 if __name__ == "__main__":
     # Load data
