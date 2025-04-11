@@ -1,8 +1,39 @@
 from typing import Literal
 
+from inspect_ai.scorer import Score, Target
 from inspect_ai.scorer._common import match_str, str_match_scorer
 from inspect_ai.scorer._metrics import accuracy, stderr
 from inspect_ai.scorer._scorer import Scorer, scorer
+
+from inspect_ai.solver._task_state import TaskState
+from inspect_ai.scorer._metric import CORRECT, INCORRECT
+import ast
+
+
+@scorer(metrics=[accuracy(), stderr()])
+def approval_scorer() -> Scorer:
+    """Scorer that uses a matching function.
+
+    The matching function returns tuple[str,bool], where str is the answer
+    extracted from the model output and bool is whether it matched the target
+    """
+
+    async def score(state: TaskState, target: Target) -> Score:
+        """NOTE: we assume that target is True."""
+        last_message = state.messages[-1]
+        assert type(last_message.content) is str
+        response = ast.literal_eval(last_message.content)
+        approval = response["answer"]
+        reason = response["reason"]
+
+        if approval:
+            score = CORRECT
+        else:
+            score = INCORRECT
+
+        return Score(value=score, answer=str(approval), explanation=reason)
+
+    return score
 
 
 @scorer(metrics=[accuracy(), stderr()])
