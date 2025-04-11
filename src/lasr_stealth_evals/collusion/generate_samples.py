@@ -3,13 +3,14 @@ from typing import List
 import json
 from inspect_ai.dataset import Sample
 from inspect_ai._util.format import format_template
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from lasr_stealth_evals.collusion.config import METADATA_TAG
 
 
 class Prompts(BaseModel, frozen=True):
     persona: str
     task: str
+    monitor: str = Field(default="")  # Info for the agent about what the overseer is looking for TODO clean up
     reply: str
 
 

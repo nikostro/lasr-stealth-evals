@@ -22,6 +22,7 @@ def update_system_message(sample_metadata: Config, system_message: ChatMessageSy
         (
             prompts.persona,
             prompts.task,
+            prompts.monitor,
             secret,  # hint or strategy
             prompts.reply,
         )
