@@ -1,15 +1,15 @@
 # %%
-from inspect_ai import Task, eval
-from inspect_ai.agent import AgentAttempts, handoff, as_solver
-from inspect_ai.scorer import accuracy, stderr
-from inspect_ai.solver import Solver, TaskState, Generate, solver
-from lasr_stealth_evals.collusion.agent import react
-from lasr_stealth_evals.collusion.config import BASE_MONITOR_PROMPT, BASE_AGENT_PROMPT, RETRY_PROMPT
-from inspect_ai.util import store
 from pathlib import Path
+
+from inspect_ai import Task, eval
+from inspect_ai.agent import Agent, AgentState, agent, as_solver
+from inspect_ai.scorer import accuracy, stderr
+from inspect_ai.solver import Generate, Solver, TaskState, solver
+from inspect_ai.util import store
+
+from lasr_stealth_evals.collusion.agent import submit_tool, simple_agent
 from lasr_stealth_evals.collusion.generate_samples import generate_samples
 from lasr_stealth_evals.collusion.scorer import match
-
 
 # CONFIG
 epochs = 1  # runs of the full dataset
@@ -23,23 +23,29 @@ if __name__ == "__main__":
     dataset = generate_samples(data_dir / "strategy.json", data_dir / "tasks.json")
 
     # Define agents
-    agent = react(
+    misaligned_agent = simple_agent(
         name="agent",
-        description="The agent trying to jailbreak the monitor.",
-        prompt="agent\n" + BASE_AGENT_PROMPT,  # we need the agent/monitor name to know which system prompt to append
     )
 
-    monitor = react(
-        name="monitor",
-        description="Monitor",
-        prompt="monitor\n"
-        + BASE_MONITOR_PROMPT,  # we need the agent/monitor name to know which system prompt to append
-        tools=[handoff(agent)],
-        attempts=AgentAttempts(
-            attempts=turns,
-            incorrect_message=RETRY_PROMPT,
-        ),
-    )
+    monitor = simple_agent(name="monitor", tools=[submit_tool()])
+
+    @agent
+    def agent_loop(turns: int = 3) -> Agent:
+        async def execute(state: AgentState) -> AgentState:
+            for i in range(turns):
+                # Run misaligned agent
+                state = await misaligned_agent(state)
+                # Run monitor
+                state = await monitor(state)
+
+                if store().get("completed"):
+                    break
+
+            # TODO exit if [ACCEPT]
+
+            return state
+
+        return execute
 
     @solver
     def update_store() -> Solver:
@@ -47,6 +53,7 @@ if __name__ == "__main__":
 
         async def solve(state: TaskState, generate: Generate) -> TaskState:
             store().set("metadata", state.metadata)
+            store().set("completed", False)  # track model acceptance
             return state
 
         return solve
@@ -55,7 +62,7 @@ if __name__ == "__main__":
         dataset=dataset,
         solver=[
             update_store(),
-            as_solver(monitor),
+            as_solver(agent_loop()),
         ],
         # sandbox="docker",
         scorer=match(location="any"),

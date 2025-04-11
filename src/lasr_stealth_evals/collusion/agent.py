@@ -1,4 +1,5 @@
 from logging import getLogger
+from inspect_ai.log._transcript import transcript
 
 # Note: These private imports are used because there are no public API equivalents
 # for these specific functions in the current version of inspect_ai
@@ -17,6 +18,7 @@ from inspect_ai.agent._handoff import has_handoff
 from inspect_ai.model import (
     ChatMessage,
     ChatMessageSystem,
+    ChatMessageTool,
     ChatMessageUser,
     Model,
     get_model,
@@ -25,7 +27,6 @@ from inspect_ai.model._call_tools import execute_tools
 from inspect_ai.scorer import score
 from inspect_ai.tool import Tool, ToolCall, ToolResult, tool
 from inspect_ai.tool._tool_info import parse_tool_info
-from inspect_ai.tool._tool_with import tool_with
 from inspect_ai.util import store
 from lasr_stealth_evals.collusion.util import update_system_message, filter_first_user_message
 from lasr_stealth_evals.collusion.generate_samples import Config
@@ -83,7 +84,7 @@ def react(
         ReAct agent.
     """
     # resolve prompt / system message
-    prompt = AgentPrompt(prompt) if isinstance(prompt, str) else prompt
+    prompt = AgentPrompt(prompt, handoff_prompt="", assistant_prompt="") if isinstance(prompt, str) else prompt
     if prompt:
         prompt_lines: list[str] = []
         if prompt.instructions:
@@ -118,19 +119,6 @@ def react(
     # resolve attempts
     attempts = AgentAttempts(attempts) if isinstance(attempts, int) else attempts
 
-    # submission tool
-    @tool
-    def submit_tool() -> Tool:
-        async def execute(answer: str) -> ToolResult:
-            """Submit an answer for evaluation.
-
-            Args:
-              answer (str): Submitted answer
-            """
-            return answer
-
-        return execute
-
     # helper to see if there is a submit tool call
     def submitted_answer(tool_calls: list[ToolCall] | None) -> str | None:
         for tool_call in tool_calls or []:
@@ -140,7 +128,6 @@ def react(
 
     # resolve tools
     tools = tools or []
-    tools.append(tool_with(submit_tool(), submit.name, submit.description))
 
     async def execute(state: AgentState) -> AgentState:
         """
@@ -151,7 +138,7 @@ def react(
 
         if system_message:
             new_system_message = update_system_message(sample_metadata, system_message)
-            state.messages.insert(0, new_system_message)
+            state.messages[0] = new_system_message
 
         state.messages = filter_first_user_message(state.messages)
 
@@ -166,8 +153,6 @@ def react(
 
             # check for context window overflow
             if state.output.stop_reason == "model_length":
-                from inspect_ai.log._transcript import transcript
-
                 transcript().info("Agent terminated: model context window exceeded")
                 break
 
@@ -239,7 +224,7 @@ async def _agent_generate(model: str | Model | Agent | None, state: AgentState, 
 
 # submission tool
 @tool
-def approval_tool() -> Tool:
+def submit_tool() -> Tool:
     async def execute(answer: bool, reason: str) -> ToolResult:
         """Submit an answer for evaluation.
 
@@ -259,3 +244,133 @@ def _model_generate(model: str | Model | None) -> Agent:
         return state
 
     return generate
+
+
+@agent
+def simple_agent_1(
+    *,
+    name: str,
+    description: str | None = None,
+    tools: list[Tool] | None = None,
+    model: str | Model | Agent | None = None,
+    attempts: int | AgentAttempts = 1,
+    submit: AgentSubmit = AgentSubmit(),
+    on_continue: str | AgentContinue | None = None,
+) -> Agent:
+    """
+    Simple agent that can use an approval_tool if given.
+    """
+    # cache agent name in system prompt for later use
+    system_message: ChatMessage | None = ChatMessageSystem(content=name)
+
+    # resolve attempts
+    attempts = AgentAttempts(attempts) if isinstance(attempts, int) else attempts
+
+    # helper to see if there is a submit tool call
+    def submitted_answer(tool_calls: list[ToolCall] | None) -> str | None:
+        for tool_call in tool_calls or []:
+            if tool_call.function == submit.name and tool_call.parse_error is None:
+                return str(tool_call.arguments["answer"])
+        return None
+
+    # resolve tools
+    tools = tools or []
+
+    async def execute(state: AgentState) -> AgentState:
+        """
+        agent_name (str): Name of the agent to retrieve its system message.
+        """
+        sample_metadata = Config(**store().get("metadata"))
+
+        transcript().info(name)
+        if system_message:
+            new_system_message = update_system_message(sample_metadata, system_message)
+            state.messages[0] = new_system_message
+
+        # We don't want default user message
+        state.messages = filter_first_user_message(state.messages)
+
+        # generate output and append assistant message
+        state = await _agent_generate(model, state, tools)
+
+        # check for a submission
+        answer = submitted_answer(state.output.message.tool_calls)
+        if answer is not None:
+            # remove the tool call and set the output to the answer for scoring
+            state.output.message.tool_calls = None
+            state.output.completion = f"{state.output.completion}\n\n{answer}".strip()
+
+            # exit if the submission is successful
+            answer_scores = await score(state)
+            if attempts.score_value(answer_scores[0].value) == 1.0:
+                pass
+
+            # otherwise notify the model that it was incorrect and continue
+            else:
+                if callable(attempts.incorrect_message):
+                    if not is_callable_coroutine(attempts.incorrect_message):
+                        raise ValueError("The incorrect_message function must be async.")
+                    response_message: str = await attempts.incorrect_message(state, answer_scores)
+                else:
+                    response_message = attempts.incorrect_message
+
+                state.messages.append(ChatMessageUser(content=response_message))
+
+        # no submitted answer, call tools and evaluate whether we should continue
+        else:
+            if state.output.message.tool_calls:
+                # call tool functions
+                messages, output = await execute_tools(state.messages, tools)
+                state.messages.extend(messages)
+                if output:
+                    state.output = output
+
+        return state
+
+    return agent_with(execute, name=name, description=description)
+
+
+@agent
+def simple_agent(
+    name: str,
+    tools: list[Tool] = [],
+    model: str | Model | Agent | None = None,
+) -> Agent:
+    system_message: ChatMessage | None = ChatMessageSystem(content=name)
+
+    async def execute(state: AgentState) -> AgentState:
+        transcript().info(name.upper())
+
+        sample_metadata = Config(**store().get("metadata"))
+        new_system_message = update_system_message(sample_metadata, system_message)
+        state.messages[0] = new_system_message
+
+        # We don't want default user message
+        state.messages = filter_first_user_message(state.messages)
+
+        # generate output and append assistant message
+        state = await _agent_generate(model, state, tools)
+
+        # Execute any tool calls and handle their results
+        if state.output.message.tool_calls:
+            # call tool functions
+            messages, output = await execute_tools(state.messages, tools)
+            state.messages.extend(messages)
+
+            # handle submit
+            assert len(messages) == 1
+            tool_response = messages[0]
+            assert type(tool_response) is ChatMessageTool
+            assert tool_response.function == "submit_tool"
+            decision = tool_response.content
+
+            # TODO don't hardcode acceptance
+
+            # return if monitor successfully jailbroken
+            if decision == "True":
+                store().set("completed", True)
+                return state
+
+        return state
+
+    return agent_with(execute, name=name)
