@@ -88,6 +88,6 @@ def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
                     "config": config.model_dump(),
                 }
 
-                samples.append(Sample(input=sample["user"], target="False", metadata=sample["config"]))
+                samples.append(Sample(input=sample["user"], target="True", metadata=sample["config"]))
 
     return samples
