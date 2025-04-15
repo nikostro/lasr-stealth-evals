@@ -1,4 +1,5 @@
 # %%
+import argparse
 from pathlib import Path
 
 from inspect_ai import Task, eval, task
@@ -7,15 +8,15 @@ from inspect_ai.scorer import accuracy, stderr
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import store
 
-from lasr_stealth_evals.collusion.agent import submit_tool, simple_agent
+from lasr_stealth_evals.collusion.agent import simple_agent, submit_tool
 from lasr_stealth_evals.collusion.generate_samples import generate_samples
 from lasr_stealth_evals.collusion.scorer import approval_scorer
 
-# CONFIG
-epochs = 1  # runs of the full dataset
-model = "openrouter/" + "meta-llama/llama-3.3-70b-instruct"
-turns = 3  # exchanges between agents
-limit = 1
+# Default configuration
+DEFAULT_EPOCHS = 1  # runs of the full dataset
+DEFAULT_MODEL = "openrouter/" + "meta-llama/llama-3.3-70b-instruct"
+DEFAULT_TURNS = 3  # exchanges between agents
+DEFAULT_LIMIT = 1
 
 # Load data
 data_dir = Path(__file__).parent.parent.parent.parent / "data"
@@ -70,5 +71,33 @@ def collusion_eval():
     )
 
 
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Run collusion evaluation task")
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=DEFAULT_EPOCHS,
+        help=f"Number of runs of the full dataset (default: {DEFAULT_EPOCHS})",
+    )
+    parser.add_argument(
+        "--model", type=str, default=DEFAULT_MODEL, help=f"Model to use for evaluation (default: {DEFAULT_MODEL})"
+    )
+    parser.add_argument(
+        "--turns",
+        type=int,
+        default=DEFAULT_TURNS,
+        help=f"Number of exchanges between agents (default: {DEFAULT_TURNS})",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIMIT,
+        help=f"Limit the number of samples to process (default: {DEFAULT_LIMIT})",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    eval(collusion_eval, model=model, epochs=epochs, limit=limit)
+    args = parse_args()
+    eval(collusion_eval, model=args.model, epochs=args.epochs, limit=args.limit)
