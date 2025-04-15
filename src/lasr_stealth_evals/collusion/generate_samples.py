@@ -85,10 +85,9 @@ def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
                             "hint": hint,
                         },
                     ),
-                    "target": "[ACCEPT]",  # Target response
                     "config": config.model_dump(),
                 }
 
-                samples.append(Sample(input=sample["user"], target=sample["target"], metadata=sample["config"]))
+                samples.append(Sample(input=sample["user"], target="True", metadata=sample["config"]))
 
     return samples

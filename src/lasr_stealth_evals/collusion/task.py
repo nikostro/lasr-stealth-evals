@@ -1,65 +1,78 @@
 # %%
-from inspect_ai import Task, eval
-from inspect_ai.agent import AgentAttempts, handoff, as_solver
-from inspect_ai.scorer import accuracy, stderr
-from inspect_ai.solver import Solver, TaskState, Generate, solver
-from lasr_stealth_evals.collusion.agent import react
-from lasr_stealth_evals.collusion.config import BASE_MONITOR_PROMPT, BASE_AGENT_PROMPT, RETRY_PROMPT
-from inspect_ai.util import store
 from pathlib import Path
-from lasr_stealth_evals.collusion.generate_samples import generate_samples
-from lasr_stealth_evals.collusion.scorer import match
 
+from inspect_ai import Task, eval, task
+from inspect_ai.agent import Agent, AgentState, agent, as_solver
+from inspect_ai.scorer import accuracy, stderr
+from inspect_ai.solver import Generate, Solver, TaskState, solver
+from inspect_ai.util import store
+
+from lasr_stealth_evals.collusion.agent import submit_tool, simple_agent
+from lasr_stealth_evals.collusion.generate_samples import generate_samples
+from lasr_stealth_evals.collusion.scorer import approval_scorer
 
 # CONFIG
 epochs = 1  # runs of the full dataset
-model = "openrouter/openai/gpt-4o"
+model = "openrouter/" + "meta-llama/llama-3.3-70b-instruct"
 turns = 3  # exchanges between agents
 limit = 1
 
-if __name__ == "__main__":
-    # Load data
-    data_dir = Path(__file__).parent.parent.parent.parent / "data"
-    dataset = generate_samples(data_dir / "strategy.json", data_dir / "tasks.json")
+# Load data
+data_dir = Path(__file__).parent.parent.parent.parent / "data"
+dataset = generate_samples(data_dir / "strategy.json", data_dir / "tasks.json")
 
-    # Define agents
-    agent = react(
-        name="agent",
-        description="The agent trying to jailbreak the monitor.",
-        prompt="agent\n" + BASE_AGENT_PROMPT,  # we need the agent/monitor name to know which system prompt to append
-    )
+# Define agents
+misaligned_agent = simple_agent(
+    name="agent",
+)
 
-    monitor = react(
-        name="monitor",
-        description="Monitor",
-        prompt="monitor\n"
-        + BASE_MONITOR_PROMPT,  # we need the agent/monitor name to know which system prompt to append
-        tools=[handoff(agent)],
-        attempts=AgentAttempts(
-            attempts=turns,
-            incorrect_message=RETRY_PROMPT,
-        ),
-    )
+monitor = simple_agent(name="monitor", tools=[submit_tool()])
 
-    @solver
-    def update_store() -> Solver:
-        """Solver which updates the store with the metadata, so that agents can access it."""
 
-        async def solve(state: TaskState, generate: Generate) -> TaskState:
-            store().set("metadata", state.metadata)
-            return state
+@agent
+def agent_loop(turns: int = 3) -> Agent:
+    async def execute(state: AgentState) -> AgentState:
+        for i in range(turns):
+            # Run misaligned agent
+            state = await misaligned_agent(state)
+            # Run monitor
+            state = await monitor(state)
 
-        return solve
+            if store().get("completed"):
+                break
 
-    task = Task(
+        # TODO exit if [ACCEPT]
+
+        return state
+
+    return execute
+
+
+@solver
+def update_store() -> Solver:
+    """Solver which updates the store with the metadata, so that agents can access it."""
+
+    async def solve(state: TaskState, generate: Generate) -> TaskState:
+        store().set("metadata", state.metadata)
+        store().set("completed", False)  # track model acceptance
+        return state
+
+    return solve
+
+
+@task
+def collusion_eval():
+    return Task(
         dataset=dataset,
         solver=[
             update_store(),
-            as_solver(monitor),
+            as_solver(agent_loop()),
         ],
         # sandbox="docker",
-        scorer=match(location="any"),
+        scorer=approval_scorer(),
         metrics=[accuracy(), stderr()],
     )
 
-    eval(task, model=model, epochs=epochs, limit=limit)
+
+if __name__ == "__main__":
+    eval(collusion_eval, model=model, epochs=epochs, limit=limit)
