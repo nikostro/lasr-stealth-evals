@@ -66,8 +66,8 @@ class ExperimentResult(BaseModel):
 
 
 class ChatOpenRouter(ChatOpenAI):
-    openai_api_base: str = "https://openrouter.ai/api/v1"
-    openai_api_key: str = OPENROUTER_API_KEY or ""
+    openai_api_base: Optional[str] = "https://openrouter.ai/api/v1"
+    openai_api_key: Optional[str] = OPENROUTER_API_KEY or ""
     model_name: str = "openai/gpt-4o-mini"
 
     def __init__(
@@ -79,9 +79,9 @@ class ChatOpenRouter(ChatOpenAI):
     ):
         openai_api_key = openai_api_key or OPENROUTER_API_KEY
         super().__init__(
-            openai_api_base=openai_api_base,
-            openai_api_key=openai_api_key,
-            model_name=model_name,
+            base_url=openai_api_base,
+            api_key=openai_api_key,
+            model=model_name,
             **kwargs,
         )
 
@@ -248,7 +248,7 @@ def main():
     for strategy in config.strategy:
         for hint_idx in range(len(strategy.hints)):
             experiment = Experiment(agent, monitor, strategy, hint_idx, num_iters=10, trials=1)
-            results = experiment.run()
+            experiment.run()
 
 
 if __name__ == "__main__":

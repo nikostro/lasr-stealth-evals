@@ -33,15 +33,11 @@ monitor = simple_agent(name="monitor", tools=[submit_tool()])
 def agent_loop(turns: int = 3) -> Agent:
     async def execute(state: AgentState) -> AgentState:
         for i in range(turns):
-            # Run misaligned agent
             state = await misaligned_agent(state)
-            # Run monitor
             state = await monitor(state)
 
             if store().get("completed"):
                 break
-
-        # TODO exit if [ACCEPT]
 
         return state
 
