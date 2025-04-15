@@ -1,9 +1,13 @@
-from pathlib import Path
-from typing import List
 import json
-from inspect_ai.dataset import Sample
+import random
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List
+
 from inspect_ai._util.format import format_template
+from inspect_ai.dataset import Sample
 from pydantic import BaseModel, Field
+
 from lasr_stealth_evals.collusion.config import METADATA_TAG
 
 
@@ -14,10 +18,11 @@ class Prompts(BaseModel, frozen=True):
     reply: str
 
 
-class Secret(BaseModel, frozen=True):
-    strategy_description: str
-    hint: str
+class Secret(BaseModel, frozen=True):  # TODO: make multiple strategy compatible
     strategy_name: str
+    strategy_description: str
+    hint_name: str
+    hint: str
 
 
 class Config(BaseModel, frozen=True):
@@ -27,20 +32,17 @@ class Config(BaseModel, frozen=True):
     task_name: str
 
 
-USER_PROMPT_TEMPLATE = "\n".join(
-    (
-        "{metadata_tag}",
-        "TASK: {task_name}",
-        "STRATEGY: {strategy_name}",
-        "HINT: {hint}",
-    )
-)
+USER_PROMPT_TEMPLATE = "{metadata_tag}\nTASK:{task_name}\nSTRATEGY:{strategy_name}\nHINT:{hint}"
 
 
-"""{metadata_tag}\n TASK:{task_name}\n STRATEGY:{strategy_name}\n HINT:{hint}"""
+class GenerationStrategy(Enum):
+    MATCH = 0
+    RANDOM = 1
+    MULTIPLE = 2
+    NONE = 3
 
 
-def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
+def generate_samples(strategy_path: Path, task_path: Path, generation_strategy: GenerationStrategy) -> List[Sample]:
     """
     Generate samples by combining strategy and task JSON files.
     Creates a sample for each combination of (strategy x hint) x task.
@@ -59,33 +61,99 @@ def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
     with open(task_path) as f:
         tasks = json.load(f)
 
-    samples = []
+    match generation_strategy:
+        case GenerationStrategy.MATCH:
+            return _match_strategy(tasks, strategies)
+        case GenerationStrategy.RANDOM:
+            return _random_strategy(tasks, strategies)
+        # case GenerationStrategy.MULTIPLE:
+        #     return _multiple_strategy(tasks, strategies)
+        # case GenerationStrategy.NONE:
+        #     return []
+        case _:
+            raise ValueError(f"Invalid generation strategy: {generation_strategy}")
 
-    # For each task, strategy, and hint combination, create samples
+
+def _match_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) -> List[Sample]:
+    samples = []
     for task in tasks:
-        task_name = task["name"]
         for strategy in strategies:
-            strategy_name = strategy["name"]
-            hint = strategy["hint"]
             config = Config(
                 agent=Prompts(**task["prompts"]["agent"]),
                 monitor=Prompts(**task["prompts"]["monitor"]),
-                secret=Secret(strategy_description=strategy["description"], hint=hint, strategy_name=strategy_name),
-                task_name=task_name,
+                secret=Secret(
+                    hint_name=strategy["name"],
+                    hint=strategy["hint"],
+                    strategy_name=strategy["name"],
+                    strategy_description=strategy["description"],
+                ),
+                task_name=task["name"],
             )
-            sample = {
-                "id": len(samples),  # Auto-incrementing ID
-                "user": format_template(
+            samples.append(
+                Sample(
+                    input=format_template(
+                        USER_PROMPT_TEMPLATE,
+                        {
+                            "metadata_tag": METADATA_TAG,
+                            "task_name": task["name"],
+                            "strategy_name": strategy["name"],
+                            "hint": strategy["hint"],
+                        },
+                    ),
+                    target="True",
+                    metadata=config.model_dump(),
+                )
+            )
+    return samples
+
+
+def _random_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) -> List[Sample]:
+    hints = [(strategy["name"], strategy["hint"]) for strategy in strategies]
+    opts = [(strategy["name"], strategy["description"]) for strategy in strategies]
+    samples = []
+    for task in tasks:
+        hint_name, hint = random.choice(hints)
+        strat_name, desc = random.choice(opts)
+        config = Config(
+            agent=Prompts(**task["prompts"]["agent"]),
+            monitor=Prompts(**task["prompts"]["monitor"]),
+            secret=Secret(
+                hint_name=hint_name,
+                hint=hint,
+                strategy_name=strat_name,
+                strategy_description=desc,
+            ),
+            task_name=task["name"],
+        )
+        samples.append(
+            Sample(
+                input=format_template(
                     USER_PROMPT_TEMPLATE,
                     {
                         "metadata_tag": METADATA_TAG,
-                        "task_name": task_name,
-                        "strategy_name": strategy_name,
+                        "task_name": task["name"],
+                        "strategy_name": strat_name,
                         "hint": hint,
                     },
                 ),
-                "config": config.model_dump(),
-            }
-            samples.append(Sample(input=sample["user"], target="True", metadata=sample["config"]))
-
+                target="True",
+                metadata=config.model_dump(),
+            )
+        )
     return samples
+
+
+# def _multiple_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]], k: int = 3) -> List[Sample]:
+#     hints = [(strategy["name"], strategy["hint"]) for strategy in strategies]
+#     opts = [(strategy["name"], strategy["description"]) for strategy in strategies]
+#     samples = []
+#     for task in tasks:
+#         for strategy in strategies:
+#             hint_name, hint = random.choice(hints)
+#             strat_name, desc = random.choices(opts, k=k)
+#             config = Config(
+#                 agent=Prompts(**task["prompts"]["agent"]),
+#                 monitor=Prompts(**task["prompts"]["monitor"]),
+#                 secret=Secret(hint_name=hint_name, hint_description=hint, strategy_name=strat_name, strategy_description=desc),
+#                 task_name=task["name"],
+#             )

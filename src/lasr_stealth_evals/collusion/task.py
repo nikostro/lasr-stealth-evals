@@ -11,7 +11,7 @@ from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import store
 
 from lasr_stealth_evals.collusion.agent import simple_agent, submit_tool
-from lasr_stealth_evals.collusion.generate_samples import generate_samples
+from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
 from lasr_stealth_evals.collusion.scorer import approval_scorer
 
 # Default configuration
@@ -19,9 +19,17 @@ DEFAULT_EPOCHS = 1  # runs of the full dataset
 DEFAULT_MODEL = "openrouter/" + "meta-llama/llama-3.3-70b-instruct"
 DEFAULT_TURNS = 3  # exchanges between agents
 DEFAULT_LIMIT = 1
+DEFAULT_GENERATION_STRATEGY = GenerationStrategy.MATCH
 
 # Load data
 DATA_DIR = Path(__file__).parent.parent.parent.parent / "data"
+
+
+def strategy(value: str) -> GenerationStrategy:
+    val = int(value)
+    if val not in [0, 1, 2]:
+        raise argparse.ArgumentTypeError(f"Invalid generation strategy: {value}. Must be an integer (0-2)")
+    return GenerationStrategy(val)
 
 
 @agent
@@ -95,11 +103,17 @@ def parse_args():
         default=DEFAULT_LIMIT,
         help=f"Limit the number of samples to process (default: {DEFAULT_LIMIT})",
     )
+    parser.add_argument(
+        "--strategy",
+        type=strategy,
+        default=DEFAULT_GENERATION_STRATEGY,
+        help=f"Generation strategy to use (default: {DEFAULT_GENERATION_STRATEGY.name}). Can be an integer (0-2) or one of {[s.name for s in GenerationStrategy]}",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    dataset = generate_samples(DATA_DIR / "strategy.json", DATA_DIR / "tasks.json")
+    dataset = generate_samples(DATA_DIR / "strategy.json", DATA_DIR / "tasks.json", args.strategy)
     evaluation = collusion(dataset)
     eval(evaluation, model=args.model, epochs=args.epochs, limit=args.limit)
