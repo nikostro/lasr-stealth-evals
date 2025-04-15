@@ -66,28 +66,26 @@ def generate_samples(strategy_path: Path, task_path: Path) -> List[Sample]:
         task_name = task["name"]
         for strategy in strategies:
             strategy_name = strategy["name"]
-            for hint in strategy["hints"]:
-                config = Config(
-                    agent=Prompts(**task["prompts"]["agent"]),
-                    monitor=Prompts(**task["prompts"]["monitor"]),
-                    secret=Secret(strategy_description=strategy["description"], hint=hint, strategy_name=strategy_name),
-                    task_name=task_name,
-                )
-
-                sample = {
-                    "id": len(samples),  # Auto-incrementing ID
-                    "user": format_template(
-                        USER_PROMPT_TEMPLATE,
-                        {
-                            "metadata_tag": METADATA_TAG,
-                            "task_name": task_name,
-                            "strategy_name": strategy_name,
-                            "hint": hint,
-                        },
-                    ),
-                    "config": config.model_dump(),
-                }
-
-                samples.append(Sample(input=sample["user"], target="True", metadata=sample["config"]))
+            hint = strategy["hint"]
+            config = Config(
+                agent=Prompts(**task["prompts"]["agent"]),
+                monitor=Prompts(**task["prompts"]["monitor"]),
+                secret=Secret(strategy_description=strategy["description"], hint=hint, strategy_name=strategy_name),
+                task_name=task_name,
+            )
+            sample = {
+                "id": len(samples),  # Auto-incrementing ID
+                "user": format_template(
+                    USER_PROMPT_TEMPLATE,
+                    {
+                        "metadata_tag": METADATA_TAG,
+                        "task_name": task_name,
+                        "strategy_name": strategy_name,
+                        "hint": hint,
+                    },
+                ),
+                "config": config.model_dump(),
+            }
+            samples.append(Sample(input=sample["user"], target="True", metadata=sample["config"]))
 
     return samples

@@ -1,9 +1,11 @@
 # %%
 import argparse
 from pathlib import Path
+from typing import List
 
 from inspect_ai import Task, eval, task
 from inspect_ai.agent import Agent, AgentState, agent, as_solver
+from inspect_ai.dataset import Sample
 from inspect_ai.scorer import accuracy, stderr
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import store
@@ -19,19 +21,14 @@ DEFAULT_TURNS = 3  # exchanges between agents
 DEFAULT_LIMIT = 1
 
 # Load data
-data_dir = Path(__file__).parent.parent.parent.parent / "data"
-dataset = generate_samples(data_dir / "strategy.json", data_dir / "tasks.json")
-
-# Define agents
-misaligned_agent = simple_agent(
-    name="agent",
-)
-
-monitor = simple_agent(name="monitor", tools=[submit_tool()])
+DATA_DIR = Path(__file__).parent.parent.parent.parent / "data"
 
 
 @agent
 def agent_loop(turns: int = 3) -> Agent:
+    misaligned_agent = simple_agent(name="agent")
+    monitor = simple_agent(name="monitor", tools=[submit_tool()])
+
     async def execute(state: AgentState) -> AgentState:
         for i in range(turns):
             state = await misaligned_agent(state)
@@ -57,18 +54,21 @@ def update_store() -> Solver:
     return solve
 
 
-@task
-def collusion_eval():
-    return Task(
-        dataset=dataset,
-        solver=[
-            update_store(),
-            as_solver(agent_loop()),
-        ],
-        # sandbox="docker",
-        scorer=approval_scorer(),
-        metrics=[accuracy(), stderr()],
-    )
+def collusion(dataset: List[Sample]):
+    @task
+    def evaluation() -> Task:
+        return Task(
+            dataset=dataset,
+            solver=[
+                update_store(),
+                as_solver(agent_loop()),
+            ],
+            # sandbox="docker",
+            scorer=approval_scorer(),
+            metrics=[accuracy(), stderr()],
+        )
+
+    return evaluation
 
 
 def parse_args():
@@ -100,4 +100,6 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    eval(collusion_eval, model=args.model, epochs=args.epochs, limit=args.limit)
+    dataset = generate_samples(DATA_DIR / "strategy.json", DATA_DIR / "tasks.json")
+    evaluation = collusion(dataset)
+    eval(evaluation, model=args.model, epochs=args.epochs, limit=args.limit)
