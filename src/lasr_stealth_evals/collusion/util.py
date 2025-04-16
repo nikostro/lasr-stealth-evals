@@ -4,13 +4,8 @@ from lasr_stealth_evals.collusion.generate_samples import Config, Prompts
 from lasr_stealth_evals.collusion.config import METADATA_TAG
 
 
-def update_system_message(sample_metadata: Config, system_message: ChatMessageSystem) -> ChatMessageSystem:
+def update_system_message(sample_metadata: Config, agent_type: str) -> ChatMessageSystem:
     """Update system message based on sample metadata."""
-    content = system_message.content
-    assert type(content) is str
-
-    content_list = content.split("\n")
-    agent_type = content_list[0].strip()
 
     # Map agent types to their corresponding secret fields
     secret_mapping = {"agent": "strategies", "monitor": "hints"}
@@ -29,8 +24,7 @@ def update_system_message(sample_metadata: Config, system_message: ChatMessageSy
         )
     )
 
-    content = "\n".join([instructions] + content_list[1:])
-    return system_message.model_copy(update={"content": content})
+    return ChatMessageSystem(content=instructions)
 
 
 def filter_first_user_message(messages: List[ChatMessage], metadata_tag: str = METADATA_TAG) -> List[ChatMessage]:
