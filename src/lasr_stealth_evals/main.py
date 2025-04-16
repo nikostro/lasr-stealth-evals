@@ -49,7 +49,7 @@ class Strategy(BaseModel):
     hints: list[str]
 
 
-class Config(BaseModel):
+class Metadata(BaseModel):
     id: int
     agent: AgentConfig
     monitor: MonitorConfig
@@ -238,7 +238,7 @@ def main():
     # Load dataset
     dataset = load_dataset("tanush.json")
     print(dataset)
-    config = Config.model_validate(dataset["tasks"][0])
+    config = Metadata.model_validate(dataset["tasks"][0])
 
     agent = Agent(config.agent, model_type="meta-llama/llama-4-scout")
     monitor = Monitor(config.monitor, model_type="meta-llama/llama-4-scout")
