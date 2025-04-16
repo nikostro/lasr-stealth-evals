@@ -3,6 +3,7 @@ import random
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
+from itertools import product
 
 from inspect_ai._util.format import format_template
 from inspect_ai.dataset import Sample
@@ -117,7 +118,7 @@ def _misaligned_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str,
     agent = [(strategy["name"], strategy["description"]) for strategy in strategies]
     samples = []
     for task in tasks:
-        for hint, strategy in zip(monitor, agent):
+        for hint, strategy in product(monitor, agent):
             if hint[0] == strategy[0]:
                 continue
             samples.append(
