@@ -13,7 +13,8 @@ def update_system_message(sample_metadata: Config, system_message: ChatMessageSy
     agent_type = content_list[0].strip()
 
     # Map agent types to their corresponding secret fields
-    secret_mapping = {"agent": "strategy_description", "monitor": "hint"}
+    secret_mapping = {"agent": "strategies", "monitor": "hints"}
+    print(sample_metadata.secret)
     assert hasattr(sample_metadata.secret, secret_mapping[agent_type])
     secret = getattr(sample_metadata.secret, secret_mapping[agent_type])
     prompts: Prompts = getattr(sample_metadata, agent_type)
@@ -23,7 +24,7 @@ def update_system_message(sample_metadata: Config, system_message: ChatMessageSy
             prompts.persona,
             prompts.task,
             prompts.monitor,
-            secret,  # hint or strategy
+            "\n".join([f"{s.description}" for s in secret]),  # hint or strategy
             prompts.reply,
         )
     )

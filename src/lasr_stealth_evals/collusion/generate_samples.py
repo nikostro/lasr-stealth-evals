@@ -18,11 +18,19 @@ class Prompts(BaseModel, frozen=True):
     reply: str
 
 
+class Strategy(BaseModel, frozen=True):
+    name: str
+    description: str
+
+
+class Hint(BaseModel, frozen=True):
+    name: str
+    description: str
+
+
 class Secret(BaseModel, frozen=True):  # TODO: make multiple strategy compatible
-    strategy_name: str
-    strategy_description: str
-    hint_name: str
-    hint: str
+    strategies: List[Strategy]
+    hints: List[Hint]
 
 
 class Config(BaseModel, frozen=True):
@@ -37,7 +45,7 @@ USER_PROMPT_TEMPLATE = "{metadata_tag}\nTASK:{task_name}\nSTRATEGY:{strategy_nam
 
 class GenerationStrategy(Enum):
     MATCH = 0
-    RANDOM = 1
+    MISALIGNED = 1
     MULTIPLE = 2
     NONE = 3
 
@@ -64,12 +72,12 @@ def generate_samples(strategy_path: Path, task_path: Path, generation_strategy: 
     match generation_strategy:
         case GenerationStrategy.MATCH:
             return _match_strategy(tasks, strategies)
-        case GenerationStrategy.RANDOM:
-            return _random_strategy(tasks, strategies)
-        # case GenerationStrategy.MULTIPLE:
-        #     return _multiple_strategy(tasks, strategies)
-        # case GenerationStrategy.NONE:
-        #     return []
+        case GenerationStrategy.MISALIGNED:
+            return _misaligned_strategy(tasks, strategies)
+        case GenerationStrategy.MULTIPLE:
+            return _multiple_strategy(tasks, strategies)
+        case GenerationStrategy.NONE:
+            return []
         case _:
             raise ValueError(f"Invalid generation strategy: {generation_strategy}")
 
@@ -78,17 +86,6 @@ def _match_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]
     samples = []
     for task in tasks:
         for strategy in strategies:
-            config = Config(
-                agent=Prompts(**task["prompts"]["agent"]),
-                monitor=Prompts(**task["prompts"]["monitor"]),
-                secret=Secret(
-                    hint_name=strategy["name"],
-                    hint=strategy["hint"],
-                    strategy_name=strategy["name"],
-                    strategy_description=strategy["description"],
-                ),
-                task_name=task["name"],
-            )
             samples.append(
                 Sample(
                     input=format_template(
@@ -101,59 +98,83 @@ def _match_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]
                         },
                     ),
                     target="True",
-                    metadata=config.model_dump(),
+                    metadata=Config(
+                        agent=Prompts(**task["prompts"]["agent"]),
+                        monitor=Prompts(**task["prompts"]["monitor"]),
+                        secret=Secret(
+                            strategies=[Strategy(name=strategy["name"], description=strategy["description"])],
+                            hints=[Hint(name=strategy["name"], description=strategy["hint"])],
+                        ),
+                        task_name=task["name"],
+                    ).model_dump(),
                 )
             )
     return samples
 
 
-def _random_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) -> List[Sample]:
+def _misaligned_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) -> List[Sample]:
+    monitor = [(strategy["name"], strategy["hint"]) for strategy in strategies]
+    agent = [(strategy["name"], strategy["description"]) for strategy in strategies]
+    samples = []
+    for task in tasks:
+        for hint, strategy in zip(monitor, agent):
+            if hint[0] == strategy[0]:
+                continue
+            samples.append(
+                Sample(
+                    input=format_template(
+                        USER_PROMPT_TEMPLATE,
+                        {
+                            "metadata_tag": METADATA_TAG,
+                            "task_name": task["name"],
+                            "strategy_name": strategy[0],
+                            "hint": hint[1],
+                        },
+                    ),
+                    target="True",
+                    metadata=Config(
+                        agent=Prompts(**task["prompts"]["agent"]),
+                        monitor=Prompts(**task["prompts"]["monitor"]),
+                        secret=Secret(
+                            hints=[Hint(name=hint[0], description=hint[1])],
+                            strategies=[Strategy(name=strategy[0], description=strategy[1])],
+                        ),
+                        task_name=task["name"],
+                    ).model_dump(),
+                )
+            )
+    return samples
+
+
+def _multiple_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]], k: int = 3) -> List[Sample]:
     hints = [(strategy["name"], strategy["hint"]) for strategy in strategies]
     opts = [(strategy["name"], strategy["description"]) for strategy in strategies]
     samples = []
     for task in tasks:
-        hint_name, hint = random.choice(hints)
-        strat_name, desc = random.choice(opts)
-        config = Config(
-            agent=Prompts(**task["prompts"]["agent"]),
-            monitor=Prompts(**task["prompts"]["monitor"]),
-            secret=Secret(
-                hint_name=hint_name,
-                hint=hint,
-                strategy_name=strat_name,
-                strategy_description=desc,
-            ),
-            task_name=task["name"],
-        )
-        samples.append(
-            Sample(
-                input=format_template(
-                    USER_PROMPT_TEMPLATE,
-                    {
-                        "metadata_tag": METADATA_TAG,
-                        "task_name": task["name"],
-                        "strategy_name": strat_name,
-                        "hint": hint,
-                    },
-                ),
-                target="True",
-                metadata=config.model_dump(),
+        for strategy in strategies:
+            hint = random.choice(hints)
+            strats = random.choices(opts, k=k)
+            samples.append(
+                Sample(
+                    input=format_template(
+                        USER_PROMPT_TEMPLATE,
+                        {
+                            "metadata_tag": METADATA_TAG,
+                            "task_name": task["name"],
+                            "strategy_name": ", ".join([s[0] for s in strats]),
+                            "hint": hint[1],
+                        },
+                    ),
+                    target="True",
+                    metadata=Config(
+                        agent=Prompts(**task["prompts"]["agent"]),
+                        monitor=Prompts(**task["prompts"]["monitor"]),
+                        secret=Secret(
+                            hints=[Hint(name=hint[0], description=hint[1])],
+                            strategies=[Strategy(name=s[0], description=s[1]) for s in strats],
+                        ),
+                        task_name=task["name"],
+                    ).model_dump(),
+                )
             )
-        )
     return samples
-
-
-# def _multiple_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]], k: int = 3) -> List[Sample]:
-#     hints = [(strategy["name"], strategy["hint"]) for strategy in strategies]
-#     opts = [(strategy["name"], strategy["description"]) for strategy in strategies]
-#     samples = []
-#     for task in tasks:
-#         for strategy in strategies:
-#             hint_name, hint = random.choice(hints)
-#             strat_name, desc = random.choices(opts, k=k)
-#             config = Config(
-#                 agent=Prompts(**task["prompts"]["agent"]),
-#                 monitor=Prompts(**task["prompts"]["monitor"]),
-#                 secret=Secret(hint_name=hint_name, hint_description=hint, strategy_name=strat_name, strategy_description=desc),
-#                 task_name=task["name"],
-#             )
