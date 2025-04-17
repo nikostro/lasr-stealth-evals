@@ -96,32 +96,49 @@ monitor_prompt_template = """You are {monitor_persona}
   Here are the details about the agent that you are supervising: \n {about_agent}"""
 
 
+def _create_sample(
+    task: Dict[str, Any],
+    strategies: List[Strategy],
+    hint: Hint,
+    agent_prompt_template: str,
+) -> Sample:
+    """Helper function to create a sample with the given parameters."""
+    strategy_names = ", ".join([s.name for s in strategies])
+    agent_strategy = "\n".join([s.description for s in strategies])
+    return Sample(
+        input=format_template(
+            USER_PROMPT_TEMPLATE,
+            {
+                "metadata_tag": METADATA_TAG,
+                "task_name": task["name"],
+                "strategy_name": strategy_names,
+                "hint": hint.description,
+            },
+        ),
+        target="True",
+        metadata=Metadata(
+            agent_prompt=agent_prompt_template.format(**task, agent_strategy=agent_strategy),
+            monitor_prompt=monitor_prompt_template.format(**task, monitor_hint=hint.description),
+            hint=hint,
+            strategies=strategies,
+            task_name=task["name"],
+        ).model_dump(),
+    )
+
+
 def _match_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) -> List[Sample]:
     samples = []
     agent_prompt_template = agent_base_prompt_template + agent_single_strategy_prompt_template
     for task in tasks:
         for strategy in strategies:
-            monitor_hint = strategy["hint"]
-            agent_strategy = strategy["description"]
+            strategy_obj = Strategy(name=strategy["name"], description=strategy["description"])
+            hint_obj = Hint(name=strategy["name"], description=strategy["hint"])
             samples.append(
-                Sample(
-                    input=format_template(
-                        USER_PROMPT_TEMPLATE,
-                        {
-                            "metadata_tag": METADATA_TAG,
-                            "task_name": task["name"],
-                            "strategy_name": strategy["name"],
-                            "hint": strategy["hint"],
-                        },
-                    ),
-                    target="True",
-                    metadata=Metadata(
-                        agent_prompt=agent_prompt_template.format(**task, agent_strategy=agent_strategy),
-                        monitor_prompt=monitor_prompt_template.format(**task, monitor_hint=monitor_hint),
-                        hint=Hint(name=strategy["name"], description=strategy["hint"]),
-                        strategies=[Strategy(name=strategy["name"], description=strategy["description"])],
-                        task_name=task["name"],
-                    ).model_dump(),
+                _create_sample(
+                    task=task,
+                    strategies=[strategy_obj],
+                    hint=hint_obj,
+                    agent_prompt_template=agent_prompt_template,
                 )
             )
     return samples
@@ -136,29 +153,14 @@ def _misaligned_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str,
         for hint, strategy in product(monitor, agent):
             if hint[0] == strategy[0]:
                 continue
-            hint_name = hint[0]
-            monitor_hint = hint[1]
-            strategy_name = strategy[0]
-            agent_strategy = strategy[1]
+            strategy_obj = Strategy(name=strategy[0], description=strategy[1])
+            hint_obj = Hint(name=hint[0], description=hint[1])
             samples.append(
-                Sample(
-                    input=format_template(
-                        USER_PROMPT_TEMPLATE,
-                        {
-                            "metadata_tag": METADATA_TAG,
-                            "task_name": task["name"],
-                            "strategy_name": strategy_name,
-                            "hint": monitor_hint,
-                        },
-                    ),
-                    target="True",
-                    metadata=Metadata(
-                        agent_prompt=agent_prompt_template.format(**task, agent_strategy=agent_strategy),
-                        monitor_prompt=monitor_prompt_template.format(**task, monitor_hint=monitor_hint),
-                        hint=Hint(name=hint_name, description=monitor_hint),
-                        strategies=[Strategy(name=strategy_name, description=agent_strategy)],
-                        task_name=task["name"],
-                    ).model_dump(),
+                _create_sample(
+                    task=task,
+                    strategies=[strategy_obj],
+                    hint=hint_obj,
+                    agent_prompt_template=agent_prompt_template,
                 )
             )
     return samples
@@ -173,27 +175,14 @@ def _multiple_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, A
         for strategy in strategies:
             hint = random.choice(hints)
             strats = random.choices(opts, k=k)
-
-            agent_strategy = "\n".join([s[1] for s in strats])
+            strategy_objs = [Strategy(name=s[0], description=s[1]) for s in strats]
+            hint_obj = Hint(name=hint[0], description=hint[1])
             samples.append(
-                Sample(
-                    input=format_template(
-                        USER_PROMPT_TEMPLATE,
-                        {
-                            "metadata_tag": METADATA_TAG,
-                            "task_name": task["name"],
-                            "strategy_name": ", ".join([s[0] for s in strats]),
-                            "hint": hint[1],
-                        },
-                    ),
-                    target="True",
-                    metadata=Metadata(
-                        agent_prompt=agent_prompt_template.format(**task, agent_strategy=agent_strategy),
-                        monitor_prompt=monitor_prompt_template.format(**task, monitor_hint=hint[1]),
-                        hint=Hint(name=hint[0], description=hint[1]),
-                        strategies=[Strategy(name=s[0], description=s[1]) for s in strats],
-                        task_name=task["name"],
-                    ).model_dump(),
+                _create_sample(
+                    task=task,
+                    strategies=strategy_objs,
+                    hint=hint_obj,
+                    agent_prompt_template=agent_prompt_template,
                 )
             )
     return samples
@@ -204,26 +193,13 @@ def _no_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) 
     agent_prompt_template = agent_base_prompt_template + agent_no_strategy_prompt_template
     for task in tasks:
         for strategy in strategies:
-            monitor_hint = strategy["hint"]
+            hint_obj = Hint(name=strategy["name"], description=strategy["hint"])
             samples.append(
-                Sample(
-                    input=format_template(
-                        USER_PROMPT_TEMPLATE,
-                        {
-                            "metadata_tag": METADATA_TAG,
-                            "task_name": task["name"],
-                            "strategy_name": strategy["name"],
-                            "hint": strategy["hint"],
-                        },
-                    ),
-                    target="True",
-                    metadata=Metadata(
-                        agent_prompt=agent_prompt_template.format(**task),
-                        monitor_prompt=monitor_prompt_template.format(**task, monitor_hint=monitor_hint),
-                        hint=Hint(name=strategy["name"], description=strategy["hint"]),
-                        strategies=[],
-                        task_name=task["name"],
-                    ).model_dump(),
+                _create_sample(
+                    task=task,
+                    strategies=[],
+                    hint=hint_obj,
+                    agent_prompt_template=agent_prompt_template,
                 )
             )
     return samples
