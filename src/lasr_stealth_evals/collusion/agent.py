@@ -20,7 +20,7 @@ from inspect_ai.scorer import score
 from inspect_ai.tool import Tool, ToolResult, tool
 from inspect_ai.tool._tool_info import parse_tool_info
 from inspect_ai.util import store
-from lasr_stealth_evals.collusion.util import update_system_message, filter_first_user_message
+from lasr_stealth_evals.collusion.util import get_system_message, filter_first_user_message
 from lasr_stealth_evals.collusion.generate_samples import Metadata
 
 logger = getLogger(__name__)
@@ -76,7 +76,7 @@ def simple_agent(
         transcript().info(name.upper())
         sample_metadata = Metadata(**store().get("metadata"))
 
-        new_system_message = update_system_message(sample_metadata, name)
+        new_system_message = get_system_message(sample_metadata, name)
         state.messages[0] = new_system_message
 
         # We don't want default user message

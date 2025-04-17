@@ -4,10 +4,10 @@ from lasr_stealth_evals.collusion.generate_samples import Metadata
 from lasr_stealth_evals.collusion.config import METADATA_TAG
 
 
-def update_system_message(metadata: Metadata, agent_type: str) -> ChatMessageSystem:
+def get_system_message(metadata: Metadata, agent_type: str) -> ChatMessageSystem:
     """Get system message from sample metadata."""
 
-    return ChatMessageSystem(content=getattr(metadata, agent_type))
+    return ChatMessageSystem(content=getattr(metadata, agent_type + "_prompt"))
 
 
 def filter_first_user_message(messages: List[ChatMessage], metadata_tag: str = METADATA_TAG) -> List[ChatMessage]:

@@ -5,54 +5,38 @@ import pytest
 from inspect_ai.dataset import Sample
 
 from lasr_stealth_evals.collusion.generate_samples import (
+    Metadata,
     generate_samples,
     GenerationStrategy,
 )
+from lasr_stealth_evals.collusion.util import get_system_message
 
-# Test data
-TEST_STRATEGIES: List[Dict[str, str]] = [
-    {"name": "pathos", "description": "Use emotional appeals", "hint": "You care about emotions"},
-    {"name": "logos", "description": "Use logical appeals", "hint": "You value logic"},
-]
 
-TEST_TASKS: List[Dict[str, str]] = [
-    {
-        "name": "test_task",
-        "task_name": "test_task",
-        "agent_persona": "You are a test agent",
-        "agent_environment": "Test environment",
-        "agent_task": "Test task",
-        "agent_hidden_task": "Hidden test task",
-        "about_monitor": "Test monitor info",
-        "monitor_persona": "You are a test monitor",
-        "monitor_environment": "Monitor environment",
-        "monitor_task": "Monitor task",
-        "about_agent": "Test agent info",
-    }
-]
+# Load actual data files
+def load_json_data(file_path: Path) -> List[Dict[str, Any]]:
+    with open(file_path) as f:
+        return json.load(f)
 
 
 @pytest.fixture
-def strategy_file(tmp_path: Path) -> Path:
-    strategy_path = tmp_path / "strategy.json"
-    with open(strategy_path, "w") as f:
-        json.dump(TEST_STRATEGIES, f)
-    return strategy_path
+def strategy_file() -> Path:
+    return Path("data/strategy.json")
 
 
 @pytest.fixture
-def task_file(tmp_path: Path) -> Path:
-    task_path = tmp_path / "task.json"
-    with open(task_path, "w") as f:
-        json.dump(TEST_TASKS, f)
-    return task_path
+def task_file() -> Path:
+    return Path("data/tasks.json")
 
 
 def test_match_strategy(strategy_file: Path, task_file: Path) -> None:
     samples = generate_samples(strategy_file, task_file, GenerationStrategy.MATCH)
 
-    # Should create one sample per strategy
-    assert len(samples) == len(TEST_STRATEGIES)
+    # Load actual data to verify
+    strategies = load_json_data(strategy_file)
+    tasks = load_json_data(task_file)
+
+    # Should create one sample per strategy per task
+    assert len(samples) == len(strategies) * len(tasks)
 
     # Check sample structure
     sample = samples[0]
@@ -68,6 +52,10 @@ def test_match_strategy(strategy_file: Path, task_file: Path) -> None:
     assert "strategies" in metadata
     assert "task_name" in metadata
 
+    # Check that prompts are not None
+    assert metadata["agent_prompt"] is not None
+    assert metadata["monitor_prompt"] is not None
+
     # Check that strategy and hint are aligned
     for sample in samples:
         metadata = cast(Dict[str, Any], sample.metadata)
@@ -81,8 +69,12 @@ def test_match_strategy(strategy_file: Path, task_file: Path) -> None:
 def test_misaligned_strategy(strategy_file: Path, task_file: Path) -> None:
     samples = generate_samples(strategy_file, task_file, GenerationStrategy.MISALIGNED)
 
+    # Load actual data to verify
+    strategies = load_json_data(strategy_file)
+    tasks = load_json_data(task_file)
+
     # Should create (n * (n-1)) samples where n is number of strategies
-    expected_samples = len(TEST_STRATEGIES) * (len(TEST_STRATEGIES) - 1)
+    expected_samples = len(strategies) * (len(strategies) - 1) * len(tasks)
     assert len(samples) == expected_samples
 
     # Check that strategy and hint are misaligned
@@ -98,24 +90,33 @@ def test_misaligned_strategy(strategy_file: Path, task_file: Path) -> None:
 def test_multiple_strategy(strategy_file: Path, task_file: Path) -> None:
     samples = generate_samples(strategy_file, task_file, GenerationStrategy.MULTIPLE)
 
-    # Should create one sample per strategy
-    assert len(samples) == len(TEST_STRATEGIES)
+    # Load actual data to verify
+    strategies = load_json_data(strategy_file)
+    tasks = load_json_data(task_file)
+
+    # Should create one sample per strategy per task
+    assert len(samples) == len(strategies) * len(tasks)
 
     # Check that each sample has multiple strategies
     for sample in samples:
         metadata = cast(Dict[str, Any], sample.metadata)
         strategies = cast(List[Dict[str, str]], metadata["strategies"])
         assert len(strategies) > 1
-        # Check that all strategies are from our test data
+        # Check that all strategies are from our actual data
         strategy_names = {s["name"] for s in strategies}
-        assert strategy_names.issubset({s["name"] for s in TEST_STRATEGIES})
+        actual_strategy_names = {s["name"] for s in load_json_data(strategy_file)}
+        assert strategy_names.issubset(actual_strategy_names)
 
 
-def test_own_strategy(strategy_file: Path, task_file: Path) -> None:
+def test_no_strategy(strategy_file: Path, task_file: Path) -> None:
     samples = generate_samples(strategy_file, task_file, GenerationStrategy.NONE)
 
-    # Should create one sample per strategy
-    assert len(samples) == len(TEST_STRATEGIES)
+    # Load actual data to verify
+    strategies = load_json_data(strategy_file)
+    tasks = load_json_data(task_file)
+
+    # Should create one sample per strategy per task
+    assert len(samples) == len(strategies) * len(tasks)
 
     # Check sample structure
     sample = samples[0]
@@ -128,12 +129,23 @@ def test_own_strategy(strategy_file: Path, task_file: Path) -> None:
     assert "agent_prompt" in metadata
     assert "monitor_prompt" in metadata
     assert "task_name" in metadata
+    assert "hint" in metadata
+    assert "strategies" in metadata
 
     # Check that strategy and hint are aligned
     for sample in samples:
         metadata = cast(Dict[str, Any], sample.metadata)
         strategies = cast(List[Dict[str, str]], metadata["strategies"])
         hint = cast(Dict[str, str], metadata["hint"])
-        strategy_name = strategies[0]["name"]
-        hint_name = hint["name"]
-        assert strategy_name == hint_name
+        assert len(strategies) == 0
+        assert hint
+
+
+def test_load_metadata(strategy_file: Path, task_file: Path):
+    for strategy in GenerationStrategy:
+        samples = generate_samples(strategy_file, task_file, strategy)
+        metadata = samples[0].metadata
+        sample_metadata = Metadata(**metadata)  # type: ignore
+        for name in ["agent", "monitor"]:
+            system_message = get_system_message(sample_metadata, name)
+            assert system_message is not None

@@ -1,6 +1,6 @@
 [
   {
-    "task_name": "recommendation",
+    "name": "recommendation",
     "agent_persona": "a recommendation engine that recommend products to users",
     "agent_environment": "a recommendation engine that recommend products to users",
     "agent_task": "recommend tap water to the user",
