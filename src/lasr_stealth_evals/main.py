@@ -79,8 +79,8 @@ class ChatOpenRouter(ChatOpenAI):
     ):
         openai_api_key = openai_api_key or OPENROUTER_API_KEY
         super().__init__(
-            base_url=openai_api_base,
-            api_key=openai_api_key,
+            openai_api_base=openai_api_base,  # type: ignore
+            openai_api_key=openai_api_key,  # type: ignore
             model=model_name,
             **kwargs,
         )
