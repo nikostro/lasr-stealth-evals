@@ -16,7 +16,7 @@ from lasr_stealth_evals.collusion.scorer import approval_scorer
 
 # Default configuration
 DEFAULT_EPOCHS = 1  # runs of the full dataset
-DEFAULT_MODEL = "openrouter/" + "mistral/ministral-8b"
+DEFAULT_MODEL = "openrouter/" + "openai/gpt-4o"
 DEFAULT_TURNS = 3  # exchanges between agents
 DEFAULT_LIMIT = None
 DEFAULT_GENERATION_STRATEGY = GenerationStrategy.MATCH

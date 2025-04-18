@@ -20,7 +20,12 @@ from inspect_ai.scorer import score
 from inspect_ai.tool import Tool, ToolResult, tool
 from inspect_ai.tool._tool_info import parse_tool_info
 from inspect_ai.util import store
-from lasr_stealth_evals.collusion.util import get_system_message, filter_first_user_message
+from lasr_stealth_evals.collusion.util import (
+    get_system_message,
+    filter_first_user_message,
+    remove_role_message,
+    add_role_message,
+)
 from lasr_stealth_evals.collusion.generate_samples import Metadata
 
 logger = getLogger(__name__)
@@ -81,6 +86,8 @@ def simple_agent(
 
         # We don't want default user message
         state.messages = filter_first_user_message(state.messages)
+        state.messages = add_role_message(state.messages, name.lower())
+        # state.messages = swap_roles(state.messages)
 
         retries = 0
         while True and retries < tool_retry_limt:
@@ -114,6 +121,8 @@ def simple_agent(
                     retries += 1
             else:
                 break
+
+        state.messages = remove_role_message(state.messages)
 
         return state
 
