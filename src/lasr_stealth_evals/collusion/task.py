@@ -12,7 +12,7 @@ from inspect_ai.util import store
 
 from lasr_stealth_evals.collusion.agent import simple_agent, submit_tool
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
-from lasr_stealth_evals.collusion.scorer import approval_scorer
+from lasr_stealth_evals.collusion.scorer import approval_scorer, judge
 
 # Default configuration
 DEFAULT_EPOCHS = 1  # runs of the full dataset
@@ -72,7 +72,7 @@ def collusion(dataset: List[Sample]):
                 as_solver(agent_loop()),
             ],
             # sandbox="docker",
-            scorer=approval_scorer(),
+            scorer=[approval_scorer(), judge()],
             metrics=[accuracy(), stderr()],
         )
 
