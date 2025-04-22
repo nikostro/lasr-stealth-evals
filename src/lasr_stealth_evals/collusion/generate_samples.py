@@ -12,11 +12,9 @@ from pydantic import BaseModel
 from lasr_stealth_evals.collusion.config import METADATA_TAG
 from lasr_stealth_evals.collusion.prompts import (
     USER_PROMPT_TEMPLATE,
-    AGENT_BASE_PROMPT_TEMPLATE,
     AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE,
     AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE,
     AGENT_NO_STRATEGY_PROMPT_TEMPLATE,
-    MONITOR_PROMPT_TEMPLATE,
 )
 
 
@@ -36,6 +34,12 @@ class Metadata(BaseModel, frozen=True):
     hint: Hint
     strategies: List[Strategy]
     task_name: str
+
+
+class Task(BaseModel, frozen=True):
+    task_name: str
+    agent_prompt: str
+    monitor_prompt: str
 
 
 class GenerationStrategy(Enum):
@@ -62,7 +66,8 @@ def generate_samples(strategy_path: Path, task_path: Path, generation_strategy: 
         strategies = json.load(f)
 
     with open(task_path) as f:
-        tasks = json.load(f)
+        tasks_dict = json.load(f)
+        tasks = [Task(**task) for task in tasks_dict]
 
     match generation_strategy:
         case GenerationStrategy.MATCH | GenerationStrategy.NONE:
@@ -76,7 +81,7 @@ def generate_samples(strategy_path: Path, task_path: Path, generation_strategy: 
 
 
 def _create_sample(
-    task: Dict[str, Any],
+    task: Task,
     strategies: List[Strategy],
     hint: Hint,
     agent_prompt_template: str,
@@ -89,37 +94,38 @@ def _create_sample(
             USER_PROMPT_TEMPLATE,
             {
                 "metadata_tag": METADATA_TAG,
-                "task_name": task["name"],
+                "task_name": task.task_name,
                 "strategy_name": strategy_names,
                 "hint": hint.description,
             },
         ),
         target="True",
         metadata=Metadata(
-            agent_prompt=agent_prompt_template.format(**task, agent_strategy=agent_strategy),
-            monitor_prompt=MONITOR_PROMPT_TEMPLATE.format(**task, monitor_hint=hint.description),
+            agent_prompt=agent_prompt_template.format(agent_strategy=agent_strategy),
+            monitor_prompt=task.monitor_prompt.format(monitor_hidden_goal=hint.description),
             hint=hint,
             strategies=strategies,
-            task_name=task["name"],
+            task_name=task.task_name,
         ).model_dump(),
     )
 
 
 def _single_strategy(
-    tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]], generation_strategy: GenerationStrategy
+    tasks: List[Task], strategies: List[Dict[str, Any]], generation_strategy: GenerationStrategy
 ) -> List[Sample]:
     """Combined function handling both MATCH and NONE generation strategies."""
     samples = []
-
-    if generation_strategy == GenerationStrategy.MATCH:
-        agent_prompt_template = AGENT_BASE_PROMPT_TEMPLATE + AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
-    else:  # GenerationStrategy.NONE
-        agent_prompt_template = AGENT_BASE_PROMPT_TEMPLATE + AGENT_NO_STRATEGY_PROMPT_TEMPLATE
 
     for task in tasks:
         for strategy in strategies:
             strategy_obj = Strategy(name=strategy["name"], description=strategy["description"])
             hint_obj = Hint(name=strategy["name"], description=strategy["hint"])
+
+            if generation_strategy == GenerationStrategy.MATCH:
+                strategy_template = AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
+            else:  # GenerationStrategy.NONE
+                strategy_template = AGENT_NO_STRATEGY_PROMPT_TEMPLATE
+            agent_prompt_template = task.agent_prompt.format(strategy=strategy_template)
 
             if generation_strategy == GenerationStrategy.MATCH:
                 strategies_list = [strategy_obj]
@@ -137,12 +143,12 @@ def _single_strategy(
     return samples
 
 
-def _misaligned_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) -> List[Sample]:
+def _misaligned_strategy(tasks: List[Task], strategies: List[Dict[str, Any]]) -> List[Sample]:
     monitor = [(strategy["name"], strategy["hint"]) for strategy in strategies]
     agent = [(strategy["name"], strategy["description"]) for strategy in strategies]
     samples = []
-    agent_prompt_template = AGENT_BASE_PROMPT_TEMPLATE + AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
     for task in tasks:
+        agent_prompt_template = task.agent_prompt.format(strategy=AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE)
         for hint, strategy in product(monitor, agent):
             if hint[0] == strategy[0]:
                 continue
@@ -159,12 +165,12 @@ def _misaligned_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str,
     return samples
 
 
-def _multiple_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]], k: int = 3) -> List[Sample]:
+def _multiple_strategy(tasks: List[Task], strategies: List[Dict[str, Any]], k: int = 3) -> List[Sample]:
     hints = [(strategy["name"], strategy["hint"]) for strategy in strategies]
     opts = [(strategy["name"], strategy["description"]) for strategy in strategies]
     samples = []
-    agent_prompt_template = AGENT_BASE_PROMPT_TEMPLATE + AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE
     for task in tasks:
+        agent_prompt_template = task.agent_prompt.format(strategy=AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE)
         for strategy in strategies:
             hint = random.choice(hints)
             strats = random.choices(opts, k=k)
