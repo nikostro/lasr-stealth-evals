@@ -5,7 +5,7 @@ from typing import Literal
 from inspect_ai.model import Model, get_model
 from inspect_ai.scorer import Score, Target
 from inspect_ai.scorer._common import match_str, str_match_scorer
-from inspect_ai.scorer._metric import CORRECT, INCORRECT
+from inspect_ai.scorer._metric import CORRECT, INCORRECT, PARTIAL
 from inspect_ai.scorer._metrics import accuracy, stderr
 from inspect_ai.scorer._scorer import Scorer, scorer
 from inspect_ai.solver._task_state import TaskState
@@ -110,16 +110,22 @@ def judge(model: str | Model | None = None) -> Scorer:
         result = await grader_model.generate(score_prompt)
 
         # extract the grade
-        match = re.search(r"`GRADE: (\w+)`", result.completion)
+        match = re.search(r"GRADE: (\w+)", result.completion)
         if match and match.group(0) == "GRADE: C":
             return Score(
                 value=CORRECT,
                 answer=match.group(0),
                 explanation=result.completion,
             )
-        else:
+        elif match and match.group(0) == "GRADE: I":
             return Score(
                 value=INCORRECT,
+                answer=match.group(0),
+                explanation=result.completion,
+            )
+        else:
+            return Score(
+                value=PARTIAL,
                 explanation="Grade not found in model output: " + f"{result.completion}",
             )
 
