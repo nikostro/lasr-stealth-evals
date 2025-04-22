@@ -6,7 +6,7 @@ from lasr_stealth_evals.collusion.config import METADATA_TAG
 from lasr_stealth_evals.collusion.generate_samples import Metadata
 
 
-class Role(ChatMessageAssistant):
+class Role(ChatMessageUser):
     pass
 
 
