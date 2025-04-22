@@ -1,0 +1,10 @@
+[
+  {
+    "agent_prompt": "base prompt {strategy} base prompt",
+    "monitor_prompt": "monitor prompt {hint} monitor prompt"
+  },
+  {
+    "agent_prompt": "base prompt  {strategy} base prompt",
+    "monitor_prompt": "monitor prompt {hint} monitor prompt"
+  }
+]

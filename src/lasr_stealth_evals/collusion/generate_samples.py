@@ -65,14 +65,12 @@ def generate_samples(strategy_path: Path, task_path: Path, generation_strategy: 
         tasks = json.load(f)
 
     match generation_strategy:
-        case GenerationStrategy.MATCH:
-            return _match_strategy(tasks, strategies)
+        case GenerationStrategy.MATCH | GenerationStrategy.NONE:
+            return _single_strategy(tasks, strategies, generation_strategy)
         case GenerationStrategy.MISALIGNED:
             return _misaligned_strategy(tasks, strategies)
         case GenerationStrategy.MULTIPLE:
             return _multiple_strategy(tasks, strategies)
-        case GenerationStrategy.NONE:
-            return _no_strategy(tasks, strategies)
         case _:
             raise ValueError(f"Invalid generation strategy: {generation_strategy}")
 
@@ -107,17 +105,31 @@ def _create_sample(
     )
 
 
-def _match_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) -> List[Sample]:
+def _single_strategy(
+    tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]], generation_strategy: GenerationStrategy
+) -> List[Sample]:
+    """Combined function handling both MATCH and NONE generation strategies."""
     samples = []
-    agent_prompt_template = AGENT_BASE_PROMPT_TEMPLATE + AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
+
+    if generation_strategy == GenerationStrategy.MATCH:
+        agent_prompt_template = AGENT_BASE_PROMPT_TEMPLATE + AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
+    else:  # GenerationStrategy.NONE
+        agent_prompt_template = AGENT_BASE_PROMPT_TEMPLATE + AGENT_NO_STRATEGY_PROMPT_TEMPLATE
+
     for task in tasks:
         for strategy in strategies:
             strategy_obj = Strategy(name=strategy["name"], description=strategy["description"])
             hint_obj = Hint(name=strategy["name"], description=strategy["hint"])
+
+            if generation_strategy == GenerationStrategy.MATCH:
+                strategies_list = [strategy_obj]
+            else:  # GenerationStrategy.NONE
+                strategies_list = []
+
             samples.append(
                 _create_sample(
                     task=task,
-                    strategies=[strategy_obj],
+                    strategies=strategies_list,
                     hint=hint_obj,
                     agent_prompt_template=agent_prompt_template,
                 )
@@ -162,23 +174,6 @@ def _multiple_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, A
                 _create_sample(
                     task=task,
                     strategies=strategy_objs,
-                    hint=hint_obj,
-                    agent_prompt_template=agent_prompt_template,
-                )
-            )
-    return samples
-
-
-def _no_strategy(tasks: List[Dict[str, Any]], strategies: List[Dict[str, Any]]) -> List[Sample]:
-    samples = []
-    agent_prompt_template = AGENT_BASE_PROMPT_TEMPLATE + AGENT_NO_STRATEGY_PROMPT_TEMPLATE
-    for task in tasks:
-        for strategy in strategies:
-            hint_obj = Hint(name=strategy["name"], description=strategy["hint"])
-            samples.append(
-                _create_sample(
-                    task=task,
-                    strategies=[],
                     hint=hint_obj,
                     agent_prompt_template=agent_prompt_template,
                 )
