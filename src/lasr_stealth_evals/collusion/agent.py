@@ -1,5 +1,4 @@
 from logging import getLogger
-from inspect_ai.log._transcript import transcript
 
 # Note: These private imports are used because there are no public API equivalents
 # for these specific functions in the current version of inspect_ai
@@ -9,6 +8,7 @@ from inspect_ai.agent import (
     agent,
     agent_with,
 )
+from inspect_ai.log._transcript import transcript
 from inspect_ai.model import (
     ChatMessageTool,
     ChatMessageUser,
@@ -20,13 +20,13 @@ from inspect_ai.scorer import score
 from inspect_ai.tool import Tool, ToolResult, tool
 from inspect_ai.tool._tool_info import parse_tool_info
 from inspect_ai.util import store
-from lasr_stealth_evals.collusion.util import (
-    get_system_message,
-    filter_first_user_message,
-    remove_role_message,
-    add_role_message,
-)
+
 from lasr_stealth_evals.collusion.generate_samples import Metadata
+from lasr_stealth_evals.collusion.util import (
+    add_role_message,
+    filter_first_user_message,
+    get_system_message,
+)
 
 logger = getLogger(__name__)
 
@@ -122,7 +122,7 @@ def simple_agent(
             else:
                 break
 
-        state.messages = remove_role_message(state.messages)
+        # state.messages = remove_role_message(state.messages)
 
         return state
 
