@@ -149,3 +149,10 @@ def test_load_metadata(strategy_file: Path, task_file: Path):
         for name in ["agent", "monitor"]:
             system_message = get_system_message(sample_metadata, name)
             assert system_message is not None
+
+
+if __name__ == "__main__":
+    import pytest
+    import sys
+
+    sys.exit(pytest.main([__file__, "-v"]))

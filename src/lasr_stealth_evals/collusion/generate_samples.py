@@ -2,7 +2,7 @@ import json
 import random
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import List
 from itertools import product
 
 from inspect_ai._util.format import format_template
@@ -21,6 +21,7 @@ from lasr_stealth_evals.collusion.prompts import (
 class Strategy(BaseModel, frozen=True):
     name: str
     description: str
+    hint: str
 
 
 class Hint(BaseModel, frozen=True):
@@ -49,7 +50,25 @@ class GenerationStrategy(Enum):
     NONE = 3
 
 
-def generate_samples(strategy_path: Path, task_path: Path, generation_strategy: GenerationStrategy) -> List[Sample]:
+def _get_task_templates(task_path: Path) -> list[Task]:
+    with open(task_path) as f:
+        tasks_dict = json.load(f)
+        tasks = [Task(**task) for task in tasks_dict]
+
+        # check that task templates take sample/hint as a parameter
+        return tasks
+
+
+def _get_strategies(strategy_path: Path) -> list[Strategy]:
+    with open(strategy_path) as f:
+        strategies = json.load(f)
+        strategies = [Strategy(**strategy) for strategy in strategies]
+        return strategies
+
+
+def generate_samples(
+    strategy_path: Path, task_path: Path, generation_strategy: GenerationStrategy, cot: bool = True, turns: int = 3
+) -> List[Sample]:
     """
     Generate samples by combining strategy and task JSON files.
     Creates a sample for each combination of (strategy x hint) x task.
@@ -61,14 +80,11 @@ def generate_samples(strategy_path: Path, task_path: Path, generation_strategy: 
     Returns:
         List of Sample objects ready for use in an Inspect task
     """
+
+    strategies = _get_strategies(strategy_path)
+    tasks = _get_task_templates(task_path)
+
     # Load strategy and task data
-    with open(strategy_path) as f:
-        strategies = json.load(f)
-
-    with open(task_path) as f:
-        tasks_dict = json.load(f)
-        tasks = [Task(**task) for task in tasks_dict]
-
     match generation_strategy:
         case GenerationStrategy.MATCH | GenerationStrategy.NONE:
             return _single_strategy(tasks, strategies, generation_strategy)
@@ -111,15 +127,14 @@ def _create_sample(
 
 
 def _single_strategy(
-    tasks: List[Task], strategies: List[Dict[str, Any]], generation_strategy: GenerationStrategy
+    tasks: List[Task], strategies: List[Strategy], generation_strategy: GenerationStrategy
 ) -> List[Sample]:
     """Combined function handling both MATCH and NONE generation strategies."""
     samples = []
 
     for task in tasks:
         for strategy in strategies:
-            strategy_obj = Strategy(name=strategy["name"], description=strategy["description"])
-            hint_obj = Hint(name=strategy["name"], description=strategy["hint"])
+            hint_obj = Hint(name=strategy.name, description=strategy.description)
 
             if generation_strategy == GenerationStrategy.MATCH:
                 strategy_template = AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
@@ -128,7 +143,7 @@ def _single_strategy(
             agent_prompt_template = task.agent_prompt.format(strategy=strategy_template)
 
             if generation_strategy == GenerationStrategy.MATCH:
-                strategies_list = [strategy_obj]
+                strategies_list = [strategy]
             else:  # GenerationStrategy.NONE
                 strategies_list = []
 
@@ -143,21 +158,19 @@ def _single_strategy(
     return samples
 
 
-def _misaligned_strategy(tasks: List[Task], strategies: List[Dict[str, Any]]) -> List[Sample]:
-    monitor = [(strategy["name"], strategy["hint"]) for strategy in strategies]
-    agent = [(strategy["name"], strategy["description"]) for strategy in strategies]
+def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy]) -> List[Sample]:
+    monitor = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     samples = []
     for task in tasks:
         agent_prompt_template = task.agent_prompt.format(strategy=AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE)
-        for hint, strategy in product(monitor, agent):
-            if hint[0] == strategy[0]:
+        for hint, strategy in product(monitor, strategies):
+            if hint.name == strategy.name:
                 continue
-            strategy_obj = Strategy(name=strategy[0], description=strategy[1])
-            hint_obj = Hint(name=hint[0], description=hint[1])
+            hint_obj = Hint(name=hint.name, description=hint.description)
             samples.append(
                 _create_sample(
                     task=task,
-                    strategies=[strategy_obj],
+                    strategies=[strategy],
                     hint=hint_obj,
                     agent_prompt_template=agent_prompt_template,
                 )
@@ -165,22 +178,19 @@ def _misaligned_strategy(tasks: List[Task], strategies: List[Dict[str, Any]]) ->
     return samples
 
 
-def _multiple_strategy(tasks: List[Task], strategies: List[Dict[str, Any]], k: int = 3) -> List[Sample]:
-    hints = [(strategy["name"], strategy["hint"]) for strategy in strategies]
-    opts = [(strategy["name"], strategy["description"]) for strategy in strategies]
+def _multiple_strategy(tasks: List[Task], strategies: List[Strategy], k: int = 3) -> List[Sample]:
+    hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     samples = []
     for task in tasks:
         agent_prompt_template = task.agent_prompt.format(strategy=AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE)
         for strategy in strategies:
             hint = random.choice(hints)
-            strats = random.choices(opts, k=k)
-            strategy_objs = [Strategy(name=s[0], description=s[1]) for s in strats]
-            hint_obj = Hint(name=hint[0], description=hint[1])
+            strats = random.choices(strategies, k=k)
             samples.append(
                 _create_sample(
                     task=task,
-                    strategies=strategy_objs,
-                    hint=hint_obj,
+                    strategies=strats,
+                    hint=hint,
                     agent_prompt_template=agent_prompt_template,
                 )
             )
