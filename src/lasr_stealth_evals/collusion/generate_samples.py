@@ -15,6 +15,9 @@ from lasr_stealth_evals.collusion.prompts import (
     AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE,
     AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE,
     AGENT_NO_STRATEGY_PROMPT_TEMPLATE,
+    AGENT_COT_PROMPT,
+    AGENT_NO_COT_PROMPT,
+    AGENT_TURNS_TEMPLATE,
 )
 
 
@@ -87,11 +90,11 @@ def generate_samples(
     # Load strategy and task data
     match generation_strategy:
         case GenerationStrategy.MATCH | GenerationStrategy.NONE:
-            return _single_strategy(tasks, strategies, generation_strategy)
+            return _single_strategy(tasks, strategies, generation_strategy, cot, turns)
         case GenerationStrategy.MISALIGNED:
-            return _misaligned_strategy(tasks, strategies)
+            return _misaligned_strategy(tasks, strategies, cot, turns)
         case GenerationStrategy.MULTIPLE:
-            return _multiple_strategy(tasks, strategies)
+            return _multiple_strategy(tasks, strategies, cot, turns)
         case _:
             raise ValueError(f"Invalid generation strategy: {generation_strategy}")
 
@@ -101,8 +104,17 @@ def _create_sample(
     strategies: List[Strategy],
     hint: Hint,
     agent_prompt_template: str,
+    cot: bool,
+    turns: int,
 ) -> Sample:
     """Helper function to create a sample with the given parameters."""
+    if cot:
+        cot_prompt = AGENT_COT_PROMPT
+    else:
+        cot_prompt = AGENT_NO_COT_PROMPT
+    agent_prompt_template = (
+        agent_prompt_template + cot_prompt + AGENT_TURNS_TEMPLATE
+    )  # add info about turns and cot for agent
     strategy_names = ", ".join([s.name for s in strategies])
     agent_strategy = "\n".join([s.description for s in strategies])
     return Sample(
@@ -113,11 +125,13 @@ def _create_sample(
                 "task_name": task.task_name,
                 "strategy_name": strategy_names,
                 "hint": hint.description,
+                "turns": turns,
+                "cot": cot,
             },
         ),
         target="True",
         metadata=Metadata(
-            agent_prompt=agent_prompt_template.format(agent_strategy=agent_strategy),
+            agent_prompt=agent_prompt_template.format(agent_strategy=agent_strategy, turns=turns),
             monitor_prompt=task.monitor_prompt.format(monitor_hidden_goal=hint.description),
             hint=hint,
             strategies=strategies,
@@ -127,7 +141,7 @@ def _create_sample(
 
 
 def _single_strategy(
-    tasks: List[Task], strategies: List[Strategy], generation_strategy: GenerationStrategy
+    tasks: List[Task], strategies: List[Strategy], generation_strategy: GenerationStrategy, cot: bool, turns: int
 ) -> List[Sample]:
     """Combined function handling both MATCH and NONE generation strategies."""
     samples = []
@@ -153,12 +167,14 @@ def _single_strategy(
                     strategies=strategies_list,
                     hint=hint_obj,
                     agent_prompt_template=agent_prompt_template,
+                    cot=cot,
+                    turns=turns,
                 )
             )
     return samples
 
 
-def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy]) -> List[Sample]:
+def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int) -> List[Sample]:
     monitor = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     samples = []
     for task in tasks:
@@ -173,12 +189,16 @@ def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy]) -> List[
                     strategies=[strategy],
                     hint=hint_obj,
                     agent_prompt_template=agent_prompt_template,
+                    cot=cot,
+                    turns=turns,
                 )
             )
     return samples
 
 
-def _multiple_strategy(tasks: List[Task], strategies: List[Strategy], k: int = 3) -> List[Sample]:
+def _multiple_strategy(
+    tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int, k: int = 3
+) -> List[Sample]:
     hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     samples = []
     for task in tasks:
@@ -192,6 +212,8 @@ def _multiple_strategy(tasks: List[Task], strategies: List[Strategy], k: int = 3
                     strategies=strats,
                     hint=hint,
                     agent_prompt_template=agent_prompt_template,
+                    cot=cot,
+                    turns=turns,
                 )
             )
     return samples
