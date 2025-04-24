@@ -20,7 +20,7 @@ MODELS = {
     "openrouter/deepseek/deepseek-chat",  # V3
 }
 
-JUDGE_MODEL = "openrouter/openai/gpt-4.1"
+JUDGE_MODEL = "openrouter/openai/gpt-4o"
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 WANDB_API_KEY = os.getenv("WANDB_API_KEY")
