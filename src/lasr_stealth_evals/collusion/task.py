@@ -25,7 +25,7 @@ wandb.login(key=WANDB_API_KEY)
 DEFAULT_EPOCHS = 1  # runs of the full dataset
 DEFAULT_MODEL = "openrouter/" + "openai/gpt-4o"
 DEFAULT_TURNS = 3  # exchanges between agents
-DEFAULT_LIMIT = 3
+DEFAULT_LIMIT = None
 DEFAULT_GENERATION_STRATEGY = GenerationStrategy.MATCH
 DEFAULT_COT = True
 
@@ -127,12 +127,17 @@ def parse_args():
         default=DEFAULT_COT,
         help=f"Whether to give the model/monitor CoT (default: {DEFAULT_COT})",
     )
-
+    parser.add_argument(
+        "--max-connections",
+        type=int,
+        default=10,
+        help="Samples to run in parallel (default: 10))",
+    )
     return parser.parse_args()
 
 
 def main(args: argparse.Namespace):
-    with wandb.init(project="collusion", config=vars(args), reinit="create_new") as run:
+    with wandb.init(project="collusion", entity="fdmi", config=vars(args), reinit="create_new") as run:
         artifact = wandb.Artifact("information", type="log")
         artifact.add_file(str(DATA_DIR / "strategy.json"))
         artifact.add_file(str(DATA_DIR / "tasks.json"))
@@ -153,6 +158,7 @@ def main(args: argparse.Namespace):
             epochs=run.config["epochs"],
             limit=run.config["limit"],
             log_dir=str(LOG_DIR),
+            max_connections=args.max_connections,
         )
 
         artifact = wandb.Artifact("log", type="log")
