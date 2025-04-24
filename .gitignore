@@ -91,3 +91,6 @@ logger.json
 
 # nik's testing file
 nik.ipynb
+
+# wandb
+wandb/
