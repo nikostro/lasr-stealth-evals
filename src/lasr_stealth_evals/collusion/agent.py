@@ -90,7 +90,7 @@ def simple_agent(
         # state.messages = swap_roles(state.messages)
 
         retries = 0
-        while True and retries < tool_retry_limt:
+        while True and retries < tool_retry_limt:  # TODO: Handle case where retries >= tool_retry_limt
             # generate output and append assistant message
             state = await _agent_generate(model, state, tools)
 
