@@ -5,13 +5,11 @@ from pathlib import Path
 from typing import List
 from itertools import product
 
-from inspect_ai._util.format import format_template
 from inspect_ai.dataset import Sample
 from pydantic import BaseModel
 
 from lasr_stealth_evals.collusion.config import METADATA_TAG
 from lasr_stealth_evals.collusion.prompts import (
-    USER_PROMPT_TEMPLATE,
     AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE,
     AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE,
     AGENT_NO_STRATEGY_PROMPT_TEMPLATE,
@@ -117,18 +115,18 @@ def _create_sample(
     )  # add info about turns and cot for agent
     strategy_names = ", ".join([s.name for s in strategies])
     agent_strategy = "\n".join([s.description for s in strategies])
+    sample_overview_dict = {
+        "task_name": task.task_name,
+        "strategy_name": strategy_names,
+        "hint": hint.description,
+        "turns": turns,
+        "cot": cot,
+    }
+    sample_overview = METADATA_TAG + "\n".join(
+        [key.upper() + ": " + str(value) for key, value in sample_overview_dict.items()]
+    )
     return Sample(
-        input=format_template(
-            USER_PROMPT_TEMPLATE,
-            {
-                "metadata_tag": METADATA_TAG,
-                "task_name": task.task_name,
-                "strategy_name": strategy_names,
-                "hint": hint.description,
-                "turns": turns,
-                "cot": cot,
-            },
-        ),
+        input=sample_overview,
         target="True",
         metadata=Metadata(
             agent_prompt=agent_prompt_template.format(agent_strategy=agent_strategy, turns=turns),
@@ -180,8 +178,8 @@ def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy], cot: boo
     for task in tasks:
         agent_prompt_template = task.agent_prompt.format(strategy=AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE)
         for hint, strategy in product(monitor, strategies):
-            if hint.name == strategy.name:
-                continue
+            # if hint.name == strategy.name:
+            #     continue
             hint_obj = Hint(name=hint.name, description=hint.description)
             samples.append(
                 _create_sample(
