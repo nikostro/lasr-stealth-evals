@@ -74,3 +74,10 @@ def test_task_prompt_placeholders(task_file: Path) -> None:
         assert any(
             placeholder in task["monitor_prompt"] for placeholder in monitor_placeholders
         ), f"Task {task['task_name']} monitor_prompt missing required placeholder"
+
+
+if __name__ == "__main__":
+    import pytest
+    import sys
+
+    sys.exit(pytest.main([__file__, "-v"]))
