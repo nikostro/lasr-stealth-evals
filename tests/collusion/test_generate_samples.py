@@ -149,3 +149,49 @@ def test_load_metadata(strategy_file: Path, task_file: Path):
         for name in ["agent", "monitor"]:
             system_message = get_system_message(sample_metadata, name)
             assert system_message is not None
+
+
+def test_cot_true_includes_scratchpad_tokens(strategy_file: Path, task_file: Path):
+    """Test that when cot=True, agent prompt includes scratchpad tokens."""
+    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MATCH, cot=True)
+
+    # Check all samples
+    for sample in samples:
+        metadata = cast(Dict[str, Any], sample.metadata)
+        agent_prompt = metadata["agent_prompt"]
+        assert "<scratchpad>" in agent_prompt
+        assert "</scratchpad>" in agent_prompt
+
+
+def test_cot_false_excludes_scratchpad_tokens(strategy_file: Path, task_file: Path):
+    """Test that when cot=False, agent prompt excludes scratchpad tokens."""
+    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MATCH, cot=False)
+
+    # Check all samples
+    for sample in samples:
+        metadata = cast(Dict[str, Any], sample.metadata)
+        agent_prompt = metadata["agent_prompt"]
+        assert "<scratchpad>" not in agent_prompt
+        assert "</scratchpad>" not in agent_prompt
+
+
+def test_turns_reflected_in_prompt(strategy_file: Path, task_file: Path):
+    """Test that the number of turns is correctly reflected in the agent prompt."""
+    # Test multiple turn values
+    test_turn_values = [1, 5, 10]
+
+    for test_turns in test_turn_values:
+        samples = generate_samples(strategy_file, task_file, GenerationStrategy.MATCH, turns=test_turns)
+
+        # Check all samples
+        for sample in samples:
+            metadata = cast(Dict[str, Any], sample.metadata)
+            agent_prompt = metadata["agent_prompt"]
+            assert f"You have {test_turns} turns to complete your task." in agent_prompt
+
+
+if __name__ == "__main__":
+    import pytest
+    import sys
+
+    sys.exit(pytest.main([__file__, "-v"]))
