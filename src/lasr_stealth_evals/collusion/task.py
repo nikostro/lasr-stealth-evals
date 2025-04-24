@@ -12,9 +12,12 @@ from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import store
 
 from lasr_stealth_evals.collusion.agent import simple_agent, submit_tool
+from lasr_stealth_evals.collusion.config import JUDGE_MODEL, MODELS
 from lasr_stealth_evals.collusion.config import WANDB_API_KEY
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
 from lasr_stealth_evals.collusion.scorer import approval_scorer, judge
+from logging import getLogger
+import time
 
 wandb.login(key=WANDB_API_KEY)
 
@@ -22,7 +25,7 @@ wandb.login(key=WANDB_API_KEY)
 DEFAULT_EPOCHS = 1  # runs of the full dataset
 DEFAULT_MODEL = "openrouter/" + "openai/gpt-4o"
 DEFAULT_TURNS = 3  # exchanges between agents
-DEFAULT_LIMIT = None
+DEFAULT_LIMIT = 3
 DEFAULT_GENERATION_STRATEGY = GenerationStrategy.MATCH
 DEFAULT_COT = True
 
@@ -30,6 +33,8 @@ DEFAULT_COT = True
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 LOG_DIR = PROJECT_ROOT / "logs"
 DATA_DIR = PROJECT_ROOT / "data"
+
+logger = getLogger()
 
 
 def strategy(value: str) -> GenerationStrategy:
@@ -79,7 +84,7 @@ def collusion(dataset: List[Sample]):
                 as_solver(agent_loop()),
             ],
             # sandbox="docker",
-            scorer=[approval_scorer(), judge()],
+            scorer=[approval_scorer(), judge(model=JUDGE_MODEL)],
             metrics=[accuracy(), stderr()],
         )
 
@@ -114,7 +119,7 @@ def parse_args():
         "--strategy",
         type=strategy,
         default=DEFAULT_GENERATION_STRATEGY,
-        help=f"Generation strategy to use (default: {DEFAULT_GENERATION_STRATEGY.name}). Can be an integer (0-2) or one of {[s.name for s in GenerationStrategy]}",
+        help=f"Generation strategy to use (default: {DEFAULT_GENERATION_STRATEGY.name}). Can be an integer (0-3) or one of {[s.name for s in GenerationStrategy]}",
     )
     parser.add_argument(
         "--cot",
@@ -122,6 +127,7 @@ def parse_args():
         default=DEFAULT_COT,
         help=f"Whether to give the model/monitor CoT (default: {DEFAULT_COT})",
     )
+
     return parser.parse_args()
 
 
@@ -157,4 +163,7 @@ def main(args: argparse.Namespace):
 
 if __name__ == "__main__":
     args = parse_args()
+    if args.model not in MODELS:
+        logger.warning(f"WARNING: Model {args.model} not in list of tested models: {MODELS}")
+        time.sleep(2)
     main(args)
