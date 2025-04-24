@@ -178,8 +178,6 @@ def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy], cot: boo
     for task in tasks:
         agent_prompt_template = task.agent_prompt.format(strategy=AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE)
         for hint, strategy in product(monitor, strategies):
-            # if hint.name == strategy.name:
-            #     continue
             hint_obj = Hint(name=hint.name, description=hint.description)
             samples.append(
                 _create_sample(

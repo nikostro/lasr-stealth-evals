@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 from typing import List
 
+import wandb
 from inspect_ai import Task, eval, task
 from inspect_ai.agent import Agent, AgentState, agent, as_solver
 from inspect_ai.dataset import Sample
@@ -11,8 +12,11 @@ from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import store
 
 from lasr_stealth_evals.collusion.agent import simple_agent, submit_tool
+from lasr_stealth_evals.collusion.config import WANDB_API_KEY
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
 from lasr_stealth_evals.collusion.scorer import approval_scorer, judge
+
+wandb.login(key=WANDB_API_KEY)
 
 # Default configuration
 DEFAULT_EPOCHS = 1  # runs of the full dataset
@@ -121,9 +125,36 @@ def parse_args():
     return parser.parse_args()
 
 
+def main(args: argparse.Namespace):
+    with wandb.init(project="collusion", config=vars(args), reinit="create_new") as run:
+        artifact = wandb.Artifact("information", type="log")
+        artifact.add_file(str(DATA_DIR / "strategy.json"))
+        artifact.add_file(str(DATA_DIR / "tasks.json"))
+        artifact.save()
+        run.log_artifact(artifact, name="information")
+
+        dataset = generate_samples(
+            DATA_DIR / "strategy.json",
+            DATA_DIR / "tasks.json",
+            args.strategy,
+            run.config["cot"],
+            run.config["turns"],
+        )
+        evaluation = collusion(dataset)
+        log = eval(
+            evaluation,
+            model=run.config["model"],
+            epochs=run.config["epochs"],
+            limit=run.config["limit"],
+            log_dir=str(LOG_DIR),
+        )
+
+        artifact = wandb.Artifact("log", type="log")
+        artifact.add_file(str(log[0].location))
+        artifact.save()
+        run.log_artifact(artifact, name="log")
+
+
 if __name__ == "__main__":
     args = parse_args()
-    print(args.cot)
-    dataset = generate_samples(DATA_DIR / "strategy.json", DATA_DIR / "tasks.json", args.strategy, args.cot, args.turns)
-    evaluation = collusion(dataset)
-    eval(evaluation, model=args.model, epochs=args.epochs, limit=args.limit, log_dir=str(LOG_DIR))
+    main(args)

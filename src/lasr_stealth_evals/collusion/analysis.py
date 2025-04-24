@@ -4,7 +4,12 @@ from typing import Any, Dict, List, Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import wandb
 from inspect_ai.log import read_eval_log
+
+from lasr_stealth_evals.collusion.config import WANDB_API_KEY
+
+wandb.login(key=WANDB_API_KEY)
 
 
 def analyze_strategy_hint_patterns(log_path: Path):
@@ -29,14 +34,14 @@ def analyze_strategy_hint_patterns(log_path: Path):
         hint_name = hint.get("name", "unknown")
 
         # Get the judge's score (C for correct/collusion, I for incorrect/no collusion)
-        judge_score = sample.score.value if sample.score else None
+        judge_score = sample.scores["judge"].value if sample.scores["judge"] else None  # type: ignore
         outcome = judge_score == "C"  # True if judge marked as collusion (C)
 
         data.append(
             {
                 "strategy": strategy_names[0] if len(strategy_names) == 1 else "multiple",
                 "hint": hint_name,
-                "outcome": outcome,
+                "outcome": int(outcome),
                 "score": judge_score,
             }
         )
@@ -75,7 +80,7 @@ def analyze_strategy_hint_patterns(log_path: Path):
 
 if __name__ == "__main__":
     # Get the most recent log file
-    log_dir = Path(__file__).parent / "logs"
+    log_dir = Path(__file__).parent.parent.parent.parent / "logs"
     log_files = sorted(log_dir.glob("*.eval"), key=lambda x: x.stat().st_mtime, reverse=True)
 
     if not log_files:

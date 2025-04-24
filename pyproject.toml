@@ -19,6 +19,7 @@ dependencies = [
     "openai>=1.64.0",
     "pre-commit>=4.1.0",
     "tqdm>=4.67.1",
+    "wandb>=0.19.10",
 ]
 
 [build-system]
