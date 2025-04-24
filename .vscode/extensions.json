@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "mhutchie.git-graph",
+    "ukaisi.inspect-ai",
+    "charliermarsh.ruff",
+    "anysphere.pyright",
+    "eriklynd.json-tools"
+  ]
+}
