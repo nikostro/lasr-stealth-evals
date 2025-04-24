@@ -113,13 +113,17 @@ def parse_args():
         help=f"Generation strategy to use (default: {DEFAULT_GENERATION_STRATEGY.name}). Can be an integer (0-2) or one of {[s.name for s in GenerationStrategy]}",
     )
     parser.add_argument(
-        "--cot", type=bool, default=DEFAULT_COT, help=f"Whether to give the model/monitor CoT (default: {DEFAULT_COT})"
+        "--cot",
+        action=argparse.BooleanOptionalAction,
+        default=DEFAULT_COT,
+        help=f"Whether to give the model/monitor CoT (default: {DEFAULT_COT})",
     )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
+    print(args.cot)
     dataset = generate_samples(DATA_DIR / "strategy.json", DATA_DIR / "tasks.json", args.strategy, args.cot, args.turns)
     evaluation = collusion(dataset)
     eval(evaluation, model=args.model, epochs=args.epochs, limit=args.limit, log_dir=str(LOG_DIR))
