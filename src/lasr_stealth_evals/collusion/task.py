@@ -20,9 +20,12 @@ DEFAULT_MODEL = "openrouter/" + "openai/gpt-4o"
 DEFAULT_TURNS = 3  # exchanges between agents
 DEFAULT_LIMIT = None
 DEFAULT_GENERATION_STRATEGY = GenerationStrategy.MATCH
+DEFAULT_COT = True
 
 # Load data
-DATA_DIR = Path(__file__).parent.parent.parent.parent / "data"
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+LOG_DIR = PROJECT_ROOT / "logs"
+DATA_DIR = PROJECT_ROOT / "data"
 
 
 def strategy(value: str) -> GenerationStrategy:
@@ -109,11 +112,14 @@ def parse_args():
         default=DEFAULT_GENERATION_STRATEGY,
         help=f"Generation strategy to use (default: {DEFAULT_GENERATION_STRATEGY.name}). Can be an integer (0-2) or one of {[s.name for s in GenerationStrategy]}",
     )
+    parser.add_argument(
+        "--cot", type=bool, default=DEFAULT_COT, help=f"Whether to give the model/monitor CoT (default: {DEFAULT_COT})"
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    dataset = generate_samples(DATA_DIR / "strategy.json", DATA_DIR / "tasks.json", args.strategy)
+    dataset = generate_samples(DATA_DIR / "strategy.json", DATA_DIR / "tasks.json", args.strategy, args.cot, args.turns)
     evaluation = collusion(dataset)
-    eval(evaluation, model=args.model, epochs=args.epochs, limit=args.limit)
+    eval(evaluation, model=args.model, epochs=args.epochs, limit=args.limit, log_dir=str(LOG_DIR))
