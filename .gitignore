@@ -88,6 +88,7 @@ notebooks/data
 plots
 logger.json
 .compose.yaml
+wandb/
 
 # nik's testing file
 nik.ipynb

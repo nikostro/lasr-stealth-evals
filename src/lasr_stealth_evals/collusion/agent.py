@@ -122,6 +122,13 @@ def simple_agent(
             else:
                 break
 
+        else:
+            transcript().info(
+                f"Monitor failed to use submit tool after {tool_retry_limt} attempts. Terminating agent loop."
+            )
+            store().set("completed", True)  # TODO different param
+            return state
+
         # state.messages = remove_role_message(state.messages)
 
         return state
