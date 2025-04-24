@@ -120,6 +120,8 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    dataset = generate_samples(DATA_DIR / "strategy.json", DATA_DIR / "tasks.json", args.strategy, args.cot, args.turns)
+    dataset = generate_samples(
+        DATA_DIR / "strategy.json", DATA_DIR / "complete_tasks.json", args.strategy, args.cot, args.turns
+    )
     evaluation = collusion(dataset)
     eval(evaluation, model=args.model, epochs=args.epochs, limit=args.limit, log_dir=str(LOG_DIR))
