@@ -11,14 +11,20 @@ dependencies = [
     "autogen-agentchat>=0.4.9.2",
     "autogen-core>=0.4.9.2",
     "autogen-ext>=0.4.9.2",
+    "bs4>=0.0.2",
     "datasets>=3.3.2",
     "inspect-ai>=0.3.66",
+    "jsonpointer>=3.0.0",
     "langchain>=0.3.20",
     "langchain-community>=0.3.19",
     "langchain-openai>=0.3.7",
     "openai>=1.64.0",
+    "pandas>=2.2.3",
+    "plotly>=6.0.1",
     "pre-commit>=4.1.0",
+    "textual>=3.0.1",
     "tqdm>=4.67.1",
+    "yarl>=1.19.0",
 ]
 
 [build-system]
