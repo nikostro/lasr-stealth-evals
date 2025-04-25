@@ -16,8 +16,6 @@ from lasr_stealth_evals.collusion.config import JUDGE_MODEL, MODELS, WANDB_API_K
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
 from lasr_stealth_evals.collusion.scorer import approval_scorer, judge
 
-wandb.login(key=WANDB_API_KEY)
-
 # Default configuration
 DEFAULT_EPOCHS = 1  # runs of the full dataset
 DEFAULT_MODEL = "openrouter/" + "openai/gpt-4o"
@@ -91,7 +89,7 @@ def evaluation(
         dataset=dataset,
         solver=[
             update_store(),
-            as_solver(agent_loop(monitor_model=monitor_model)),
+            as_solver(agent=agent_loop(monitor_model=monitor_model, turns=turns)),
         ],
         scorer=[approval_scorer(), judge(model=JUDGE_MODEL)],
         metrics=[accuracy(), stderr()],
@@ -184,6 +182,8 @@ def main(args: argparse.Namespace):
 
 
 if __name__ == "__main__":
+    wandb.login(key=WANDB_API_KEY)
+
     args = parse_args()
     if args.model not in MODELS:
         logger.warning(f"WARNING: Model {args.model} not in list of tested models: {MODELS}")
