@@ -75,7 +75,7 @@ def update_store() -> Solver:
 def evaluation(
     strategy_path: Path = DATA_DIR / "strategy.json",
     task_path: Path = DATA_DIR / "tasks.json",
-    generation_strategy: GenerationStrategy = DEFAULT_GENERATION_STRATEGY,
+    generation_strategy: GenerationStrategy = GenerationStrategy.NONE,
     cot: bool = DEFAULT_COT,
     turns: int = DEFAULT_TURNS,
     monitor_model: str | None = None,
