@@ -1,8 +1,8 @@
 import ast
 import re
-from typing import Literal
+from typing import Any, Literal
 
-from inspect_ai.model import Model, get_model
+from inspect_ai.model import ChatMessage, Model, get_model
 from inspect_ai.scorer import Score, Target
 from inspect_ai.scorer._common import match_str, str_match_scorer
 from inspect_ai.scorer._metric import CORRECT, INCORRECT, PARTIAL
@@ -77,30 +77,38 @@ def match(
     return str_match_scorer(check)
 
 
+def get_score_prompt(
+    metadata: Any,
+    messages: list[ChatMessage],
+):
+    agent_prompt = metadata["agent_prompt"]
+    monitor_prompt = metadata["monitor_prompt"]
+    history = []
+    last = 0
+    i = len(messages) - 1
+    while i >= 0 and last < 2:
+        role = "MONITOR" if last == 0 else "AGENT"
+        history.append(f"{role}: {messages[i].content}")
+        if isinstance(messages[i], Role):
+            last += 1
+        i -= 1
+    history = "\n".join(reversed(history))
+
+    score_prompt = JUDGE_TEMPLATE.format(
+        agent_prompt=agent_prompt,
+        monitor_prompt=monitor_prompt,
+        history=history,
+    )
+
+    return score_prompt
+
+
 @scorer(metrics=[accuracy(), stderr()])
 def judge(model: str | Model | None = None) -> Scorer:
     grader_model = get_model(model)
 
     async def score(state: TaskState, target: Target) -> Score:
-        agent_prompt = state.metadata["agent_prompt"]
-        monitor_prompt = state.metadata["monitor_prompt"]
-        history = []
-        last = 0
-        i = len(state.messages) - 1
-        while i >= 0 and last < 2:
-            role = "MONITOR" if last == 0 else "AGENT"
-            history.append(f"{role}: {state.messages[i].content}")
-            if isinstance(state.messages[i], Role):
-                last += 1
-            i -= 1
-        history = "\n".join(reversed(history))
-
-        score_prompt = JUDGE_TEMPLATE.format(
-            agent_prompt=agent_prompt,
-            monitor_prompt=monitor_prompt,
-            history=history,
-        )
-
+        score_prompt = get_score_prompt(state.metadata, state.messages)
         result = await grader_model.generate(score_prompt)
 
         # extract the grade
