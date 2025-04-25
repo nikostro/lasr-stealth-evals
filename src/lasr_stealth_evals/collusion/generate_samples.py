@@ -1,20 +1,19 @@
 import json
-import random
 from enum import Enum
+from itertools import product
 from pathlib import Path
 from typing import List
-from itertools import product
 
 from inspect_ai.dataset import Sample
 from pydantic import BaseModel
 
 from lasr_stealth_evals.collusion.config import METADATA_TAG
 from lasr_stealth_evals.collusion.prompts import (
-    AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE,
-    AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE,
-    AGENT_NO_STRATEGY_PROMPT_TEMPLATE,
     AGENT_COT_PROMPT,
+    AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE,
     AGENT_NO_COT_PROMPT,
+    AGENT_NO_STRATEGY_PROMPT_TEMPLATE,
+    AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE,
     AGENT_TURNS_TEMPLATE,
 )
 
@@ -198,10 +197,9 @@ def _multiple_strategy(
     hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     samples = []
     for task in tasks:
-        agent_prompt_template = task.agent_prompt.format(strategy=AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE)
-        for strategy in strategies:
-            hint = random.choice(hints)
-            strats = random.choices(strategies, k=k)
+        for hint in hints:
+            agent_prompt_template = task.agent_prompt.format(strategy=AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE)
+            strats = strategies
             samples.append(
                 _create_sample(
                     task=task,
