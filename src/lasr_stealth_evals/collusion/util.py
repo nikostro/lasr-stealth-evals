@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import List
 
 from inspect_ai.model import ChatMessage, ChatMessageAssistant, ChatMessageSystem, ChatMessageTool, ChatMessageUser
@@ -61,3 +62,13 @@ def add_role_message(messages: List[ChatMessage], agent_type: str) -> List[ChatM
 def remove_role_message(messages: List[ChatMessage]) -> List[ChatMessage]:
     """Remove the role message from the chat history."""
     return [message for message in messages if not isinstance(message, Role)]
+
+
+def filter_history(history: List[ChatMessage]) -> List[ChatMessage]:
+    """Filter the chat history to remove role messages."""
+    import re
+
+    filtered_history = deepcopy(history)
+    for message in filtered_history:
+        message.content = re.sub(r"<scratchpad>.*?</scratchpad>", "", str(message.content), flags=re.DOTALL)
+    return filtered_history

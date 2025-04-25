@@ -9,22 +9,22 @@ INSPECT_EVAL_COMMON = $(INSPECT_EVAL_BASE) --max-connections 400 --fail-on-error
 
 # Small run for testing purposes
 eval-test:
-	$(INSPECT_EVAL_BASE) --limit 2 --model openrouter/openai/gpt-4.1-mini -T turns=1
+	$(INSPECT_EVAL_BASE) --limit 2 --model openrouter/openai/gpt-4.1-mini -T turns=5 -T agent_cot=True -T monitor_cot=False
 
 test:
 	uv run pytest
 
 eval-strategy-hint:
-	make eval ARGS="--epochs 3 --turns 5 --model openrouter/openai/gpt-4.1 --strategy 1 --cot --max-connections 500"
+	make eval ARGS="--epochs 3 --turns 5 --model openrouter/openai/gpt-4.1 --strategy 1 -T agent_cot=True -T monitor_cot=False --max-connections 500"
 
 eval-cot:
-	$(INSPECT_EVAL_COMMON) -T cot=False turns=5
-	$(INSPECT_EVAL_COMMON) -T cot=True turns=5
+	$(INSPECT_EVAL_COMMON) -T agent_cot=False -T monitor_cot=False turns=5
+	$(INSPECT_EVAL_COMMON) -T agent_cot=True -T monitor_cot=True turns=5
 
 eval-cot-strats:
 	$(eval MAX_CONNECTIONS := 500)
-	$(INSPECT_EVAL_COMMON) -T cot=False turns=5 generation_strategy=2
-	$(INSPECT_EVAL_COMMON) -T cot=True turns=5 generation_strategy=2
+	$(INSPECT_EVAL_COMMON) -T agent_cot=False -T monitor_cot=False turns=5 generation_strategy=2
+	$(INSPECT_EVAL_COMMON) -T agent_cot=True -T monitor_cot=True turns=5 generation_strategy=2
 
 # Define the models to evaluate
 MODELS = openrouter/openai/gpt-4.1 openrouter/anthropic/claude-3.7-sonnet openrouter/google/gemini-2.5-pro-preview-03-25 openrouter/deepseek/deepseek-chat
@@ -33,7 +33,7 @@ MODELS = openrouter/openai/gpt-4.1 openrouter/anthropic/claude-3.7-sonnet openro
 eval-agent:
 	@for model in $(MODELS); do \
 		echo "Running evaluation for model: $$model"; \
-		make eval ARGS="--epochs 5 --turns 5 --model $$model --monitor-model openrouter/openai/gpt-4.1 --cot --max-connections 300 --strategy 3"; \
+		make eval ARGS="--epochs 5 --turns 5 --model $$model --monitor-model openrouter/openai/gpt-4.1 -T agent_cot=True -T monitor_cot=False --max-connections 300 --strategy 3"; \
 		echo "Completed evaluation for model: $$model"; \
 		echo "----------------------------------------"; \
 	done

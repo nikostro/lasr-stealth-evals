@@ -11,7 +11,7 @@ from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import store
 
 import wandb
-from lasr_stealth_evals.collusion.agent import simple_agent, submit_tool
+from lasr_stealth_evals.collusion.agent import collusion_agent, monitor_agent, submit_tool
 from lasr_stealth_evals.collusion.config import JUDGE_MODEL, MODELS, WANDB_API_KEY
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
 from lasr_stealth_evals.collusion.scorer import approval_scorer, judge
@@ -40,13 +40,15 @@ def strategy(value: str) -> GenerationStrategy:
 
 
 @agent
-def agent_loop(turns: int = 3, monitor_model: str | None = None) -> Agent:
-    misaligned_agent = simple_agent(name="agent")
-    monitor = simple_agent(name="monitor", tools=[submit_tool()], model=monitor_model)
+def agent_loop(
+    turns: int = 3, monitor_model: str | None = None, agent_cot: bool = DEFAULT_COT, monitor_cot: bool = DEFAULT_COT
+) -> Agent:
+    misaligned = collusion_agent(name="agent", cot=agent_cot)
+    monitor = monitor_agent(name="monitor", tools=[submit_tool()], model=monitor_model, cot=monitor_cot)
 
     async def execute(state: AgentState) -> AgentState:
         for i in range(turns):
-            state = await misaligned_agent(state)
+            state = await misaligned(state)
             state = await monitor(state)
 
             if store().get("completed"):
@@ -74,7 +76,8 @@ def evaluation(
     strategy_path: Path = DATA_DIR / "strategy.json",
     task_path: Path = DATA_DIR / "tasks.json",
     generation_strategy: int = 2,
-    cot: bool = DEFAULT_COT,
+    agent_cot: bool = DEFAULT_COT,
+    monitor_cot: bool = DEFAULT_COT,
     turns: int = DEFAULT_TURNS,
     monitor_model: str | None = None,
 ) -> Task:
@@ -82,14 +85,21 @@ def evaluation(
         strategy_path=strategy_path,
         task_path=task_path,
         generation_strategy=GenerationStrategy(generation_strategy),
-        cot=cot,
+        cot=agent_cot,
         turns=turns,
     )
     return Task(
         dataset=dataset,
         solver=[
             update_store(),
-            as_solver(agent=agent_loop(monitor_model=monitor_model, turns=turns)),
+            as_solver(
+                agent=agent_loop(
+                    monitor_model=monitor_model,
+                    turns=turns,
+                    agent_cot=agent_cot,
+                    monitor_cot=monitor_cot,
+                )
+            ),
         ],
         scorer=[approval_scorer(), judge(model=JUDGE_MODEL)],
         metrics=[accuracy(), stderr()],
@@ -131,10 +141,16 @@ def parse_args():
         help=f"Generation strategy to use (default: {DEFAULT_GENERATION_STRATEGY.name}). Can be an integer (0-3) or one of {[s.name for s in GenerationStrategy]}",
     )
     parser.add_argument(
-        "--cot",
+        "--agent-cot",
         action=argparse.BooleanOptionalAction,
         default=DEFAULT_COT,
         help=f"Whether to give the model/monitor CoT (default: {DEFAULT_COT})",
+    )
+    parser.add_argument(
+        "--monitor-cot",
+        action=argparse.BooleanOptionalAction,
+        default=DEFAULT_COT,
+        help=f"Whether to give the monitor CoT (default: {DEFAULT_COT})",
     )
     parser.add_argument(
         "--max-connections",
