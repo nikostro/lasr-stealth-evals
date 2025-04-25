@@ -3,11 +3,9 @@ import argparse
 import time
 from logging import getLogger
 from pathlib import Path
-from typing import List
 
-from inspect_ai import Task, eval, task
+from inspect_ai import Task, task
 from inspect_ai.agent import Agent, AgentState, agent, as_solver
-from inspect_ai.dataset import Sample
 from inspect_ai.scorer import accuracy, stderr
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import store
@@ -46,7 +44,7 @@ def strategy(value: str) -> GenerationStrategy:
 @agent
 def agent_loop(turns: int = 3, monitor_model: str | None = None) -> Agent:
     misaligned_agent = simple_agent(name="agent")
-    monitor = simple_agent(name="monitor", model=monitor_model, tools=[submit_tool()])
+    monitor = simple_agent(name="monitor", tools=[submit_tool()], model=monitor_model)
 
     async def execute(state: AgentState) -> AgentState:
         for i in range(turns):
@@ -73,20 +71,34 @@ def update_store() -> Solver:
     return solve
 
 
-def collusion(dataset: List[Sample], monitor_model: str | None = None):
-    @task
-    def evaluation() -> Task:
-        return Task(
-            dataset=dataset,
-            solver=[
-                update_store(),
-                as_solver(agent_loop(monitor_model=monitor_model)),
-            ],
-            # sandbox="docker",
-            scorer=[approval_scorer(), judge(model=JUDGE_MODEL)],
-            metrics=[accuracy(), stderr()],
-        )
+@task
+def evaluation(
+    strategy_path: Path = DATA_DIR / "strategy.json",
+    task_path: Path = DATA_DIR / "tasks.json",
+    generation_strategy: GenerationStrategy = DEFAULT_GENERATION_STRATEGY,
+    cot: bool = DEFAULT_COT,
+    turns: int = DEFAULT_TURNS,
+    monitor_model: str | None = None,
+) -> Task:
+    dataset = generate_samples(
+        strategy_path=strategy_path,
+        task_path=task_path,
+        generation_strategy=generation_strategy,
+        cot=cot,
+        turns=turns,
+    )
+    return Task(
+        dataset=dataset,
+        solver=[
+            update_store(),
+            as_solver(agent_loop(monitor_model=monitor_model)),
+        ],
+        scorer=[approval_scorer(), judge(model=JUDGE_MODEL)],
+        metrics=[accuracy(), stderr()],
+    )
 
+
+def collusion():
     return evaluation
 
 
@@ -149,27 +161,26 @@ def main(args: argparse.Namespace):
         artifact.save()
         run.log_artifact(artifact, name="information")
 
-        dataset = generate_samples(
-            DATA_DIR / "strategy.json",
-            DATA_DIR / "tasks.json",
-            args.strategy,
-            run.config["cot"],
-            run.config["turns"],
-        )
-        evaluation = collusion(dataset, args.monitor_model)
-        log = eval(
-            evaluation,
-            model=run.config["model"],
-            epochs=run.config["epochs"],
-            limit=run.config["limit"],
-            log_dir=str(LOG_DIR),
-            max_connections=args.max_connections,
-        )
+        # dataset = generate_samples(
+        #     DATA_DIR / "strategy.json",
+        #     DATA_DIR / "tasks.json",
+        #     args.strategy,
+        #     run.config["cot"],
+        #     run.config["turns"],
+        # )
+        # log = eval(
+        #     collusion,
+        #     model=run.config["model"],
+        #     epochs=run.config["epochs"],
+        #     limit=run.config["limit"],
+        #     log_dir=str(LOG_DIR),
+        #     max_connections=args.max_connections,
+        # )
 
-        artifact = wandb.Artifact("log", type="log")
-        artifact.add_file(str(log[0].location))
-        artifact.save()
-        run.log_artifact(artifact, name="log")
+        # artifact = wandb.Artifact("log", type="log")
+        # artifact.add_file(str(log[0].location))
+        # artifact.save()
+        # run.log_artifact(artifact, name="log")
 
 
 if __name__ == "__main__":
