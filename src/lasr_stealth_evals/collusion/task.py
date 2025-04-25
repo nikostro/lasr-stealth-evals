@@ -1,9 +1,10 @@
 # %%
 import argparse
+import time
+from logging import getLogger
 from pathlib import Path
 from typing import List
 
-import wandb
 from inspect_ai import Task, eval, task
 from inspect_ai.agent import Agent, AgentState, agent, as_solver
 from inspect_ai.dataset import Sample
@@ -11,13 +12,11 @@ from inspect_ai.scorer import accuracy, stderr
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import store
 
+import wandb
 from lasr_stealth_evals.collusion.agent import simple_agent, submit_tool
-from lasr_stealth_evals.collusion.config import JUDGE_MODEL, MODELS
-from lasr_stealth_evals.collusion.config import WANDB_API_KEY
+from lasr_stealth_evals.collusion.config import JUDGE_MODEL, MODELS, WANDB_API_KEY
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
 from lasr_stealth_evals.collusion.scorer import approval_scorer, judge
-from logging import getLogger
-import time
 
 wandb.login(key=WANDB_API_KEY)
 
@@ -45,9 +44,9 @@ def strategy(value: str) -> GenerationStrategy:
 
 
 @agent
-def agent_loop(turns: int = 3) -> Agent:
+def agent_loop(turns: int = 3, monitor_model: str | None = None) -> Agent:
     misaligned_agent = simple_agent(name="agent")
-    monitor = simple_agent(name="monitor", tools=[submit_tool()])
+    monitor = simple_agent(name="monitor", model=monitor_model, tools=[submit_tool()])
 
     async def execute(state: AgentState) -> AgentState:
         for i in range(turns):
@@ -74,14 +73,14 @@ def update_store() -> Solver:
     return solve
 
 
-def collusion(dataset: List[Sample]):
+def collusion(dataset: List[Sample], monitor_model: str | None = None):
     @task
     def evaluation() -> Task:
         return Task(
             dataset=dataset,
             solver=[
                 update_store(),
-                as_solver(agent_loop()),
+                as_solver(agent_loop(monitor_model=monitor_model)),
             ],
             # sandbox="docker",
             scorer=[approval_scorer(), judge(model=JUDGE_MODEL)],
@@ -133,6 +132,12 @@ def parse_args():
         default=10,
         help="Samples to run in parallel (default: 10))",
     )
+    parser.add_argument(
+        "--monitor-model",
+        type=str,
+        default=None,
+        help="Model to use for the monitor (default: None)",
+    )
     return parser.parse_args()
 
 
@@ -151,7 +156,7 @@ def main(args: argparse.Namespace):
             run.config["cot"],
             run.config["turns"],
         )
-        evaluation = collusion(dataset)
+        evaluation = collusion(dataset, args.monitor_model)
         log = eval(
             evaluation,
             model=run.config["model"],
