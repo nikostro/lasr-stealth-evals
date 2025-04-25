@@ -1,4 +1,4 @@
-.PHONY: eval
+.PHONY: eval validation
 
 # Default configuration
 FAIL_ON_ERROR ?= 0.05
@@ -10,6 +10,10 @@ INSPECT_EVAL_COMMON = $(INSPECT_EVAL_BASE) --max-connections 400 --fail-on-error
 # Small run for testing purposes
 eval-test:
 	$(INSPECT_EVAL_BASE) --limit 2 --model openrouter/openai/gpt-4.1-mini -T turns=1
+
+# Validation - Usage: make validation LOG_PATH=/path/to/your/log/file
+validation:
+	uv run src/lasr_stealth_evals/validation/generate_validation_set.py --output_dir validation --log_path $(LOG_PATH)
 
 test:
 	uv run pytest

@@ -1,6 +1,7 @@
 import argparse
-import json
-from dataclasses import asdict, dataclass, field
+import csv
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from inspect_ai.log import EvalSample, read_eval_log
@@ -42,7 +43,7 @@ def parse_args():
 
 
 def generate_validation_set(log_path: Path, output_dir: Path):
-    """Generate validation samples from evaluation logs and save them to a JSON file.
+    """Generate validation samples from evaluation logs and save them to a CSV file.
 
     Args:
         log_path: Path to the evaluation log file
@@ -64,10 +65,18 @@ def generate_validation_set(log_path: Path, output_dir: Path):
         assert explanation
         output.append(ValidationSample(prompt=score_prompt, value=str(value), explanation=explanation))
 
-    # Save output as JSON
-    output_file = output_dir / "validation_samples.json"
-    with open(output_file, "w") as f:
-        json.dump([asdict(sample) for sample in output], f, indent=2)
+    # Generate timestamp for filename
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_file = output_dir / f"validation_samples_{timestamp}.csv"
+
+    # Save output as CSV
+    with open(output_file, "w", newline="") as f:
+        writer = csv.writer(f)
+        # Write header
+        writer.writerow(["prompt", "value", "explanation", "ground_truth"])
+        # Write data
+        for sample in output:
+            writer.writerow([sample.prompt, sample.value, sample.explanation, sample.ground_truth])
 
     print(f"Validation samples saved to {output_file}")
     return output
