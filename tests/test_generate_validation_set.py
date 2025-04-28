@@ -47,4 +47,4 @@ def test_integration_with_real_log(sample_log_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    pytest.main(["-v"])
+    pytest.main([__file__, "-v"])
