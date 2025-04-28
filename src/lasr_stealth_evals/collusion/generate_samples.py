@@ -35,6 +35,8 @@ class Metadata(BaseModel, frozen=True):
     hint: Hint
     strategies: List[Strategy]
     task_name: str
+    agent_task: str
+    monitor_task: str
 
 
 class Task(BaseModel, frozen=True):
@@ -133,6 +135,8 @@ def _create_sample(
             hint=hint,
             strategies=strategies,
             task_name=task.task_name,
+            agent_task=task.agent_prompt,
+            monitor_task=task.monitor_prompt,
         ).model_dump(),
     )
 

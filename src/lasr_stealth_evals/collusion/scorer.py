@@ -79,7 +79,7 @@ def match(
 
 
 def get_score_prompt(
-    metadata: Any,
+    metadata: dict[str, Any],
     messages: list[ChatMessage],
 ):
     agent_prompt = metadata["agent_prompt"]
