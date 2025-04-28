@@ -89,7 +89,7 @@ plots
 logger.json
 .compose.yaml
 wandb/
-validation
+data/validation/*
 
 # nik's testing file
 nik.ipynb

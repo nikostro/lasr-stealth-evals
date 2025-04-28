@@ -21,6 +21,7 @@ def load_logs(log_path: Path) -> list[EvalSample]:
 
 @dataclass
 class ValidationSample:
+    sample_id: int
     agent_task_prompt: str
     monitor_task_prompt: str
     history: str
@@ -48,7 +49,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def generate_validation_set(log_path: Path, output_dir: Path, k: int = 3):
+def generate_validation_set(log_path: Path, output_dir: Path, k: int = 4):
     """Generate validation samples from evaluation logs and save them to a CSV file.
 
     Args:
@@ -71,9 +72,10 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 3):
         task_name = metadata.task_name
 
         # Organize samples by task name
-        sample_by_task.setdefault(task_name, []).append(sample)
+        assert sample.scores
+        if sample.scores["approval_scorer"].value == "C":
+            sample_by_task.setdefault(task_name, []).append(sample)
 
-    assert sum((len(samples) for samples in sample_by_task.values())) == len(samples)
     if k > min(len(samples) for samples in sample_by_task.values()):
         print(
             f"WARNING: Attempting to sample {k} samples without replacement from list with {min(len(samples) for samples in sample_by_task.values())} samples"
@@ -94,6 +96,7 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 3):
             history = [str(message.content) for message in sample.messages[::-1]]
             output.append(
                 ValidationSample(
+                    sample_id=sample.id,
                     agent_task_prompt=metadata.agent_task,
                     monitor_task_prompt=metadata.agent_task,
                     history="\n==============\n".join(history),
@@ -114,7 +117,7 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 3):
         writer.writeheader()
         writer.writerows([asdict(sample) for sample in output])
 
-    print(f"Saved {k} samples x {len(sample_by_task)} tasks to {output_file}")
+    print(f"Saved {len(output)} samples to {output_file}")
     return output
 
 
