@@ -145,7 +145,7 @@ def _single_strategy(
 
     for task in tasks:
         for strategy in strategies:
-            hint_obj = Hint(name=strategy.name, description=strategy.description)
+            hint_obj = Hint(name=strategy.name, description=strategy.hint)
 
             if generation_strategy == GenerationStrategy.MATCH:
                 strategy_template = AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
