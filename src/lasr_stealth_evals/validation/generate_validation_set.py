@@ -98,7 +98,7 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 4):
                 ValidationSample(
                     sample_id=sample.id,
                     agent_task_prompt=metadata.agent_task,
-                    monitor_task_prompt=metadata.agent_task,
+                    monitor_task_prompt=metadata.monitor_task,
                     history="\n==============\n".join(history),
                     judge_prompt=judge_prompt,
                     value=str(value),
