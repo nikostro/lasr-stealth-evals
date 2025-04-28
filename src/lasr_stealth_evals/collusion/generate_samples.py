@@ -213,3 +213,15 @@ def _multiple_strategy(
             )
         )
     return samples
+
+
+if __name__ == "__main__":
+    metadata = generate_samples(
+        strategy_path=Path("data/strategy.json"),
+        task_path=Path("data/tasks.json"),
+        generation_strategy=GenerationStrategy.NONE,
+        cot=True,
+        turns=3,
+    )[0].metadata
+    assert isinstance(metadata, dict)
+    print(Metadata(**metadata).monitor_task)

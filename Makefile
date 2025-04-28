@@ -13,7 +13,7 @@ eval-test:
 
 # Validation - Usage: make validation LOG_PATH=/path/to/your/log/file
 validation:
-	uv run src/lasr_stealth_evals/validation/generate_validation_set.py --output_dir validation --log_path $(LOG_PATH)
+	uv run src/lasr_stealth_evals/validation/generate_validation_set.py --output_dir data/validation --log_path $(LOG_PATH)
 
 test:
 	uv run pytest
