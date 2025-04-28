@@ -75,7 +75,7 @@ def update_store() -> Solver:
 def evaluation(
     strategy_path: Path = DATA_DIR / "strategy.json",
     task_path: Path = DATA_DIR / "tasks.json",
-    generation_strategy: int = 2,
+    generation_strategy: int = 0,
     agent_cot: bool = DEFAULT_COT,
     monitor_cot: bool = DEFAULT_COT,
     turns: int = DEFAULT_TURNS,
