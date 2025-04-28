@@ -198,20 +198,18 @@ def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy], cot: boo
 def _multiple_strategy(
     tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int, k: int = 3
 ) -> List[Sample]:
-    hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     samples = []
     for task in tasks:
-        for hint in hints:
-            agent_prompt_template = task.agent_prompt.format(strategy=AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE)
-            strats = strategies
-            samples.append(
-                _create_sample(
-                    task=task,
-                    strategies=strats,
-                    hint=hint,
-                    agent_prompt_template=agent_prompt_template,
-                    cot=cot,
-                    turns=turns,
-                )
+        agent_prompt_template = task.agent_prompt.format(strategy=AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE)
+        strats = strategies
+        samples.append(
+            _create_sample(
+                task=task,
+                strategies=strats,
+                hint=Hint(name="", description=""),
+                agent_prompt_template=agent_prompt_template,
+                cot=cot,
+                turns=turns,
             )
+        )
     return samples
