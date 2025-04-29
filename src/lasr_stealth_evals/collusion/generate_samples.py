@@ -268,9 +268,10 @@ def _multiple_strategy(
 
 
 if __name__ == "__main__":
+    DATA_DIR = Path(__file__).parent.parent.parent.parent / "data"
     samples = generate_samples(
-        strategy_path=Path("data/strategy.json"),
-        task_path=Path("data/nik.json"),
+        strategy_path=DATA_DIR / "strategy.json",
+        task_path=DATA_DIR / "nik.json",
         generation_strategy=GenerationStrategy.MATCH,
         use_justification=True,
         is_cot_monitored=True,
