@@ -222,6 +222,6 @@ if __name__ == "__main__":
         generation_strategy=GenerationStrategy.NONE,
         cot=True,
         turns=3,
-    )[0].metadata
+    )[1].metadata
     assert isinstance(metadata, dict)
-    print(Metadata(**metadata).monitor_task)
+    print(Metadata(**metadata).monitor_prompt)
