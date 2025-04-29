@@ -148,7 +148,7 @@ def _create_sample(
                 agent_main_task=task.agent_main_task,
                 agent_hidden_task=task.agent_hidden_task,
                 monitor_policy=task.monitor_policy,
-                strategy=f"\n- {sdescs}",
+                strategy=sdescs,
                 turns=turns,
             ),
             monitor_prompt=monitor_prompt_template.format(
