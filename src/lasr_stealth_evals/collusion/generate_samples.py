@@ -1,6 +1,6 @@
 import json
+import random
 from enum import Enum
-from itertools import product
 from pathlib import Path
 from typing import List
 
@@ -47,7 +47,7 @@ class Task(BaseModel, frozen=True):
 
 class GenerationStrategy(Enum):
     MATCH = 0
-    MISALIGNED = 1
+    MISMATCHED = 1
     MULTIPLE = 2
     NONE = 3
 
@@ -69,7 +69,12 @@ def _get_strategies(strategy_path: Path) -> list[Strategy]:
 
 
 def generate_samples(
-    strategy_path: Path, task_path: Path, generation_strategy: GenerationStrategy, cot: bool = True, turns: int = 3
+    strategy_path: Path,
+    task_path: Path,
+    generation_strategy: GenerationStrategy,
+    cot: bool = True,
+    turns: int = 3,
+    use_hint: bool = True,
 ) -> List[Sample]:
     """
     Generate samples by combining strategy and task JSON files.
@@ -88,12 +93,14 @@ def generate_samples(
 
     # Load strategy and task data
     match generation_strategy:
-        case GenerationStrategy.MATCH | GenerationStrategy.NONE:
-            return _single_strategy(tasks, strategies, generation_strategy, cot, turns)
-        case GenerationStrategy.MISALIGNED:
-            return _misaligned_strategy(tasks, strategies, cot, turns)
+        case GenerationStrategy.MATCH:
+            return _single_strategy(tasks, strategies, cot, turns)
+        case GenerationStrategy.MISMATCHED:
+            return _mismatched_strategy(tasks, strategies, cot, turns)
         case GenerationStrategy.MULTIPLE:
-            return _multiple_strategy(tasks, strategies, cot, turns)
+            return _multiple_strategy(tasks, strategies, cot, turns, use_hint)
+        case GenerationStrategy.NONE:
+            return _no_strategy(tasks, strategies, cot, turns, use_hint)
         case _:
             raise ValueError(f"Invalid generation strategy: {generation_strategy}")
 
@@ -141,31 +148,17 @@ def _create_sample(
     )
 
 
-def _single_strategy(
-    tasks: List[Task], strategies: List[Strategy], generation_strategy: GenerationStrategy, cot: bool, turns: int
-) -> List[Sample]:
+def _single_strategy(tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int) -> List[Sample]:
     """Combined function handling both MATCH and NONE generation strategies."""
     samples = []
-
     for task in tasks:
         for strategy in strategies:
-            if generation_strategy == GenerationStrategy.MATCH:
-                strategy_template = AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
-                hint_obj = Hint(name=strategy.name, description=strategy.hint)
-            else:  # GenerationStrategy.NONE
-                strategy_template = AGENT_NO_STRATEGY_PROMPT_TEMPLATE
-                hint_obj = Hint(name="", description="")
-            agent_prompt_template = task.agent_prompt.format(strategy=strategy_template)
-
-            if generation_strategy == GenerationStrategy.MATCH:
-                strategies_list = [strategy]
-            else:  # GenerationStrategy.NONE
-                strategies_list = []
-
+            hint_obj = Hint(name=strategy.name, description=strategy.hint)
+            agent_prompt_template = task.agent_prompt.format(strategy=AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE)
             samples.append(
                 _create_sample(
                     task=task,
-                    strategies=strategies_list,
+                    strategies=[strategy],
                     hint=hint_obj,
                     agent_prompt_template=agent_prompt_template,
                     cot=cot,
@@ -175,13 +168,33 @@ def _single_strategy(
     return samples
 
 
-def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int) -> List[Sample]:
-    monitor = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
+def _no_strategy(tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int, use_hint: bool) -> List[Sample]:
     samples = []
+    hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     for task in tasks:
-        agent_prompt_template = task.agent_prompt.format(strategy=AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE)
-        for hint, strategy in product(monitor, strategies):
-            hint_obj = Hint(name=hint.name, description=hint.description)
+        hint_obj = random.choice(hints) if use_hint else Hint(name="", description="")
+        agent_prompt_template = task.agent_prompt.format(strategy=AGENT_NO_STRATEGY_PROMPT_TEMPLATE)
+        samples.append(
+            _create_sample(
+                task=task,
+                strategies=[],
+                hint=hint_obj,
+                agent_prompt_template=agent_prompt_template,
+                cot=cot,
+                turns=turns,
+            )
+        )
+    return samples
+
+
+def _mismatched_strategy(tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int) -> List[Sample]:
+    samples = []
+    hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
+    for task in tasks:
+        for strategy in strategies:
+            hints_wo_match = filter(lambda hint: hint.name != strategy.name, hints)
+            hint_obj = random.choice(list(hints_wo_match))
+            agent_prompt_template = task.agent_prompt.format(strategy=AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE)
             samples.append(
                 _create_sample(
                     task=task,
@@ -196,17 +209,18 @@ def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy], cot: boo
 
 
 def _multiple_strategy(
-    tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int, k: int = 3
+    tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int, use_hint: bool
 ) -> List[Sample]:
     samples = []
+    hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     for task in tasks:
+        hint_obj = random.choice(hints) if use_hint else Hint(name="", description="")
         agent_prompt_template = task.agent_prompt.format(strategy=AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE)
-        strats = strategies
         samples.append(
             _create_sample(
                 task=task,
-                strategies=strats,
-                hint=Hint(name="", description=""),
+                strategies=strategies,
+                hint=hint_obj,
                 agent_prompt_template=agent_prompt_template,
                 cot=cot,
                 turns=turns,

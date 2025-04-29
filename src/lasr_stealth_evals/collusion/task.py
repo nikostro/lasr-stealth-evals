@@ -23,6 +23,7 @@ DEFAULT_TURNS = 3  # exchanges between agents
 DEFAULT_LIMIT = None
 DEFAULT_GENERATION_STRATEGY = GenerationStrategy.MATCH
 DEFAULT_COT = True
+DEFAULT_HINT = True
 
 # Load data
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
@@ -79,6 +80,7 @@ def evaluation(
     agent_cot: bool = DEFAULT_COT,
     monitor_cot: bool = DEFAULT_COT,
     turns: int = DEFAULT_TURNS,
+    use_hint: bool = DEFAULT_HINT,
     monitor_model: str | None = None,
 ) -> Task:
     dataset = generate_samples(
@@ -87,6 +89,7 @@ def evaluation(
         generation_strategy=GenerationStrategy(generation_strategy),
         cot=agent_cot,
         turns=turns,
+        use_hint=use_hint,
     )
     return Task(
         dataset=dataset,
@@ -163,6 +166,12 @@ def parse_args():
         type=str,
         default=None,
         help="Model to use for the monitor (default: None)",
+    )
+    parser.add_argument(
+        "--hint",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Whether to use a hint for the evaluation (default: True)",
     )
     return parser.parse_args()
 

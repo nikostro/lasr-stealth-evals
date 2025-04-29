@@ -67,7 +67,7 @@ def test_match_strategy(strategy_file: Path, task_file: Path) -> None:
 
 
 def test_misaligned_strategy(strategy_file: Path, task_file: Path) -> None:
-    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MISALIGNED)
+    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MISMATCHED)
 
     # Load actual data to verify
     strategies = load_json_data(strategy_file)
