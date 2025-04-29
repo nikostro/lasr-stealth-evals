@@ -67,7 +67,7 @@ def test_match_strategy(strategy_file: Path, task_file: Path) -> None:
 
 
 def test_misaligned_strategy(strategy_file: Path, task_file: Path) -> None:
-    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MISALIGNED)
+    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MISMATCHED)
 
     # Load actual data to verify
     strategies = load_json_data(strategy_file)
@@ -153,7 +153,7 @@ def test_load_metadata(strategy_file: Path, task_file: Path):
 
 def test_cot_true_includes_scratchpad_tokens(strategy_file: Path, task_file: Path):
     """Test that when cot=True, agent prompt includes scratchpad tokens."""
-    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MATCH, cot=True)
+    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MATCH, use_justification=True)
 
     # Check all samples
     for sample in samples:
@@ -165,7 +165,7 @@ def test_cot_true_includes_scratchpad_tokens(strategy_file: Path, task_file: Pat
 
 def test_cot_false_excludes_scratchpad_tokens(strategy_file: Path, task_file: Path):
     """Test that when cot=False, agent prompt excludes scratchpad tokens."""
-    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MATCH, cot=False)
+    samples = generate_samples(strategy_file, task_file, GenerationStrategy.MATCH, use_justification=False)
 
     # Check all samples
     for sample in samples:

@@ -23,6 +23,8 @@ DEFAULT_TURNS = 3  # exchanges between agents
 DEFAULT_LIMIT = None
 DEFAULT_GENERATION_STRATEGY = GenerationStrategy.MATCH
 DEFAULT_COT = True
+DEFAULT_USE_JUSTIFICATION = True
+DEFAULT_HINT = True
 
 # Load data
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
@@ -41,13 +43,16 @@ def strategy(value: str) -> GenerationStrategy:
 
 @agent
 def agent_loop(
-    turns: int = 3, monitor_model: str | None = None, agent_cot: bool = DEFAULT_COT, monitor_cot: bool = DEFAULT_COT
+    turns: int = 3,
+    monitor_model: str | None = None,
+    use_justification: bool = DEFAULT_USE_JUSTIFICATION,
+    is_cot_monitored: bool = DEFAULT_COT,
 ) -> Agent:
-    misaligned = collusion_agent(name="agent", cot=agent_cot)
-    monitor = monitor_agent(name="monitor", tools=[submit_tool()], model=monitor_model, cot=monitor_cot)
+    misaligned = collusion_agent(name="agent", use_justification=use_justification)
+    monitor = monitor_agent(name="monitor", tools=[submit_tool()], model=monitor_model, cot=is_cot_monitored)
 
     async def execute(state: AgentState) -> AgentState:
-        for i in range(turns):
+        for _ in range(turns):
             state = await misaligned(state)
             state = await monitor(state)
 
@@ -74,19 +79,22 @@ def update_store() -> Solver:
 @task
 def evaluation(
     strategy_path: Path = DATA_DIR / "strategy.json",
-    task_path: Path = DATA_DIR / "tasks.json",
+    task_path: Path = DATA_DIR / "nik.json",  # TODO: change back to tasks.json
     generation_strategy: int = 0,
-    agent_cot: bool = DEFAULT_COT,
-    monitor_cot: bool = DEFAULT_COT,
     turns: int = DEFAULT_TURNS,
+    use_hint: bool = DEFAULT_HINT,
+    use_justification: bool = DEFAULT_USE_JUSTIFICATION,
+    is_cot_monitored: bool = DEFAULT_COT,
     monitor_model: str | None = None,
 ) -> Task:
     dataset = generate_samples(
         strategy_path=strategy_path,
         task_path=task_path,
         generation_strategy=GenerationStrategy(generation_strategy),
-        cot=agent_cot,
+        use_justification=use_justification,
+        is_cot_monitored=is_cot_monitored,
         turns=turns,
+        use_hint=use_hint,
     )
     return Task(
         dataset=dataset,
@@ -96,8 +104,8 @@ def evaluation(
                 agent=agent_loop(
                     monitor_model=monitor_model,
                     turns=turns,
-                    agent_cot=agent_cot,
-                    monitor_cot=monitor_cot,
+                    use_justification=use_justification,
+                    is_cot_monitored=is_cot_monitored,
                 )
             ),
         ],
@@ -163,6 +171,12 @@ def parse_args():
         type=str,
         default=None,
         help="Model to use for the monitor (default: None)",
+    )
+    parser.add_argument(
+        "--hint",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Whether to use a hint for the evaluation (default: True)",
     )
     return parser.parse_args()
 
