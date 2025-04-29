@@ -270,7 +270,7 @@ def _multiple_strategy(
 if __name__ == "__main__":
     samples = generate_samples(
         strategy_path=Path("data/strategy.json"),
-        task_path=Path("data/nik.json"),
+        task_path=Path("data/julija.json"),
         generation_strategy=GenerationStrategy.MATCH,
         use_justification=True,
         is_cot_monitored=True,
