@@ -1,6 +1,6 @@
 import json
+import random
 from enum import Enum
-from itertools import product
 from pathlib import Path
 from typing import List
 
@@ -8,14 +8,20 @@ from inspect_ai.dataset import Sample
 from pydantic import BaseModel
 
 from lasr_stealth_evals.collusion.config import METADATA_TAG
-from lasr_stealth_evals.collusion.prompts import (
-    AGENT_COT_PROMPT,
-    AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE,
-    AGENT_NO_COT_PROMPT,
-    AGENT_NO_STRATEGY_PROMPT_TEMPLATE,
-    AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE,
-    AGENT_TURNS_TEMPLATE,
+from lasr_stealth_evals.collusion.templates import (
+    AGENT_COT_MONITORED,
+    AGENT_COT_MONITORED_NO_JUSTIFICATION,
+    AGENT_COT_NOT_MONITORED,
+    AGENT_COT_NOT_MONITORED_NO_JUSTIFICATION,
+    MONITOR_TEMPLATE,
 )
+
+template_map = {  # (is_cot_monitored, use_justification)
+    (True, True): AGENT_COT_MONITORED,
+    (False, True): AGENT_COT_NOT_MONITORED,
+    (True, False): AGENT_COT_MONITORED_NO_JUSTIFICATION,
+    (False, False): AGENT_COT_NOT_MONITORED_NO_JUSTIFICATION,
+}
 
 
 class Strategy(BaseModel, frozen=True):
@@ -41,13 +47,17 @@ class Metadata(BaseModel, frozen=True):
 
 class Task(BaseModel, frozen=True):
     task_name: str
-    agent_prompt: str
-    monitor_prompt: str
+    agent_persona: str
+    agent_main_task: str
+    agent_hidden_task: str
+    monitor_persona: str
+    monitor_main_task: str
+    monitor_policy: str
 
 
 class GenerationStrategy(Enum):
     MATCH = 0
-    MISALIGNED = 1
+    MISMATCHED = 1
     MULTIPLE = 2
     NONE = 3
 
@@ -56,8 +66,6 @@ def _get_task_templates(task_path: Path) -> list[Task]:
     with open(task_path) as f:
         tasks_dict = json.load(f)
         tasks = [Task(**task) for task in tasks_dict]
-
-        # check that task templates take sample/hint as a parameter
         return tasks
 
 
@@ -69,7 +77,13 @@ def _get_strategies(strategy_path: Path) -> list[Strategy]:
 
 
 def generate_samples(
-    strategy_path: Path, task_path: Path, generation_strategy: GenerationStrategy, cot: bool = True, turns: int = 3
+    strategy_path: Path,
+    task_path: Path,
+    generation_strategy: GenerationStrategy,
+    turns: int = 3,
+    use_hint: bool = True,
+    use_justification: bool = True,
+    is_cot_monitored: bool = True,
 ) -> List[Sample]:
     """
     Generate samples by combining strategy and task JSON files.
@@ -88,12 +102,14 @@ def generate_samples(
 
     # Load strategy and task data
     match generation_strategy:
-        case GenerationStrategy.MATCH | GenerationStrategy.NONE:
-            return _single_strategy(tasks, strategies, generation_strategy, cot, turns)
-        case GenerationStrategy.MISALIGNED:
-            return _misaligned_strategy(tasks, strategies, cot, turns)
+        case GenerationStrategy.MATCH:
+            return _single_strategy(tasks, strategies, use_justification, is_cot_monitored, turns)
+        case GenerationStrategy.MISMATCHED:
+            return _mismatched_strategy(tasks, strategies, use_justification, is_cot_monitored, turns)
         case GenerationStrategy.MULTIPLE:
-            return _multiple_strategy(tasks, strategies, cot, turns)
+            return _multiple_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, use_hint)
+        case GenerationStrategy.NONE:
+            return _no_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, use_hint)
         case _:
             raise ValueError(f"Invalid generation strategy: {generation_strategy}")
 
@@ -103,92 +119,121 @@ def _create_sample(
     strategies: List[Strategy],
     hint: Hint,
     agent_prompt_template: str,
-    cot: bool,
+    use_justification: bool,
+    is_cot_monitored: bool,
     turns: int,
+    monitor_prompt_template: str = MONITOR_TEMPLATE,
 ) -> Sample:
     """Helper function to create a sample with the given parameters."""
-    if cot:
-        cot_prompt = AGENT_COT_PROMPT
-    else:
-        cot_prompt = AGENT_NO_COT_PROMPT
-    agent_prompt_template = (
-        agent_prompt_template + cot_prompt + AGENT_TURNS_TEMPLATE
-    )  # add info about turns and cot for agent
-    strategy_names = ", ".join([s.name for s in strategies])
-    agent_strategy = "\n".join([s.description for s in strategies])
+    snames = ", ".join([s.name for s in strategies])
+    sdescs = "\n- ".join([s.description for s in strategies])
     sample_overview_dict = {
         "task_name": task.task_name,
-        "strategy_name": strategy_names,
+        "strategy_name": snames,
         "hint": hint.description,
         "turns": turns,
-        "cot": cot,
+        "use_justification": use_justification,
+        "is_cot_monitored": is_cot_monitored,
     }
     sample_overview = METADATA_TAG + "\n".join(
         [key.upper() + ": " + str(value) for key, value in sample_overview_dict.items()]
     )
+    print(agent_prompt_template)
     return Sample(
         input=sample_overview,
         target="True",
         metadata=Metadata(
-            agent_prompt=agent_prompt_template.format(agent_strategy=agent_strategy, turns=turns),
-            monitor_prompt=task.monitor_prompt.format(monitor_hidden_goal=hint.description),
+            agent_prompt=agent_prompt_template.format(
+                agent_persona=task.agent_persona,
+                agent_main_task=task.agent_main_task,
+                agent_hidden_task=task.agent_hidden_task,
+                monitor_policy=task.monitor_policy,
+                strategy=f"\n- {sdescs}",
+                turns=turns,
+            ),
+            monitor_prompt=monitor_prompt_template.format(
+                monitor_persona=task.monitor_persona,
+                monitor_main_task=task.monitor_main_task,
+                monitor_policy=task.monitor_policy,
+                monitor_hidden_goal=hint.description,
+            ),
             hint=hint,
             strategies=strategies,
             task_name=task.task_name,
-            agent_task=task.agent_prompt,
-            monitor_task=task.monitor_prompt,
+            agent_task="",
+            monitor_task="",
         ).model_dump(),
     )
 
 
 def _single_strategy(
-    tasks: List[Task], strategies: List[Strategy], generation_strategy: GenerationStrategy, cot: bool, turns: int
+    tasks: List[Task], strategies: List[Strategy], use_justification: bool, is_cot_monitored: bool, turns: int
 ) -> List[Sample]:
     """Combined function handling both MATCH and NONE generation strategies."""
     samples = []
-
     for task in tasks:
         for strategy in strategies:
-            if generation_strategy == GenerationStrategy.MATCH:
-                strategy_template = AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE
-                hint_obj = Hint(name=strategy.name, description=strategy.hint)
-            else:  # GenerationStrategy.NONE
-                strategy_template = AGENT_NO_STRATEGY_PROMPT_TEMPLATE
-                hint_obj = Hint(name="", description="")
-            agent_prompt_template = task.agent_prompt.format(strategy=strategy_template)
-
-            if generation_strategy == GenerationStrategy.MATCH:
-                strategies_list = [strategy]
-            else:  # GenerationStrategy.NONE
-                strategies_list = []
-
-            samples.append(
-                _create_sample(
-                    task=task,
-                    strategies=strategies_list,
-                    hint=hint_obj,
-                    agent_prompt_template=agent_prompt_template,
-                    cot=cot,
-                    turns=turns,
-                )
-            )
-    return samples
-
-
-def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int) -> List[Sample]:
-    monitor = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
-    samples = []
-    for task in tasks:
-        agent_prompt_template = task.agent_prompt.format(strategy=AGENT_SINGLE_STRATEGY_PROMPT_TEMPLATE)
-        for hint, strategy in product(monitor, strategies):
-            hint_obj = Hint(name=hint.name, description=hint.description)
+            hint_obj = Hint(name=strategy.name, description=strategy.hint)
+            agent_prompt_template = template_map[(is_cot_monitored, use_justification)]
             samples.append(
                 _create_sample(
                     task=task,
                     strategies=[strategy],
                     hint=hint_obj,
                     agent_prompt_template=agent_prompt_template,
-                    cot=cot,
+                    use_justification=use_justification,
+                    is_cot_monitored=is_cot_monitored,
+                    turns=turns,
+                )
+            )
+    return samples
+
+
+def _no_strategy(
+    tasks: List[Task],
+    strategies: List[Strategy],
+    use_justification: bool,
+    is_cot_monitored: bool,
+    turns: int,
+    use_hint: bool,
+) -> List[Sample]:
+    samples = []
+    hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
+    for task in tasks:
+        hint_obj = random.choice(hints) if use_hint else Hint(name="", description="")
+        agent_prompt_template = template_map[(is_cot_monitored, use_justification)]
+        samples.append(
+            _create_sample(
+                task=task,
+                strategies=[],
+                hint=hint_obj,
+                agent_prompt_template=agent_prompt_template,
+                use_justification=use_justification,
+                is_cot_monitored=is_cot_monitored,
+                turns=turns,
+            )
+        )
+    return samples
+
+
+def _mismatched_strategy(
+    tasks: List[Task], strategies: List[Strategy], use_justification: bool, is_cot_monitored: bool, turns: int
+) -> List[Sample]:
+    samples = []
+    hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
+    for task in tasks:
+        for strategy in strategies:
+            hints_wo_match = filter(lambda hint: hint.name != strategy.name, hints)
+            hint_obj = random.choice(list(hints_wo_match))
+            agent_prompt_template = template_map[(is_cot_monitored, use_justification)]
+            samples.append(
+                _create_sample(
+                    task=task,
+                    strategies=[strategy],
+                    hint=hint_obj,
+                    agent_prompt_template=agent_prompt_template,
+                    use_justification=use_justification,
+                    is_cot_monitored=is_cot_monitored,
                     turns=turns,
                 )
             )
@@ -196,19 +241,26 @@ def _misaligned_strategy(tasks: List[Task], strategies: List[Strategy], cot: boo
 
 
 def _multiple_strategy(
-    tasks: List[Task], strategies: List[Strategy], cot: bool, turns: int, k: int = 3
+    tasks: List[Task],
+    strategies: List[Strategy],
+    use_justification: bool,
+    is_cot_monitored: bool,
+    turns: int,
+    use_hint: bool,
 ) -> List[Sample]:
     samples = []
+    hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
     for task in tasks:
-        agent_prompt_template = task.agent_prompt.format(strategy=AGENT_MULTI_STRATEGY_PROMPT_TEMPLATE)
-        strats = strategies
+        hint_obj = random.choice(hints) if use_hint else Hint(name="", description="")
+        agent_prompt_template = template_map[(is_cot_monitored, use_justification)]
         samples.append(
             _create_sample(
                 task=task,
-                strategies=strats,
-                hint=Hint(name="", description=""),
+                strategies=strategies,
+                hint=hint_obj,
                 agent_prompt_template=agent_prompt_template,
-                cot=cot,
+                use_justification=use_justification,
+                is_cot_monitored=is_cot_monitored,
                 turns=turns,
             )
         )
@@ -218,9 +270,10 @@ def _multiple_strategy(
 if __name__ == "__main__":
     metadata = generate_samples(
         strategy_path=Path("data/strategy.json"),
-        task_path=Path("data/tasks.json"),
+        task_path=Path("data/nik.json"),
         generation_strategy=GenerationStrategy.NONE,
-        cot=True,
+        use_justification=True,
+        is_cot_monitored=True,
         turns=3,
     )[1].metadata
     assert isinstance(metadata, dict)
