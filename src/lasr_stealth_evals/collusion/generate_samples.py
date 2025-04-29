@@ -268,13 +268,18 @@ def _multiple_strategy(
 
 
 if __name__ == "__main__":
-    metadata = generate_samples(
+    samples = generate_samples(
         strategy_path=Path("data/strategy.json"),
         task_path=Path("data/nik.json"),
-        generation_strategy=GenerationStrategy.NONE,
+        generation_strategy=GenerationStrategy.MATCH,
         use_justification=True,
         is_cot_monitored=True,
         turns=3,
-    )[1].metadata
-    assert isinstance(metadata, dict)
-    print(Metadata(**metadata).monitor_prompt)
+    )
+    for sample in samples:
+        print("=================")
+        assert isinstance(sample.metadata, dict)
+        metadata = Metadata(**sample.metadata)
+        print(metadata.task_name.upper())
+        print(metadata.agent_prompt)
+        print(metadata.monitor_prompt)
