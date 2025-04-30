@@ -79,7 +79,7 @@ def update_store() -> Solver:
 @task
 def evaluation(
     strategy_path: Path = DATA_DIR / "strategy.json",
-    task_path: Path = DATA_DIR / "tasks.json",
+    task_path: Path = DATA_DIR / "no_generation_tasks.json",
     generation_strategy: int = 0,
     turns: int = DEFAULT_TURNS,
     use_hint: bool = DEFAULT_HINT,

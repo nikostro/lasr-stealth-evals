@@ -8,12 +8,12 @@ from inspect_ai.dataset import Sample
 from pydantic import BaseModel
 
 from lasr_stealth_evals.collusion.config import METADATA_TAG
-from lasr_stealth_evals.collusion.templates import (
+from lasr_stealth_evals.collusion.no_generation_templates import (
     AGENT_COT_MONITORED,
     AGENT_COT_MONITORED_NO_JUSTIFICATION,
     AGENT_COT_NOT_MONITORED,
     AGENT_COT_NOT_MONITORED_NO_JUSTIFICATION,
-    MONITOR_TEMPLATE,
+    MONITOR_COT_MONITORED_FULL_PROMPT,
 )
 
 template_map = {  # (is_cot_monitored, use_justification)
@@ -122,7 +122,7 @@ def _create_sample(
     use_justification: bool,
     is_cot_monitored: bool,
     turns: int,
-    monitor_prompt_template: str = MONITOR_TEMPLATE,
+    monitor_prompt_template: str = MONITOR_COT_MONITORED_FULL_PROMPT,
 ) -> Sample:
     """Helper function to create a sample with the given parameters."""
     snames = ", ".join([s.name for s in strategies])
@@ -138,7 +138,7 @@ def _create_sample(
     sample_overview = METADATA_TAG + "\n".join(
         [key.upper() + ": " + str(value) for key, value in sample_overview_dict.items()]
     )
-    print(agent_prompt_template)
+
     return Sample(
         input=sample_overview,
         target="True",
@@ -156,6 +156,7 @@ def _create_sample(
                 monitor_main_task=task.monitor_main_task,
                 monitor_policy=task.monitor_policy,
                 monitor_hidden_goal=hint.description,
+                agent_hidden_task=task.agent_hidden_task,
             ),
             hint=hint,
             strategies=strategies,
