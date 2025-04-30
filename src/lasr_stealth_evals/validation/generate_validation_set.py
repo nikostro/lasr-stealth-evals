@@ -97,8 +97,8 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 4):
             output.append(
                 ValidationSample(
                     sample_id=sample.id,
-                    agent_task_prompt=metadata.agent_task,
-                    monitor_task_prompt=metadata.monitor_task,
+                    agent_task_prompt=metadata.agent_prompt,
+                    monitor_task_prompt=metadata.monitor_prompt,
                     history="\n==============\n".join(history),
                     judge_prompt=judge_prompt,
                     value=str(value),
@@ -112,7 +112,7 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 4):
     output_file = output_dir / f"validation_samples_{timestamp}.csv"
 
     # Save output as CSV
-    with open(output_file, "w", newline="") as f:
+    with open(output_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=[f.name for f in fields(ValidationSample)])
         writer.writeheader()
         writer.writerows([asdict(sample) for sample in output])
