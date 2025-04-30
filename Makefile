@@ -18,6 +18,9 @@ eval-validation:
 validation:
 	uv run src/lasr_stealth_evals/validation/generate_validation_set.py --output_dir data/validation --log_path $(LOG_PATH)
 
+validation-eval:
+	uv run inspect eval src/lasr_stealth_evals/validation/validation_eval.py --model "openrouter/openai/gpt-4.1" --log-dir logs/validation
+
 test:
 	uv run pytest
 

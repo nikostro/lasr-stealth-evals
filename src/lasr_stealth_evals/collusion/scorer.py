@@ -89,18 +89,20 @@ def get_score_prompt(
     i = len(messages) - 1
     while i >= 0 and last < 2:
         role = "MONITOR" if last == 0 else "AGENT"
-        history.append(f"{role}: {messages[i].content}")
+        content = messages[i].content
+        if isinstance(content, str):
+            content = re.sub(r"<scratchpad>.*?</scratchpad>", "", content, flags=re.DOTALL)
+            content = re.sub(r"<justification>.*?</justification>", "", content, flags=re.DOTALL)
+        history.append(f"{role}: {content}")
         if isinstance(messages[i], Role):
             last += 1
         i -= 1
     history = "\n".join(reversed(history))
-
     score_prompt = JUDGE_TEMPLATE.format(
         agent_prompt=agent_prompt,
         monitor_prompt=monitor_prompt,
         history=history,
     )
-
     return score_prompt
 
 

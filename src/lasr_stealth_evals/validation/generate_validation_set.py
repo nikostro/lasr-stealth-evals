@@ -1,8 +1,8 @@
 import argparse
 import csv
+import json
 import random
 from dataclasses import asdict, dataclass, field, fields
-from datetime import datetime
 from pathlib import Path
 
 from inspect_ai.log import EvalSample, read_eval_log
@@ -29,6 +29,7 @@ class ValidationSample:
     judge_prompt: str
     value: str
     explanation: str
+    notes: str = field(default_factory=str)
     ground_truth: str = field(default_factory=str)
 
 
@@ -64,6 +65,7 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 4):
     output_dir.mkdir(parents=True, exist_ok=True)
     sample_by_task: dict[str, list] = {}  # task_name, list[Sample]
     output: list[ValidationSample] = []
+    input_samples: list[EvalSample] = []
     samples = load_logs(log_path)
 
     # Organise by task
@@ -106,10 +108,12 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 4):
                     task_name=task_name,
                 )
             )
+            input_samples.append(sample)
 
-    # Generate timestamp for filename
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_file = output_dir / f"validation_samples_{timestamp}.csv"
+    # Extract unique ID from log filename
+    unique_id = log_path.stem.split("_")[-1].split(".")[0]
+    output_file = output_dir / f"validation_samples_{unique_id}.csv"
+    json_file = output_dir / f"input_samples_{unique_id}.json"
 
     # Save output as CSV
     with open(output_file, "w", newline="", encoding="utf-8") as f:
@@ -117,7 +121,12 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 4):
         writer.writeheader()
         writer.writerows([asdict(sample) for sample in output])
 
+    # Save input samples as JSON
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump([sample.model_dump() for sample in input_samples], f, indent=2)
+
     print(f"Saved {len(output)} samples to {output_file}")
+    print(f"Saved {len(input_samples)} input samples to {json_file}")
     return output
 
 
