@@ -135,7 +135,7 @@ def _create_sample(
     sample_overview_dict = {
         "task_name": task.task_name,
         "strategy_name": snames,
-        "hint": hint.description,
+        "hint": hint.name,
         "turns": turns,
         "use_justification": use_justification,
         "is_cot_monitored": is_cot_monitored,

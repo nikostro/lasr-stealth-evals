@@ -2,19 +2,9 @@ from logging import getLogger
 
 # Note: These private imports are used because there are no public API equivalents
 # for these specific functions in the current version of inspect_ai
-from inspect_ai.agent import (
-    Agent,
-    AgentState,
-    agent,
-    agent_with,
-)
+from inspect_ai.agent import Agent, AgentState, agent, agent_with
 from inspect_ai.log._transcript import transcript
-from inspect_ai.model import (
-    ChatMessageTool,
-    ChatMessageUser,
-    Model,
-    get_model,
-)
+from inspect_ai.model import ChatMessageTool, ChatMessageUser, Model, get_model
 from inspect_ai.model._call_tools import execute_tools
 from inspect_ai.scorer import score
 from inspect_ai.tool import Tool, ToolResult, tool
@@ -22,11 +12,7 @@ from inspect_ai.tool._tool_info import parse_tool_info
 from inspect_ai.util import store
 
 from lasr_stealth_evals.collusion.generate_samples import Metadata
-from lasr_stealth_evals.collusion.util import (
-    filter_first_user_message,
-    filter_history,
-    get_system_message,
-)
+from lasr_stealth_evals.collusion.util import filter_first_user_message, filter_history, get_system_message
 
 logger = getLogger(__name__)
 

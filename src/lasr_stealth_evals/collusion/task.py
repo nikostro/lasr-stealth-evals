@@ -86,6 +86,7 @@ def evaluation(
     use_justification: bool = DEFAULT_USE_JUSTIFICATION,
     is_cot_monitored: bool = DEFAULT_COT,
     monitor_model: str | None = None,
+    agent_model: str | None = None,
     domain_policy: bool = False,
 ) -> Task:
     dataset = generate_samples(

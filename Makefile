@@ -9,7 +9,7 @@ INSPECT_EVAL_COMMON = $(INSPECT_EVAL_BASE) --max-connections 400 --fail-on-error
 
 # Small run for testing purposes
 eval-test:
-	$(INSPECT_EVAL_BASE) --limit 2 --model openrouter/openai/gpt-4.1-mini -T turns=5 -T use_hint=False -T use_justification=True -T is_cot_monitored=True -T generation_strategy=2
+	$(INSPECT_EVAL_COMMON) --limit 2 -T monitor_model openrouter/openai/gpt-4.1-mini -T turns=5 -T use_hint=False -T use_justification=True -T is_cot_monitored=True -T generation_strategy=2
 
 eval-validation:
 	$(INSPECT_EVAL_BASE) --model openrouter/openai/gpt-4.1 --max-connections 400 -T turns=3 -T use_hint=False -T use_justification=True -T is_cot_monitored=True -T generation_strategy=1 $(ARGS)
