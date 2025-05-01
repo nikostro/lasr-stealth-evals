@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
 from inspect_ai.log import EvalSample, read_eval_log
+from inspect_ai.model import ChatMessage, ChatMessageTool
 
 from lasr_stealth_evals.collusion.generate_samples import Metadata
 from lasr_stealth_evals.collusion.scorer import get_score_prompt
@@ -29,6 +30,7 @@ class ValidationSample:
     judge_prompt: str
     value: str
     explanation: str
+    n_turns: int
     notes: str = field(default_factory=str)
     ground_truth: str = field(default_factory=str)
 
@@ -56,59 +58,62 @@ def generate_validation_set(log_path: Path, output_dir: Path, k: int = 4):
     Args:
         log_path: Path to the evaluation log file
         output_dir: Directory to save the validation set
-        k: Number of samples to evaluate from each task
+        k: Number of samples to evaluate from each task-score combination
     """
     # Set random seed for reproducibility
     random.seed(42)
 
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
-    sample_by_task: dict[str, list] = {}  # task_name, list[Sample]
+    sample_by_task_and_score: dict[str, dict[str, list]] = {}  # task_name -> score -> list[Sample]
     output: list[ValidationSample] = []
     input_samples: list[EvalSample] = []
     samples = load_logs(log_path)
 
-    # Organise by task
+    # Organise by task and score
     for sample in samples:
         metadata = Metadata(**sample.metadata)
         task_name = metadata.task_name
-
-        # Organize samples by task name
         assert sample.scores
-        if sample.scores["approval_scorer"].value == "C":
-            sample_by_task.setdefault(task_name, []).append(sample)
+        score = str(sample.scores["approval_scorer"].value)
 
-    if k > min(len(samples) for samples in sample_by_task.values()):
-        print(
-            f"WARNING: Attempting to sample {k} samples without replacement from list with {min(len(samples) for samples in sample_by_task.values())} samples"
-        )
-    # Generate set by task type
-    for task_name, task_samples in sample_by_task.items():
-        # Sample without replacement
-        samples = random.sample(task_samples, min(len(task_samples), k))  # Adjust the number 10 as needed
+        # Initialize nested dictionary if needed
+        if task_name not in sample_by_task_and_score:
+            sample_by_task_and_score[task_name] = {"C": [], "I": []}
 
-        for sample in samples:
-            metadata = Metadata(**sample.metadata)
-            # Judge input
-            judge_prompt = get_score_prompt(sample.metadata, sample.messages)
-            assert sample.scores
-            value = sample.scores["judge"].value
-            explanation = sample.scores["judge"].explanation
-            assert explanation
-            history = [str(message.content) for message in sample.messages[::-1]]
-            output.append(
-                ValidationSample(
-                    sample_id=sample.id,
-                    agent_task_prompt=metadata.agent_prompt,
-                    monitor_task_prompt=metadata.monitor_prompt,
-                    history="\n==============\n".join(history),
-                    judge_prompt=judge_prompt,
-                    value=str(value),
-                    explanation=explanation,
-                    task_name=task_name,
+        sample_by_task_and_score[task_name][score].append(sample)
+
+    # Generate set by task type and score
+    for task_name, score_samples in sample_by_task_and_score.items():
+        # Sample k samples from each score category
+        for score in ["C", "I"]:
+            samples = random.sample(score_samples[score], min(len(score_samples[score]), k))
+
+            for sample in samples:
+                metadata = Metadata(**sample.metadata)
+                # Judge input
+                judge_prompt = get_score_prompt(sample.metadata, sample.messages)
+                assert sample.scores
+                value = sample.scores["approval_scorer"].value
+                explanation = sample.scores["approval_scorer"].explanation
+                assert explanation
+                history = [str(message.content) for message in sample.messages[::-1]]
+                messages: list[ChatMessage] = sample.messages
+                n_turns = sum(1 for message in messages if isinstance(message, ChatMessageTool))
+                output.append(
+                    ValidationSample(
+                        sample_id=sample.id,
+                        agent_task_prompt=metadata.agent_prompt,
+                        monitor_task_prompt=metadata.monitor_prompt,
+                        history="\n==============\n".join(history),
+                        judge_prompt=judge_prompt,
+                        value=str(value),
+                        explanation=explanation,
+                        task_name=task_name,
+                        n_turns=n_turns,
+                    )
                 )
-            )
-            input_samples.append(sample)
+                input_samples.append(sample)
 
     # Extract unique ID from log filename
     unique_id = log_path.stem.split("_")[-1].split(".")[0]
