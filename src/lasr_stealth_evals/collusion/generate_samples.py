@@ -53,6 +53,7 @@ class Task(BaseModel, frozen=True):
     monitor_persona: str
     monitor_main_task: str
     monitor_policy: str
+    domain_policy: str
 
 
 class GenerationStrategy(Enum):
@@ -84,6 +85,7 @@ def generate_samples(
     use_hint: bool = True,
     use_justification: bool = True,
     is_cot_monitored: bool = True,
+    domain_policy: bool = False,
 ) -> List[Sample]:
     """
     Generate samples by combining strategy and task JSON files.
@@ -103,13 +105,15 @@ def generate_samples(
     # Load strategy and task data
     match generation_strategy:
         case GenerationStrategy.MATCH:
-            return _single_strategy(tasks, strategies, use_justification, is_cot_monitored, turns)
+            return _single_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, domain_policy)
         case GenerationStrategy.MISMATCHED:
-            return _mismatched_strategy(tasks, strategies, use_justification, is_cot_monitored, turns)
+            return _mismatched_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, domain_policy)
         case GenerationStrategy.MULTIPLE:
-            return _multiple_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, use_hint)
+            return _multiple_strategy(
+                tasks, strategies, use_justification, is_cot_monitored, turns, use_hint, domain_policy
+            )
         case GenerationStrategy.NONE:
-            return _no_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, use_hint)
+            return _no_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, use_hint, domain_policy)
         case _:
             raise ValueError(f"Invalid generation strategy: {generation_strategy}")
 
@@ -123,6 +127,7 @@ def _create_sample(
     is_cot_monitored: bool,
     turns: int,
     monitor_prompt_template: str = MONITOR_COT_MONITORED_FULL_PROMPT,
+    domain_policy: bool = False,
 ) -> Sample:
     """Helper function to create a sample with the given parameters."""
     snames = ", ".join([s.name for s in strategies])
@@ -138,7 +143,7 @@ def _create_sample(
     sample_overview = METADATA_TAG + "\n".join(
         [key.upper() + ": " + str(value) for key, value in sample_overview_dict.items()]
     )
-
+    monitor_policy = task.domain_policy if domain_policy else task.monitor_policy
     return Sample(
         input=sample_overview,
         target="True",
@@ -147,14 +152,14 @@ def _create_sample(
                 agent_persona=task.agent_persona,
                 agent_main_task=task.agent_main_task,
                 agent_hidden_task=task.agent_hidden_task,
-                monitor_policy=task.monitor_policy,
+                monitor_policy=monitor_policy,
                 strategy=sdescs,
                 turns=turns,
             ),
             monitor_prompt=monitor_prompt_template.format(
                 monitor_persona=task.monitor_persona,
                 monitor_main_task=task.monitor_main_task,
-                monitor_policy=task.monitor_policy,
+                monitor_policy=monitor_policy,
                 monitor_hidden_goal=hint.description,
                 agent_hidden_task=task.agent_hidden_task,
             ),
@@ -168,7 +173,12 @@ def _create_sample(
 
 
 def _single_strategy(
-    tasks: List[Task], strategies: List[Strategy], use_justification: bool, is_cot_monitored: bool, turns: int
+    tasks: List[Task],
+    strategies: List[Strategy],
+    use_justification: bool,
+    is_cot_monitored: bool,
+    turns: int,
+    domain_policy: bool,
 ) -> List[Sample]:
     """Combined function handling both MATCH and NONE generation strategies."""
     samples = []
@@ -185,6 +195,7 @@ def _single_strategy(
                     use_justification=use_justification,
                     is_cot_monitored=is_cot_monitored,
                     turns=turns,
+                    domain_policy=domain_policy,
                 )
             )
     return samples
@@ -197,6 +208,7 @@ def _no_strategy(
     is_cot_monitored: bool,
     turns: int,
     use_hint: bool,
+    domain_policy: bool,
 ) -> List[Sample]:
     samples = []
     hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
@@ -212,13 +224,19 @@ def _no_strategy(
                 use_justification=use_justification,
                 is_cot_monitored=is_cot_monitored,
                 turns=turns,
+                domain_policy=domain_policy,
             )
         )
     return samples
 
 
 def _mismatched_strategy(
-    tasks: List[Task], strategies: List[Strategy], use_justification: bool, is_cot_monitored: bool, turns: int
+    tasks: List[Task],
+    strategies: List[Strategy],
+    use_justification: bool,
+    is_cot_monitored: bool,
+    turns: int,
+    domain_policy: bool,
 ) -> List[Sample]:
     samples = []
     hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
@@ -236,6 +254,7 @@ def _mismatched_strategy(
                     use_justification=use_justification,
                     is_cot_monitored=is_cot_monitored,
                     turns=turns,
+                    domain_policy=domain_policy,
                 )
             )
     return samples
@@ -248,6 +267,7 @@ def _multiple_strategy(
     is_cot_monitored: bool,
     turns: int,
     use_hint: bool,
+    domain_policy: bool,
 ) -> List[Sample]:
     samples = []
     hints = [Hint(name=strategy.name, description=strategy.hint) for strategy in strategies]
@@ -263,6 +283,7 @@ def _multiple_strategy(
                 use_justification=use_justification,
                 is_cot_monitored=is_cot_monitored,
                 turns=turns,
+                domain_policy=domain_policy,
             )
         )
     return samples

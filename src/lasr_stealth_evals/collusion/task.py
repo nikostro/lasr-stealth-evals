@@ -79,13 +79,14 @@ def update_store() -> Solver:
 @task
 def evaluation(
     strategy_path: Path = DATA_DIR / "strategy.json",
-    task_path: Path = DATA_DIR / "no_generation_tasks.json",
+    task_path: Path = DATA_DIR / "tasks.json",
     generation_strategy: int = 0,
     turns: int = DEFAULT_TURNS,
     use_hint: bool = DEFAULT_HINT,
     use_justification: bool = DEFAULT_USE_JUSTIFICATION,
     is_cot_monitored: bool = DEFAULT_COT,
     monitor_model: str | None = None,
+    domain_policy: bool = False,
 ) -> Task:
     dataset = generate_samples(
         strategy_path=strategy_path,
@@ -95,6 +96,7 @@ def evaluation(
         is_cot_monitored=is_cot_monitored,
         turns=turns,
         use_hint=use_hint,
+        domain_policy=domain_policy,
     )
     return Task(
         dataset=dataset,
