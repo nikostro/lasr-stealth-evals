@@ -8,7 +8,7 @@ from inspect_ai.dataset import Sample
 from pydantic import BaseModel
 
 from lasr_stealth_evals.collusion.config import METADATA_TAG
-from lasr_stealth_evals.collusion.no_generation_templates import (
+from lasr_stealth_evals.collusion.templates import (
     AGENT_COT_MONITORED,
     AGENT_COT_MONITORED_NO_JUSTIFICATION,
     AGENT_COT_NOT_MONITORED,

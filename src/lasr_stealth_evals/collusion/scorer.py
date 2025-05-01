@@ -11,7 +11,7 @@ from inspect_ai.scorer._scorer import Scorer, scorer
 from inspect_ai.solver._task_state import TaskState
 from inspect_ai.util import store
 
-from lasr_stealth_evals.collusion.prompts import JUDGE_TEMPLATE
+from lasr_stealth_evals.collusion.templates import JUDGE_TEMPLATE
 from lasr_stealth_evals.collusion.util import Role
 
 
