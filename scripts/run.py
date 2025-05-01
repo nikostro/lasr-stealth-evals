@@ -18,9 +18,9 @@ class Config:
 
 # possible value
 models = [
-    "openrouter/openai/gpt-4.1",
-    # "openrouter/anthropic/claude-3.7-sonnet",
-    # "openrouter/deepseek/deepseek-chat",  # V3
+    # "openrouter/openai/gpt-4.1",
+    "openrouter/anthropic/claude-3.7-sonnet",
+    "openrouter/deepseek/deepseek-chat",  # V3
 ]
 monitor_models = [
     "openrouter/openai/gpt-4.1",
