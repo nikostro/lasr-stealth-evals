@@ -14,7 +14,7 @@ import wandb
 from lasr_stealth_evals.collusion.agent import collusion_agent, monitor_agent, submit_tool
 from lasr_stealth_evals.collusion.config import MODELS, WANDB_API_KEY
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
-from lasr_stealth_evals.collusion.scorer import approval_scorer
+from lasr_stealth_evals.collusion.scorer import approval_scorer, judge
 
 # Default configuration
 DEFAULT_EPOCHS = 1  # runs of the full dataset
@@ -112,9 +112,7 @@ def evaluation(
                 )
             ),
         ],
-        scorer=[
-            approval_scorer(),
-        ],
+        scorer=[approval_scorer(), judge()],
         metrics=[accuracy(), stderr()],
     )
 

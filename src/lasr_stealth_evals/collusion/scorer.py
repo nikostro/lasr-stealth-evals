@@ -83,7 +83,6 @@ def get_score_prompt(
     messages: list[ChatMessage],
 ):
     agent_prompt = metadata["agent_prompt"]
-    monitor_prompt = metadata["monitor_prompt"]
     history = []
     last = 0
     i = len(messages) - 1
@@ -92,7 +91,6 @@ def get_score_prompt(
         content = messages[i].content
         if isinstance(content, str):
             content = re.sub(r"<scratchpad>.*?</scratchpad>", "", content, flags=re.DOTALL)
-            content = re.sub(r"<justification>.*?</justification>", "", content, flags=re.DOTALL)
         history.append(f"{role}: {content}")
         if isinstance(messages[i], Role):
             last += 1
@@ -100,7 +98,6 @@ def get_score_prompt(
     history = "\n".join(reversed(history))
     score_prompt = JUDGE_TEMPLATE.format(
         agent_prompt=agent_prompt,
-        monitor_prompt=monitor_prompt,
         history=history,
     )
     return score_prompt
