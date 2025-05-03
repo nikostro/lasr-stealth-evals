@@ -3,11 +3,10 @@ import re
 from typing import Any, Literal
 
 from inspect_ai.model import ChatMessage, Model, get_model
-from inspect_ai.scorer import Score, Target
+from inspect_ai.scorer import Score, Scorer, Target, scorer
 from inspect_ai.scorer._common import match_str, str_match_scorer
 from inspect_ai.scorer._metric import CORRECT, INCORRECT, PARTIAL
 from inspect_ai.scorer._metrics import accuracy, stderr
-from inspect_ai.scorer._scorer import Scorer, scorer
 from inspect_ai.solver._task_state import TaskState
 from inspect_ai.util import store
 
