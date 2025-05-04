@@ -92,7 +92,6 @@ def convert_eval_to_json(eval_dir: Path, json_dir: Path):
     """Convert .eval files to JSON format."""
     json_dir.mkdir(parents=True, exist_ok=True)
     for eval_file in eval_dir.glob("*.eval"):
-        output_file = json_dir / f"{eval_file.stem}.json"
         cmd = f'uv run inspect log convert --to json "{eval_file}" --output-dir "{json_dir}"'
         subprocess.run(cmd, shell=True, check=True)
 
@@ -100,30 +99,28 @@ def convert_eval_to_json(eval_dir: Path, json_dir: Path):
 def create_eval_artifact(eval_dir: Path, json_dir: Path, artifact_name: str = "eval_files") -> wandb.Artifact:
     """Create a wandb artifact containing the original eval files and converted JSON files."""
     print(f"\nCreating artifact: {artifact_name}")
-    
+
     with tempfile.TemporaryDirectory() as temp_dir:
         eval_files_dir = os.path.join(temp_dir, "eval_files")
         json_files_dir = os.path.join(temp_dir, "json_files")
         os.makedirs(eval_files_dir, exist_ok=True)
         os.makedirs(json_files_dir, exist_ok=True)
-        
+
         for eval_file in eval_dir.glob("*.eval"):
             shutil.copy2(eval_file, eval_files_dir)
-        
+
         for json_file in json_dir.glob("*.json"):
             shutil.copy2(json_file, json_files_dir)
-        
+
         zip_path = os.path.join(temp_dir, f"{artifact_name}.zip")
-        shutil.make_archive(zip_path[:-4], 'zip', temp_dir)
-        
+        shutil.make_archive(zip_path[:-4], "zip", temp_dir)
+
         artifact = wandb.Artifact(
-            name=artifact_name,
-            type="eval_files",
-            description="Original eval files and converted JSON files"
+            name=artifact_name, type="eval_files", description="Original eval files and converted JSON files"
         )
-        
+
         artifact.add_file(zip_path)
-        
+
         print("************Artifact created***********")
         return artifact
 
@@ -201,6 +198,7 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                     total_samples += 1
                     if i % 10 == 0:
                         print(f"  ...processed {i} samples in {file.name}")
+                    metadata = {}
                     try:
                         metadata = sample.get("metadata", {})
                         task_name = metadata.get("task_name", "unknown")

@@ -44,11 +44,12 @@ def strategy(value: str) -> GenerationStrategy:
 @agent
 def agent_loop(
     turns: int = 3,
+    agent_model: str | None = None,
     monitor_model: str | None = None,
     use_justification: bool = DEFAULT_USE_JUSTIFICATION,
     is_cot_monitored: bool = DEFAULT_COT,
 ) -> Agent:
-    misaligned = collusion_agent(name="agent", use_justification=use_justification)
+    misaligned = collusion_agent(name="agent", use_justification=use_justification, model=agent_model)
     monitor = monitor_agent(name="monitor", tools=[submit_tool()], model=monitor_model, cot=is_cot_monitored)
 
     async def execute(state: AgentState) -> AgentState:
