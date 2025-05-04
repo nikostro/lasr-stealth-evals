@@ -1,10 +1,10 @@
 import argparse
 import ast
 import json
-import subprocess
-import tempfile
 import os
 import shutil
+import subprocess
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -92,7 +92,7 @@ def convert_eval_to_json(eval_dir: Path, json_dir: Path):
     """Convert .eval files to JSON format."""
     json_dir.mkdir(parents=True, exist_ok=True)
     for eval_file in eval_dir.glob("*.eval"):
-        output_file = json_dir / f"{eval_file.stem}.json"
+        json_dir / f"{eval_file.stem}.json"
         cmd = f'uv run inspect log convert --to json "{eval_file}" --output-dir "{json_dir}"'
         subprocess.run(cmd, shell=True, check=True)
 
@@ -100,30 +100,28 @@ def convert_eval_to_json(eval_dir: Path, json_dir: Path):
 def create_eval_artifact(eval_dir: Path, json_dir: Path, artifact_name: str = "eval_files") -> wandb.Artifact:
     """Create a wandb artifact containing the original eval files and converted JSON files."""
     print(f"\nCreating artifact: {artifact_name}")
-    
+
     with tempfile.TemporaryDirectory() as temp_dir:
         eval_files_dir = os.path.join(temp_dir, "eval_files")
         json_files_dir = os.path.join(temp_dir, "json_files")
         os.makedirs(eval_files_dir, exist_ok=True)
         os.makedirs(json_files_dir, exist_ok=True)
-        
+
         for eval_file in eval_dir.glob("*.eval"):
             shutil.copy2(eval_file, eval_files_dir)
-        
+
         for json_file in json_dir.glob("*.json"):
             shutil.copy2(json_file, json_files_dir)
-        
+
         zip_path = os.path.join(temp_dir, f"{artifact_name}.zip")
-        shutil.make_archive(zip_path[:-4], 'zip', temp_dir)
-        
+        shutil.make_archive(zip_path[:-4], "zip", temp_dir)
+
         artifact = wandb.Artifact(
-            name=artifact_name,
-            type="eval_files",
-            description="Original eval files and converted JSON files"
+            name=artifact_name, type="eval_files", description="Original eval files and converted JSON files"
         )
-        
+
         artifact.add_file(zip_path)
-        
+
         print("************Artifact created***********")
         return artifact
 
@@ -296,6 +294,8 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                         }
                     except Exception as e:
                         error_count += 1
+                        # Ensure metadata is defined before using it in error handling
+                        metadata = sample.get("metadata", {}) if "sample" in locals() else {}
                         error_msg = f"Sample {i} ({metadata.get('task_name', 'unknown')}) - {str(e)}"
                         print(f"Error: {error_msg}")
                         error_log["errors"].append(
@@ -306,8 +306,8 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                                 "error_type": type(e).__name__,
                                 "sample_data": {
                                     "metadata": metadata,
-                                    "scores": sample.get("scores", {}),
-                                    "messages": sample.get("messages", []),
+                                    "scores": sample.get("scores", {}) if "sample" in locals() else {},
+                                    "messages": sample.get("messages", []) if "sample" in locals() else [],
                                 },
                             }
                         )
@@ -362,22 +362,24 @@ def inspect_specific_sample(file_path: str, sample_index: int = 1):
 
 
 if __name__ == "__main__":
-    
-    EVAL_DIR = ""
-    JSON_DIR = ""
-    RUN_NAME = "Mock_run"    
-    assert EVAL_DIR != "" 
-    assert JSON_DIR != "" 
-    assert RUN_NAME != "" and "/" not in RUN_NAME
+    parser = argparse.ArgumentParser(description="Process evaluation files and log to wandb")
+    parser.add_argument("--eval-dir", type=str, required=True, help="Directory containing .eval files")
+    parser.add_argument("--json-dir", type=str, required=True, help="Base directory to store converted JSON files")
+    parser.add_argument("--run-name", type=str, default="Baseline_results", help="Name for the wandb run")
 
-    eval_dir = Path(EVAL_DIR)
-    base_json_dir = Path(JSON_DIR)
-    run_name = RUN_NAME
+    args = parser.parse_args()
+
+    eval_dir = Path(args.eval_dir)
+    base_json_dir = Path(args.json_dir)
+    run_name = args.run_name
     print(run_name)
-    
+    assert "/" not in run_name
 
+    # Create a timestamped directory for this run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     json_dir = base_json_dir / f"{run_name}_{timestamp}"
+    print(f"\nCreating new JSON directory: {json_dir}")
+    json_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\nConverting eval files from {eval_dir} to JSON in {json_dir}")
     convert_eval_to_json(eval_dir, json_dir)
