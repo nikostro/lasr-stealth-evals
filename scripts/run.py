@@ -1,3 +1,4 @@
+import itertools
 import os
 from dataclasses import dataclass, field
 
@@ -14,51 +15,33 @@ class Config:
     justification: bool
     hint: bool
     epochs: int
-    domain_policy: bool = field(default=True)
+    domain_policy: bool = field(default=False)
 
 
 # possible value
 models = [
+    "openrouter/openai/gpt-4.1",
     "openrouter/google/gemini-2.5-flash-preview",
-    "openrouter/openai/gpt-3.5-turbo-0613",
     "openrouter/meta-llama/llama-4-maverick",
 ]
 monitor_models = [
-    "openrouter/google/gemini-2.5-flash-preview",
-    "openrouter/openai/gpt-3.5-turbo-0613",
+    "openrouter/openai/gpt-4.1",
+    "openrouter/anthropic/claude-3.7-sonnet",
     "openrouter/meta-llama/llama-4-maverick",
 ]
 generation = [
-    # (0, True, True),  # strategy, use_hint, justification
-    # (1, True, True),
-    # (2, False, True),
-    # (2, True, True),
-    (3, False, False),
-    # (3, False, True),
-    # (3, True, False),
-    # (3, True, True),
+    (0, True, True, True, 5),  # match, with hint, with justification, with cot monitored, 5 epochs
+    (0, True, True, False, 5),  # match, with hint, with justification, without cot monitored, 5 epochs
+    (1, True, True, True, 5),  # mismatch, with hint, with justification, with cot monitored, 5 epochs
+    (1, True, True, False, 5),  # mismatch, with hint, with justification, without cot monitored, 5 epochs
+    (1, False, True, True, 5),  # mismatch, without hint, with justification, with cot monitored, 5 epochs
+    (1, False, True, False, 5),  # mismatch, without hint, with justification, without cot monitored, 5 epochs
+    (3, False, True, True, 10),  # none, without hint, with justification, with cot monitored, 10 epochs
+    (3, False, True, False, 10),  # none, without hint, with justification, without cot monitored, 10 epochs
+    (3, False, False, False, 10),  # none, with hint, without justification, with cot monitored, 10 epochs
 ]
-cot_monitored = [
-    True,
-    # False,
-]
-n_turns = [5]
 
-# Create list of configurations
-configs = []
-# monitor=gemini, agent=gemini
-configs.append(
-    Config(
-        monitor="openrouter/openai/gpt-4.1",
-        agent="openrouter/openai/gpt-4.1",
-        justification=False,
-        strategy=GenerationStrategy.NONE,
-        cot=False,
-        turns=5,
-        hint=False,
-        epochs=20,
-    )
-)
+n_turns = [5]
 
 
 def get_filename(config: Config) -> str:
@@ -73,14 +56,13 @@ def get_command(config: Config, log_dir: str) -> str:
         f"uv run inspect eval src/lasr_stealth_evals/collusion/task.py "
         f"--model {config.agent} "
         f"--epochs {config.epochs} "
-        # f"--limit 2 "
-        f"--max-connections 360 "
+        f"--limit 2 "
+        f"--max-connections 1000 "
         f"--log-dir {log_dir} "
         f"--fail-on-error 0.05 "
         f"-T turns={config.turns} "
         f"-T use_hint={config.hint} "
         f"-T use_justification={config.justification} "
-        f"-T agent_model={config.agent} "
         f"-T monitor_model={config.monitor} "
         f"-T is_cot_monitored={config.cot} "
         f"-T generation_strategy={config.strategy.value} "
@@ -89,11 +71,25 @@ def get_command(config: Config, log_dir: str) -> str:
 
 
 if __name__ == "__main__":
-    LOG_DIR = "/workspace/baseline1"
-    for config in configs:
+    LOG_DIR = "/workspace/test_big_run"
+    print(len(list(itertools.product(models, monitor_models, n_turns, generation))))
+    for config in itertools.product(models, monitor_models, n_turns, generation):
+        agent, monitor, turns, generation_config = config
+        gen, hint, justification, cot, epochs = generation_config
+        config = Config(
+            agent=agent,
+            monitor=monitor,
+            cot=cot,
+            turns=turns,
+            strategy=GenerationStrategy(gen),
+            justification=justification,
+            hint=hint,
+            epochs=epochs,
+        )
         os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
         os.system(get_command(config, LOG_DIR))
+        break
     os.system(
         f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
         f"--eval-dir {LOG_DIR} "
