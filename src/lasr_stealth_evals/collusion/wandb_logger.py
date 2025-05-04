@@ -1,10 +1,10 @@
 import argparse
 import ast
 import json
-import os
-import shutil
 import subprocess
 import tempfile
+import os
+import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -92,7 +92,7 @@ def convert_eval_to_json(eval_dir: Path, json_dir: Path):
     """Convert .eval files to JSON format."""
     json_dir.mkdir(parents=True, exist_ok=True)
     for eval_file in eval_dir.glob("*.eval"):
-        json_dir / f"{eval_file.stem}.json"
+        output_file = json_dir / f"{eval_file.stem}.json"
         cmd = f'uv run inspect log convert --to json "{eval_file}" --output-dir "{json_dir}"'
         subprocess.run(cmd, shell=True, check=True)
 
@@ -100,28 +100,30 @@ def convert_eval_to_json(eval_dir: Path, json_dir: Path):
 def create_eval_artifact(eval_dir: Path, json_dir: Path, artifact_name: str = "eval_files") -> wandb.Artifact:
     """Create a wandb artifact containing the original eval files and converted JSON files."""
     print(f"\nCreating artifact: {artifact_name}")
-
+    
     with tempfile.TemporaryDirectory() as temp_dir:
         eval_files_dir = os.path.join(temp_dir, "eval_files")
         json_files_dir = os.path.join(temp_dir, "json_files")
         os.makedirs(eval_files_dir, exist_ok=True)
         os.makedirs(json_files_dir, exist_ok=True)
-
+        
         for eval_file in eval_dir.glob("*.eval"):
             shutil.copy2(eval_file, eval_files_dir)
-
+        
         for json_file in json_dir.glob("*.json"):
             shutil.copy2(json_file, json_files_dir)
-
+        
         zip_path = os.path.join(temp_dir, f"{artifact_name}.zip")
-        shutil.make_archive(zip_path[:-4], "zip", temp_dir)
-
+        shutil.make_archive(zip_path[:-4], 'zip', temp_dir)
+        
         artifact = wandb.Artifact(
-            name=artifact_name, type="eval_files", description="Original eval files and converted JSON files"
+            name=artifact_name,
+            type="eval_files",
+            description="Original eval files and converted JSON files"
         )
-
+        
         artifact.add_file(zip_path)
-
+        
         print("************Artifact created***********")
         return artifact
 
@@ -165,6 +167,7 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
             "monitor_verdict",
             "final_decision",
             "epoch",
+            "messages",
         ]
     )
 
@@ -263,6 +266,7 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                             )
                         monitor_verdict = messages[-1].get("content", "") if messages else ""
                         epoch = sample.get("epoch", 0)
+                        formatted_messages = format_messages(messages)
                         table.add_data(
                             task_name,
                             monitor_model,
@@ -284,6 +288,7 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                             monitor_verdict,
                             final_decision,
                             epoch,
+                            formatted_messages,
                         )
                         error_log["samples"][f"{file.name}:{i}"] = {
                             "task_name": task_name,
@@ -294,8 +299,6 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                         }
                     except Exception as e:
                         error_count += 1
-                        # Ensure metadata is defined before using it in error handling
-                        metadata = sample.get("metadata", {}) if "sample" in locals() else {}
                         error_msg = f"Sample {i} ({metadata.get('task_name', 'unknown')}) - {str(e)}"
                         print(f"Error: {error_msg}")
                         error_log["errors"].append(
@@ -306,8 +309,8 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                                 "error_type": type(e).__name__,
                                 "sample_data": {
                                     "metadata": metadata,
-                                    "scores": sample.get("scores", {}) if "sample" in locals() else {},
-                                    "messages": sample.get("messages", []) if "sample" in locals() else [],
+                                    "scores": sample.get("scores", {}),
+                                    "messages": sample.get("messages", []),
                                 },
                             }
                         )
@@ -375,7 +378,6 @@ if __name__ == "__main__":
     print(run_name)
     assert "/" not in run_name
 
-    # Create a timestamped directory for this run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     json_dir = base_json_dir / f"{run_name}_{timestamp}"
     print(f"\nCreating new JSON directory: {json_dir}")
