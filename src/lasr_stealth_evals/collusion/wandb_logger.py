@@ -2,6 +2,9 @@ import argparse
 import ast
 import json
 import subprocess
+import tempfile
+import os
+import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -86,13 +89,46 @@ def get_sample_identifier(sample: Dict[str, Any]) -> str:
 
 
 def convert_eval_to_json(eval_dir: Path, json_dir: Path):
+    """Convert .eval files to JSON format."""
     json_dir.mkdir(parents=True, exist_ok=True)
     for eval_file in eval_dir.glob("*.eval"):
-        cmd = f"uv run inspect log convert --to json {eval_file} --output-dir {json_dir}"
+        output_file = json_dir / f"{eval_file.stem}.json"
+        cmd = f'uv run inspect log convert --to json "{eval_file}" --output-dir "{json_dir}"'
         subprocess.run(cmd, shell=True, check=True)
 
 
-def process_json_files(json_dir: Path, run_name: str):
+def create_eval_artifact(eval_dir: Path, json_dir: Path, artifact_name: str = "eval_files") -> wandb.Artifact:
+    """Create a wandb artifact containing the original eval files and converted JSON files."""
+    print(f"\nCreating artifact: {artifact_name}")
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        eval_files_dir = os.path.join(temp_dir, "eval_files")
+        json_files_dir = os.path.join(temp_dir, "json_files")
+        os.makedirs(eval_files_dir, exist_ok=True)
+        os.makedirs(json_files_dir, exist_ok=True)
+        
+        for eval_file in eval_dir.glob("*.eval"):
+            shutil.copy2(eval_file, eval_files_dir)
+        
+        for json_file in json_dir.glob("*.json"):
+            shutil.copy2(json_file, json_files_dir)
+        
+        zip_path = os.path.join(temp_dir, f"{artifact_name}.zip")
+        shutil.make_archive(zip_path[:-4], 'zip', temp_dir)
+        
+        artifact = wandb.Artifact(
+            name=artifact_name,
+            type="eval_files",
+            description="Original eval files and converted JSON files"
+        )
+        
+        artifact.add_file(zip_path)
+        
+        print("************Artifact created***********")
+        return artifact
+
+
+def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     error_log_path = Path(f"error_logs/debug_errors_{run_name}_{timestamp}.json")
     error_log_path.parent.mkdir(exist_ok=True)
@@ -100,6 +136,11 @@ def process_json_files(json_dir: Path, run_name: str):
     error_log = {"timestamp": timestamp, "total_samples": 0, "warnings": [], "errors": [], "samples": {}}
 
     wandb.init(project="collusion", entity="fdmi", name=f"{run_name}_{timestamp}", job_type="post_analysis")
+
+    artifact = create_eval_artifact(eval_dir, json_dir)
+    print("\nLogging eval files artifact to wandb...")
+    wandb.log_artifact(artifact)
+    print("************Artifact logged***********")
 
     json_files = list(json_dir.glob("*.json"))
     print(f"\nFound {len(json_files)} JSON files")
@@ -153,17 +194,16 @@ def process_json_files(json_dir: Path, run_name: str):
                 is_cot_monitored = task_args.get("is_cot_monitored", True)
                 monitor_model = task_args.get("monitor_model", "unknown")
                 agent_model = task_args.get("agent_model", "unknown")
-                use_hint_default = task_args.get("use_hint", True)
+                use_hint = task_args.get("use_hint", True)
 
                 for i, sample in enumerate(data.get("samples", []), 1):
                     total_samples += 1
                     if i % 10 == 0:
                         print(f"  ...processed {i} samples in {file.name}")
-                    metadata = {}
                     try:
                         metadata = sample.get("metadata", {})
                         task_name = metadata.get("task_name", "unknown")
-                        use_hint = metadata.get("use_hint", use_hint_default)
+                        use_hint = metadata.get("use_hint", use_hint)
                         if isinstance(use_hint, str):
                             use_hint = use_hint.lower() == "true"
                         else:
@@ -283,12 +323,12 @@ def process_json_files(json_dir: Path, run_name: str):
 
     print("\nLogging table to wandb...")
     wandb.log({"converted_results": table})
-    print("✓ Table logged successfully")
+    print("************Table logged***********")
 
     print(f"\nSaving error log to {error_log_path}")
     with open(error_log_path, "w") as f:
         json.dump(error_log, f, indent=2)
-    print("✓ Error log saved successfully")
+    print("************Error log saved***********")
     return table
 
 
@@ -322,27 +362,25 @@ def inspect_specific_sample(file_path: str, sample_index: int = 1):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process evaluation files and log to wandb")
-    parser.add_argument("--eval-dir", type=str, required=True, help="Directory containing .eval files")
-    parser.add_argument("--json-dir", type=str, required=True, help="Base directory to store converted JSON files")
-    parser.add_argument("--run-name", type=str, default="Baseline_results", help="Name for the wandb run")
+    
+    EVAL_DIR = ""
+    JSON_DIR = ""
+    RUN_NAME = "Mock_run"    
+    assert EVAL_DIR != "" 
+    assert JSON_DIR != "" 
+    assert RUN_NAME != "" and "/" not in RUN_NAME
 
-    args = parser.parse_args()
-
-    eval_dir = Path(args.eval_dir)
-    base_json_dir = Path(args.json_dir)
-    run_name = args.run_name
+    eval_dir = Path(EVAL_DIR)
+    base_json_dir = Path(JSON_DIR)
+    run_name = RUN_NAME
     print(run_name)
-    assert "/" not in run_name
+    
 
-    # Create a timestamped directory for this run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     json_dir = base_json_dir / f"{run_name}_{timestamp}"
-    print(f"\nCreating new JSON directory: {json_dir}")
-    json_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\nConverting eval files from {eval_dir} to JSON in {json_dir}")
     convert_eval_to_json(eval_dir, json_dir)
 
     print(f"\nLogging data to wandb for {run_name}")
-    table = process_json_files(json_dir, run_name)
+    table = process_json_files(json_dir, run_name, eval_dir)
