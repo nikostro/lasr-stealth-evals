@@ -1,5 +1,3 @@
-# pyright: ignore[reportPossiblyUnboundVariable]
-
 import argparse
 import ast
 import json
