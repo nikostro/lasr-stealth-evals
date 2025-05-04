@@ -14,7 +14,7 @@ import wandb
 from lasr_stealth_evals.collusion.agent import collusion_agent, monitor_agent, submit_tool
 from lasr_stealth_evals.collusion.config import MODELS, WANDB_API_KEY
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
-from lasr_stealth_evals.collusion.scorer import approval_scorer, judge
+from lasr_stealth_evals.collusion.scorer import approval_scorer
 
 # Default configuration
 DEFAULT_EPOCHS = 1  # runs of the full dataset
@@ -44,13 +44,12 @@ def strategy(value: str) -> GenerationStrategy:
 @agent
 def agent_loop(
     turns: int = 3,
-    agent_model: str | None = None,
     monitor_model: str | None = None,
     use_justification: bool = DEFAULT_USE_JUSTIFICATION,
     is_cot_monitored: bool = DEFAULT_COT,
 ) -> Agent:
-    misaligned = collusion_agent(name="agent", use_justification=use_justification, model=agent_model)
-    monitor = monitor_agent(name="monitor", tools=[submit_tool()], model=monitor_model, cot=is_cot_monitored)
+    misaligned = collusion_agent(name="agent", use_justification=use_justification)
+    monitor = monitor_agent(name="monitor", tools=[submit_tool()], cot=is_cot_monitored, model=monitor_model)
 
     async def execute(state: AgentState) -> AgentState:
         for _ in range(turns):
@@ -89,7 +88,6 @@ def evaluation(
     use_justification: bool = DEFAULT_USE_JUSTIFICATION,
     is_cot_monitored: bool = DEFAULT_COT,
     monitor_model: str | None = None,
-    agent_model: str | None = None,
     domain_policy: bool = False,
 ) -> Task:
     dataset = generate_samples(
@@ -115,7 +113,7 @@ def evaluation(
                 )
             ),
         ],
-        scorer=[approval_scorer(), judge()],
+        scorer=[approval_scorer()],
         metrics=[accuracy(), stderr()],
     )
 
