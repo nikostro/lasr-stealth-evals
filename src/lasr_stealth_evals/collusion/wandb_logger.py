@@ -324,14 +324,22 @@ def inspect_specific_sample(file_path: str, sample_index: int = 1):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process evaluation files and log to wandb")
     parser.add_argument("--eval-dir", type=str, required=True, help="Directory containing .eval files")
-    parser.add_argument("--json-dir", type=str, required=True, help="Directory to store converted JSON files")
+    parser.add_argument("--json-dir", type=str, required=True, help="Base directory to store converted JSON files")
     parser.add_argument("--run-name", type=str, default="Baseline_results", help="Name for the wandb run")
 
     args = parser.parse_args()
 
     eval_dir = Path(args.eval_dir)
-    json_dir = Path(args.json_dir)
+    base_json_dir = Path(args.json_dir)
     run_name = args.run_name
+    print(run_name)
+    assert "/" not in run_name
+
+    # Create a timestamped directory for this run
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    json_dir = base_json_dir / f"{run_name}_{timestamp}"
+    print(f"\nCreating new JSON directory: {json_dir}")
+    json_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\nConverting eval files from {eval_dir} to JSON in {json_dir}")
     convert_eval_to_json(eval_dir, json_dir)
