@@ -54,8 +54,10 @@ def agent_loop(
     async def execute(state: AgentState) -> AgentState:
         for _ in range(turns):
             state = await misaligned(state)
+            if store().get("completed"):
+                store().set("monitor_output", None)
+                break
             state = await monitor(state)
-
             if store().get("completed"):
                 break
 
