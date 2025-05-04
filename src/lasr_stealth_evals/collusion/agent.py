@@ -6,6 +6,7 @@ from inspect_ai.agent import Agent, AgentState, agent, agent_with
 from inspect_ai.log._transcript import transcript
 from inspect_ai.model import ChatMessageTool, ChatMessageUser, Model, get_model
 from inspect_ai.model._call_tools import execute_tools
+from inspect_ai.model._providers.openrouter import OpenRouterError
 from inspect_ai.scorer import score
 from inspect_ai.tool import Tool, ToolResult, tool
 from inspect_ai.tool._tool_info import parse_tool_info
@@ -25,6 +26,7 @@ logger = getLogger(__name__)
 async def _agent_generate(model: str | Model | Agent | None, state: AgentState, tools: list[Tool]) -> AgentState:
     # convert model to agent
     if isinstance(model, str | Model) or model is None:
+        retries = 0
         model = _model_generate(model)
 
     # confirm we have a tools param
@@ -33,7 +35,15 @@ async def _agent_generate(model: str | Model | Agent | None, state: AgentState, 
         raise ValueError("Agent passed as model for react agent must have a tools parameter.")
 
     # call the agent
-    return await model(state, tools)
+    while retries < 3:
+        try:
+            return await model(state, tools)
+        except OpenRouterError:
+            retries += 1
+    else:
+        transcript().info("Failed to generate model after 3 retries")
+        store().set("completed", True)
+        return state
 
 
 # submission tool
