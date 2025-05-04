@@ -1,3 +1,5 @@
+# pyright: ignore[reportPossiblyUnboundVariable]
+
 import argparse
 import ast
 import json
@@ -88,7 +90,6 @@ def get_sample_identifier(sample: Dict[str, Any]) -> str:
 def convert_eval_to_json(eval_dir: Path, json_dir: Path):
     json_dir.mkdir(parents=True, exist_ok=True)
     for eval_file in eval_dir.glob("*.eval"):
-        output_file = json_dir / f"{eval_file.stem}.json"
         cmd = f"uv run inspect log convert --to json {eval_file} --output-dir {json_dir}"
         subprocess.run(cmd, shell=True, check=True)
 
@@ -160,6 +161,7 @@ def process_json_files(json_dir: Path, run_name: str):
                     total_samples += 1
                     if i % 10 == 0:
                         print(f"  ...processed {i} samples in {file.name}")
+                    metadata = {}
                     try:
                         metadata = sample.get("metadata", {})
                         task_name = metadata.get("task_name", "unknown")

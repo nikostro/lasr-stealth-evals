@@ -24,9 +24,8 @@ logger = getLogger(__name__)
 
 
 async def _agent_generate(model: str | Model | Agent | None, state: AgentState, tools: list[Tool]) -> AgentState:
-    # convert model to agent
+    retries = 3
     if isinstance(model, str | Model) or model is None:
-        retries = 0
         model = _model_generate(model)
 
     # confirm we have a tools param
@@ -35,11 +34,11 @@ async def _agent_generate(model: str | Model | Agent | None, state: AgentState, 
         raise ValueError("Agent passed as model for react agent must have a tools parameter.")
 
     # call the agent
-    while retries < 3:
+    while retries > 0:
         try:
             return await model(state, tools)
         except OpenRouterError:
-            retries += 1
+            retries -= 1
     else:
         transcript().info("Failed to generate model after 3 retries")
         store().set("completed", True)

@@ -105,9 +105,13 @@ def generate_samples(
     # Load strategy and task data
     match generation_strategy:
         case GenerationStrategy.MATCH:
-            return _single_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, domain_policy)
+            return _single_strategy(
+                tasks, strategies, use_justification, is_cot_monitored, turns, use_hint, domain_policy
+            )
         case GenerationStrategy.MISMATCHED:
-            return _mismatched_strategy(tasks, strategies, use_justification, is_cot_monitored, turns, domain_policy)
+            return _mismatched_strategy(
+                tasks, strategies, use_justification, is_cot_monitored, turns, use_hint, domain_policy
+            )
         case GenerationStrategy.MULTIPLE:
             return _multiple_strategy(
                 tasks, strategies, use_justification, is_cot_monitored, turns, use_hint, domain_policy
@@ -178,13 +182,16 @@ def _single_strategy(
     use_justification: bool,
     is_cot_monitored: bool,
     turns: int,
+    use_hint: bool,
     domain_policy: bool,
 ) -> List[Sample]:
     """Combined function handling both MATCH and NONE generation strategies."""
     samples = []
     for task in tasks:
         for strategy in strategies:
-            hint_obj = Hint(name=strategy.name, description=strategy.hint)
+            hint_obj = (
+                Hint(name=strategy.name, description=strategy.hint) if use_hint else Hint(name="", description="")
+            )
             agent_prompt_template = template_map[(is_cot_monitored, use_justification)]
             samples.append(
                 _create_sample(
@@ -236,6 +243,7 @@ def _mismatched_strategy(
     use_justification: bool,
     is_cot_monitored: bool,
     turns: int,
+    use_hint: bool,
     domain_policy: bool,
 ) -> List[Sample]:
     samples = []
@@ -243,7 +251,7 @@ def _mismatched_strategy(
     for task in tasks:
         for strategy in strategies:
             hints_wo_match = filter(lambda hint: hint.name != strategy.name, hints)
-            hint_obj = random.choice(list(hints_wo_match))
+            hint_obj = random.choice(list(hints_wo_match)) if use_hint else Hint(name="", description="")
             agent_prompt_template = template_map[(is_cot_monitored, use_justification)]
             samples.append(
                 _create_sample(
