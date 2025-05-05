@@ -1,10 +1,10 @@
 import argparse
 import ast
 import json
-import subprocess
-import tempfile
 import os
 import shutil
+import subprocess
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -179,7 +179,8 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                 data = json.load(f)
                 sample_count = len(data.get("samples", []))
                 print(f"Processing {file.name} - {sample_count} samples")
-                task_args = data.get("eval", {}).get("task_args", {})
+                eval_dict = data.get("eval", {})
+                task_args = eval_dict.get("task_args", {})
                 max_turns = task_args.get("turns", 0)
                 generation_strategy = "MATCH"
                 if task_args.get("generation_strategy", "unknown") == 1:
@@ -191,7 +192,8 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                 use_justification = task_args.get("use_justification", True)
                 is_cot_monitored = task_args.get("is_cot_monitored", True)
                 monitor_model = task_args.get("monitor_model", "unknown")
-                agent_model = task_args.get("agent_model", "unknown")
+                basic_model = eval_dict.get("model", "unknown")
+                agent_model = task_args.get("agent_model", basic_model)
                 use_hint = task_args.get("use_hint", True)
 
                 for i, sample in enumerate(data.get("samples", []), 1):
@@ -365,13 +367,12 @@ def inspect_specific_sample(file_path: str, sample_index: int = 1):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process evaluation files and log to wandb")
     parser.add_argument("--eval-dir", type=str, required=True, help="Directory containing .eval files")
-    parser.add_argument("--json-dir", type=str, required=True, help="Base directory to store converted JSON files")
     parser.add_argument("--run-name", type=str, default="Baseline_results", help="Name for the wandb run")
 
     args = parser.parse_args()
 
     eval_dir = Path(args.eval_dir)
-    base_json_dir = Path(args.json_dir)
+    base_json_dir = eval_dir / ".." / "json_dir"
     run_name = args.run_name
     print(run_name)
     assert "/" not in run_name

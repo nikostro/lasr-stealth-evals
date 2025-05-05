@@ -25,7 +25,7 @@ run:
 	uv run scripts/run.py
 
 upload:
-	uv run src/lasr_stealth_evals/collusion/wandb_logger.py --eval-dir $(LOG_DIR) --json-dir /workspace/logs_json/ --run-name $(RUN_NAME)
+	uv run src/lasr_stealth_evals/collusion/wandb_logger.py --eval-dir $(LOG_DIR) --run-name $(RUN_NAME)
 
 test:
 	uv run pytest
