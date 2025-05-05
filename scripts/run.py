@@ -20,13 +20,13 @@ class Config:
 
 # possible value
 models = [
-    "openrouter/openai/gpt-4.1",
+    # "openrouter/openai/gpt-4.1",
     "openrouter/google/gemini-2.5-flash-preview",
     "openrouter/meta-llama/llama-4-maverick",
 ]
 monitor_models = [
     "openrouter/openai/gpt-4.1",
-    "openrouter/anthropic/claude-3.7-sonnet",
+    # "openrouter/anthropic/claude-3.7-sonnet",
     "openrouter/meta-llama/llama-4-maverick",
 ]
 generation = [
@@ -56,10 +56,11 @@ def get_command(config: Config, log_dir: str) -> str:
         f"uv run inspect eval src/lasr_stealth_evals/collusion/task.py "
         f"--model {config.agent} "
         f"--epochs {config.epochs} "
-        f"--limit 2 "
         f"--max-connections 1000 "
+        # f"--limit 2 "
         f"--log-dir {log_dir} "
         f"--fail-on-error 0.05 "
+        f"--time-limit 300 "
         f"-T turns={config.turns} "
         f"-T use_hint={config.hint} "
         f"-T use_justification={config.justification} "
@@ -71,9 +72,9 @@ def get_command(config: Config, log_dir: str) -> str:
 
 
 if __name__ == "__main__":
-    LOG_DIR = "/workspace/test_big_run"
+    LOG_DIR = "/workspace/real_big_run_p2"
     print(len(list(itertools.product(models, monitor_models, n_turns, generation))))
-    for config in itertools.product(models, monitor_models, n_turns, generation):
+    for config in list(itertools.product(models, monitor_models, n_turns, generation)):
         agent, monitor, turns, generation_config = config
         gen, hint, justification, cot, epochs = generation_config
         config = Config(
@@ -89,7 +90,6 @@ if __name__ == "__main__":
         os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
         os.system(get_command(config, LOG_DIR))
-        break
     os.system(
         f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
         f"--eval-dir {LOG_DIR} "
