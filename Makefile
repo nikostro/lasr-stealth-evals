@@ -55,3 +55,6 @@ eval-agent:
 		echo "Completed evaluation for model: $$model"; \
 		echo "----------------------------------------"; \
 	done
+
+conversation-histories:
+	uv run src/lasr_stealth_evals/writeup/get_conversation_histories.py --log-path $(LOG_PATH) --output-dir $(OUTPUT_DIR)

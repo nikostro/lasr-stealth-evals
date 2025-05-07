@@ -97,3 +97,5 @@ nik.ipynb
 # wandb
 wandb/
 error_logs
+*.code-workspace
+conversation_histories/
