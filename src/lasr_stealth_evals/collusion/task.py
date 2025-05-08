@@ -52,15 +52,17 @@ def agent_loop(
     monitor = monitor_agent(name="monitor", tools=[submit_tool()], cot=is_cot_monitored, model=monitor_model)
 
     async def execute(state: AgentState) -> AgentState:
-        for _ in range(turns):
-            state = await misaligned(state)
-            if store().get("completed"):
-                store().set("monitor_output", None)
-                break
+        if use_justification or is_cot_monitored:
+            for _ in range(turns):
+                state = await misaligned(state)
+                if store().get("completed"):
+                    store().set("monitor_output", None)
+                    break
+                state = await monitor(state)
+                if store().get("completed"):
+                    break
+        else:
             state = await monitor(state)
-            if store().get("completed"):
-                break
-
         return state
 
     return execute
