@@ -149,7 +149,7 @@ def monitor_agent(
         transcript().info(name.upper())
         sample_metadata = Metadata(**store().get("metadata"))
 
-        history = store().get("history", [])
+        history = store().get("history", state.messages)
 
         state.messages = filter_history(history, use_justification) if not cot else history
         state.messages[0] = get_system_message(sample_metadata, name)
