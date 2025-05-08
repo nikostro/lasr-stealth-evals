@@ -48,7 +48,7 @@ def agent_loop(
     use_justification: bool = DEFAULT_USE_JUSTIFICATION,
     is_cot_monitored: bool = DEFAULT_COT,
 ) -> Agent:
-    misaligned = collusion_agent(name="agent", use_justification=use_justification)
+    misaligned = collusion_agent(name="agent", use_justification=use_justification, cot=is_cot_monitored)
     monitor = monitor_agent(name="monitor", tools=[submit_tool()], cot=is_cot_monitored, model=monitor_model)
 
     async def execute(state: AgentState) -> AgentState:
