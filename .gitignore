@@ -93,6 +93,7 @@ data/validation/*
 
 # nik's testing file
 nik.ipynb
+nik.py
 
 # wandb
 wandb/

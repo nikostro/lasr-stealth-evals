@@ -1,10 +1,9 @@
 # %%
 import argparse
-import time
 from logging import getLogger
 from pathlib import Path
 
-from inspect_ai import Task, task
+from inspect_ai import Task, eval, task
 from inspect_ai.agent import Agent, AgentState, agent, as_solver
 from inspect_ai.scorer import accuracy, stderr
 from inspect_ai.solver import Generate, Solver, TaskState, solver
@@ -12,7 +11,6 @@ from inspect_ai.util import store
 
 import wandb
 from lasr_stealth_evals.collusion.agent import collusion_agent, monitor_agent, submit_tool
-from lasr_stealth_evals.collusion.config import MODELS, WANDB_API_KEY
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy, generate_samples
 from lasr_stealth_evals.collusion.scorer import approval_scorer
 
@@ -218,10 +216,8 @@ def main(args: argparse.Namespace):
 
 
 if __name__ == "__main__":
-    wandb.login(key=WANDB_API_KEY)
-
-    args = parse_args()
-    if args.model not in MODELS:
-        logger.warning(f"WARNING: Model {args.model} not in list of tested models: {MODELS}")
-        time.sleep(2)
-    main(args)
+    eval(
+        collusion(),
+        model="openrouter/openai/gpt-4.1",
+        limit=1,
+    )
