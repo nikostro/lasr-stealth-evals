@@ -5,7 +5,7 @@ from typing import Any, Literal
 from inspect_ai.model import ChatMessage, Model, get_model
 from inspect_ai.scorer import Score, Scorer, Target, scorer
 from inspect_ai.scorer._common import match_str, str_match_scorer
-from inspect_ai.scorer._metric import CORRECT, INCORRECT, PARTIAL
+from inspect_ai.scorer._metric import CORRECT, INCORRECT, NOANSWER
 from inspect_ai.scorer._metrics import accuracy, stderr
 from inspect_ai.solver._task_state import TaskState
 from inspect_ai.util import store
@@ -38,7 +38,7 @@ def approval_scorer() -> Scorer:
         else:
             score = INCORRECT
         if store().get("error"):
-            score = PARTIAL
+            score = NOANSWER
 
         return Score(value=score, answer=str(approval), explanation=reason)
 
@@ -124,7 +124,7 @@ def judge(model: str | Model | None = None) -> Scorer:
             )
         else:
             return Score(
-                value=PARTIAL,
+                value=NOANSWER,
                 explanation="Grade not found in model output: " + f"{result.completion}",
             )
 

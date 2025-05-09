@@ -21,27 +21,34 @@ class Config:
 # possible value
 models = [
     "openrouter/openai/gpt-4.1",
-    "openrouter/google/gemini-2.5-flash-preview",
-    # "openrouter/meta-llama/llama-4-maverick",
+    # "openrouter/google/gemini-2.5-flash-preview",
+    "openrouter/meta-llama/llama-4-maverick",
 ]
 monitor_models = [
     "openrouter/google/gemini-2.5-flash-preview",
-    # "openrouter/openai/gpt-4.1",
+    "openrouter/openai/gpt-4.1",
     # "openrouter/anthropic/claude-3.7-sonnet",
     # "openrouter/meta-llama/llama-4-maverick",
 ]
+BASE_EPOCHS = 1
 generation = [
-    (0, True, False, False, 5),  # match, with hint, without justification, without cot monitored, 20 epochs
-    (0, False, False, False, 5),  # match, with hint, without justification, without cot monitored, 20 epochs
-    # (0, True, True, True, 5),  # match, with hint, with justification, with cot monitored, 5 epochs
-    # (0, True, True, False, 5),  # match, with hint, with justification, without cot monitored, 5 epochs
-    # (1, True, True, True, 5),  # mismatch, with hint, with justification, with cot monitored, 5 epochs
-    # (1, True, True, False, 5),  # mismatch, with hint, with justification, without cot monitored, 5 epochs
-    # (1, False, True, True, 5),  # mismatch, without hint, with justification, with cot monitored, 5 epochs
-    # (1, False, True, False, 5),  # mismatch, without hint, with justification, without cot monitored, 5 epochs
-    # (3, False, True, True, 10),  # none, without hint, with justification, with cot monitored, 10 epochs
-    # (3, False, True, False, 10),  # none, without hint, with justification, without cot monitored, 10 epochs
-    # (3, False, False, False, 10),  # none, with hint, without justification, with cot monitored, 10 epochs
+    # (0, True, False, False, 1),  # match, with hint, without justification, without cot monitored, 20 epochs
+    # (0, False, False, False, 1),  # match, with hint, without justification, without cot monitored, 20 epochs
+    (0, True, True, True, BASE_EPOCHS),  # match, with hint, with justification, with cot monitored, 5 epochs
+    (0, True, True, False, BASE_EPOCHS),  # match, with hint, with justification, without cot monitored, 5 epochs
+    (1, True, True, True, BASE_EPOCHS),  # mismatch, with hint, with justification, with cot monitored, 5 epochs
+    (1, True, True, False, BASE_EPOCHS),  # mismatch, with hint, with justification, without cot monitored, 5 epochs
+    (1, False, True, True, BASE_EPOCHS),  # mismatch, without hint, with justification, with cot monitored, 5 epochs
+    (1, False, True, False, BASE_EPOCHS),  # mismatch, without hint, with justification, without cot monitored, 5 epochs
+    (3, False, True, True, 2 * BASE_EPOCHS),  # none, without hint, with justification, with cot monitored, 10 epochs
+    (
+        3,
+        False,
+        True,
+        False,
+        2 * BASE_EPOCHS,
+    ),  # none, without hint, with justification, without cot monitored, 10 epochs
+    (3, False, False, False, 2 * BASE_EPOCHS),  # none, with hint, without justification, with cot monitored, 10 epochs
 ]
 
 n_turns = [5]
@@ -58,7 +65,7 @@ def get_command(config: Config, log_dir: str) -> str:
     return (
         f"uv run inspect eval src/lasr_stealth_evals/collusion/task.py "
         f"--model {config.agent} "
-        f"--epochs {20} "
+        f"--epochs {config.epochs} "
         f"--max-connections 1000 "
         # f"--limit 2 "
         f"--log-dir {log_dir} "
@@ -67,7 +74,7 @@ def get_command(config: Config, log_dir: str) -> str:
         f"-T turns={config.turns} "
         f"-T use_hint={config.hint} "
         f"-T use_justification={config.justification} "
-        # f"-T monitor_model={config.monitor} "
+        f"-T monitor_model={config.monitor} "
         f"-T is_cot_monitored={config.cot} "
         f"-T generation_strategy={config.strategy.value} "
         f"-T domain_policy={config.domain_policy} "
