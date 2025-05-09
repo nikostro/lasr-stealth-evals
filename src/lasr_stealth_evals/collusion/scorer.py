@@ -37,6 +37,8 @@ def approval_scorer() -> Scorer:
             score = CORRECT
         else:
             score = INCORRECT
+        if store().get("error"):
+            score = PARTIAL
 
         return Score(value=score, answer=str(approval), explanation=reason)
 

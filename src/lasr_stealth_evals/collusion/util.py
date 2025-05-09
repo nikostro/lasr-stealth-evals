@@ -77,6 +77,6 @@ def filter_history(history: List[ChatMessage], use_justification: bool = True) -
     filtered_history = deepcopy(history)
     for message in filtered_history:
         message.content = re.sub(r"<scratchpad>.*?</scratchpad>", "", str(message.content), flags=re.DOTALL)
-        if use_justification:
-            message.content = re.sub(r"<justification>.*?</justification>", "", str(message.content), flags=re.DOTALL)
+        # if use_justification:
+        #     message.content = re.sub(r"<justification>.*?</justification>", "", str(message.content), flags=re.DOTALL)
     return filtered_history
