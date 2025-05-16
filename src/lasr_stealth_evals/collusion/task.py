@@ -89,7 +89,9 @@ def evaluation(
     is_cot_monitored: bool = DEFAULT_COT,
     monitor_model: str | None = DEFAULT_MODEL,
     domain_policy: bool = False,
+    benign_task: bool = False,
 ) -> Task:
+    print(benign_task)
     dataset = generate_samples(
         strategy_path=strategy_path,
         task_path=task_path,
@@ -99,6 +101,7 @@ def evaluation(
         turns=turns,
         use_hint=use_hint,
         domain_policy=domain_policy,
+        benign_task=benign_task,
     )
     return Task(
         dataset=dataset,

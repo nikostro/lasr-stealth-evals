@@ -9,7 +9,7 @@ INSPECT_EVAL_COMMON = $(INSPECT_EVAL_BASE) --max-connections 400 --fail-on-error
 
 # Small run for testing purposes
 eval-test:
-	$(INSPECT_EVAL_COMMON) --max-connections 400 --time-limit 300 --fail-on-error $(FAIL_ON_ERROR) --epochs 1 --max-retries 3 -T monitor_model=openrouter/google/gemini-2.5-flash-preview -T turns=5 -T use_hint=False -T use_justification=True -T is_cot_monitored=False -T generation_strategy=0
+	$(INSPECT_EVAL_COMMON) --max-connections 400 --time-limit 300 --fail-on-error $(FAIL_ON_ERROR) --epochs 5 --max-retries 3 -T monitor_model=openrouter/google/gemini-2.5-flash-preview -T turns=5 -T use_hint=False -T use_justification=False -T is_cot_monitored=False -T generation_strategy=3 -T benign_task=True
 
 eval-validation:
 	$(INSPECT_EVAL_BASE) --model openrouter/openai/gpt-4.1 --max-connections 400 -T turns=3 -T use_hint=False -T use_justification=True -T is_cot_monitored=True -T generation_strategy=1 $(ARGS)

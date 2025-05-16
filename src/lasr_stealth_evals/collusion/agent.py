@@ -199,7 +199,10 @@ def monitor_agent(
         history = store().get("history", [])
 
         state.messages = filter_history(history) if not cot else history
-        state.messages[0] = get_system_message(sample_metadata, name)
+        if not state.messages:
+            state.messages = [get_system_message(sample_metadata, name)]
+        else:
+            state.messages[0] = get_system_message(sample_metadata, name)
         state.messages = filter_first_user_message(state.messages)
 
         state.messages = add_role_message(state.messages, name)
