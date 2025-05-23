@@ -81,7 +81,7 @@ def update_store() -> Solver:
 @task
 def evaluation(
     strategy_path: Path = DATA_DIR / "strategy.json",
-    task_path: Path = DATA_DIR / "updated_tasks.json",
+    task_path: Path = DATA_DIR / "tasks.json",
     generation_strategy: int = 0,
     turns: int = DEFAULT_TURNS,
     use_hint: bool = DEFAULT_HINT,
@@ -91,7 +91,6 @@ def evaluation(
     domain_policy: bool = False,
     benign_task: bool = False,
 ) -> Task:
-    print(benign_task)
     dataset = generate_samples(
         strategy_path=strategy_path,
         task_path=task_path,

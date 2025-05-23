@@ -30,10 +30,8 @@ monitor_models = [
     # "openrouter/anthropic/claude-3.7-sonnet",
     # "openrouter/meta-llama/llama-4-maverick",
 ]
-BASE_EPOCHS = 1
+BASE_EPOCHS = 5
 generation = [
-    (0, True, False, False, 1),  # match, with hint, without justification, without cot monitored, 20 epochs
-    (0, False, False, False, 1),  # match, with hint, without justification, without cot monitored, 20 epochs
     (0, True, True, True, BASE_EPOCHS),  # match, with hint, with justification, with cot monitored, 5 epochs
     (0, True, True, False, BASE_EPOCHS),  # match, with hint, with justification, without cot monitored, 5 epochs
     (1, True, True, True, BASE_EPOCHS),  # mismatch, with hint, with justification, with cot monitored, 5 epochs
@@ -41,14 +39,8 @@ generation = [
     (1, False, True, True, BASE_EPOCHS),  # mismatch, without hint, with justification, with cot monitored, 5 epochs
     (1, False, True, False, BASE_EPOCHS),  # mismatch, without hint, with justification, without cot monitored, 5 epochs
     (3, False, True, True, 2 * BASE_EPOCHS),  # none, without hint, with justification, with cot monitored, 10 epochs
-    (
-        3,
-        False,
-        True,
-        False,
-        2 * BASE_EPOCHS,
-    ),  # none, without hint, with justification, without cot monitored
-    # (3, False, False, False, 2 * BASE_EPOCHS),  # none, with hint, without justification, with cot monitored, 10 epochs
+    (3, False, False, False, 2 * BASE_EPOCHS),  # none, without hint, without justification, without cot monitored, 10 epochs
+    (3, False, False, False, 2 * BASE_EPOCHS),  # none, with hint, without justification, with cot monitored, 10 epochs
 ]
 
 n_turns = [5]
@@ -82,27 +74,26 @@ def get_command(config: Config, log_dir: str) -> str:
 
 
 if __name__ == "__main__":
-    LOG_DIR = "/workspace/test_run_20250522"
-    print(len(list(itertools.product(models, monitor_models, n_turns, generation))))
-    # config_list = list(itertools.product(models, monitor_models, n_turns, generation))
-    # for config in config_list:
-    #     agent, monitor, turns, generation_config = config
-    #     gen, hint, justification, cot, epochs = generation_config
-    #     config = Config(
-    #         agent=agent,
-    #         monitor=agent,
-    #         cot=cot,
-    #         turns=turns,
-    #         strategy=GenerationStrategy.NONE,
-    #         justification=justification,
-    #         hint=hint,
-    #         epochs=epochs,
-    #     )
-    #     os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
-    #     os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
-    #     os.system(get_command(config, LOG_DIR))
-    # os.system(
-    #     f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
-    #     f"--eval-dir {LOG_DIR} "
-    #     f"--run-name {LOG_DIR.split('/')[-1]}"
-    # )
+    LOG_DIR = "/workspace/23-05-2025"
+    config_list = list(itertools.product(models, monitor_models, n_turns, generation))
+    for config in config_list:
+        agent, monitor, turns, generation_config = config
+        gen, hint, justification, cot, epochs = generation_config
+        config = Config(
+            agent=agent,
+            monitor=monitor,
+            cot=cot,
+            turns=turns,
+            strategy=GenerationStrategy(gen),
+            justification=justification,
+            hint=hint,
+            epochs=epochs,
+        )
+        os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
+        os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
+        os.system(get_command(config, LOG_DIR))
+    os.system(
+        f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
+        f"--eval-dir {LOG_DIR} "
+        f"--run-name {LOG_DIR.split('/')[-1]}"
+    )
