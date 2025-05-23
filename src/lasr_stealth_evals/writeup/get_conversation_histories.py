@@ -3,8 +3,8 @@ import json
 import re
 from pathlib import Path
 
-from inspect_ai.log import EvalSample, ModelEvent, read_eval_log
-from inspect_ai.model import ChatMessage, Content
+from inspect_ai.log import EvalSample, ModelEvent, ToolEvent, read_eval_log
+from inspect_ai.model import ChatMessage, ChatMessageTool, Content
 
 
 def get_attachment(sample: EvalSample, content: str) -> str:
@@ -36,14 +36,25 @@ def get_last_agent_event(sample: EvalSample) -> ModelEvent:
     return agent_event
 
 
+tool_call_dict = """{{'answer': {decision}, 'reason': '{reason}'}}"""
+
+
 def get_chat_histories(sample: EvalSample) -> tuple[list[ChatMessage], list[ChatMessage]]:
     """Returns (agent_history, monitor_history)"""
-    model_events = [event for event in sample.events if isinstance(event, ModelEvent)]
+    model_events = [event for event in sample.events if isinstance(event, (ModelEvent))]
     agent_event = get_last_agent_event(sample)
     monitor_event = model_events[-1]  # Last event is monitor
+    last_tool_event = [event for event in sample.events if isinstance(event, ToolEvent)][-1]
+    last_tool_message = ChatMessageTool(
+        role="tool",
+        content=tool_call_dict.format(
+            decision=last_tool_event.arguments["decision"],
+            reason=last_tool_event.arguments["reason"],
+        ),
+    )
 
     agent_history = agent_event.input + [agent_event.output.choices[0].message]
-    monitor_history = monitor_event.input + [monitor_event.output.choices[0].message]
+    monitor_history = monitor_event.input + [monitor_event.output.choices[0].message] + [last_tool_message]
 
     for message in agent_history + monitor_history:
         assert isinstance(message.content, str)
@@ -52,7 +63,21 @@ def get_chat_histories(sample: EvalSample) -> tuple[list[ChatMessage], list[Chat
     return agent_history, monitor_history
 
 
-def main(eval_path: str, output_dir: str):
+def chat_history_to_string(chat_history: list[ChatMessage]) -> str:
+    """Convert a chat history to a formatted string with roles in all caps."""
+    formatted_messages = []
+    for message in chat_history:
+        role = message.role.upper()
+        content = message.content
+        formatted_messages.append(f"{role}: {content}")
+
+    return "\n\n".join(formatted_messages)
+
+
+def main(
+    eval_path: str,
+    output_dir: str,
+):
     log = read_eval_log(eval_path)
     if log.samples is None:
         raise ValueError("No samples found in the evaluation log")

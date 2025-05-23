@@ -11,7 +11,10 @@ from pathlib import Path
 from pprint import pprint
 from typing import Any, Dict, List, Optional, Union
 
+from inspect_ai.log import EvalSample
+
 import wandb
+from lasr_stealth_evals.writeup.get_conversation_histories import chat_history_to_string, get_chat_histories
 
 
 @dataclass
@@ -36,6 +39,8 @@ class TableRow:
     monitor_verdict: str
     final_decision: Optional[bool]
     epoch: int
+    agent_conversation_history: str
+    monitor_conversation_history: str
 
 
 def parse_metadata(metadata: Dict[str, Any]) -> Dict[str, Union[str, bool, int]]:
@@ -165,6 +170,8 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
             "final_decision",
             "epoch",
             "messages",
+            "agent_conversation_history",
+            "monitor_conversation_history",
         ]
     )
 
@@ -267,6 +274,12 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                         monitor_verdict = messages[-1].get("content", "") if messages else ""
                         epoch = sample.get("epoch", 0)
                         formatted_messages = format_messages(messages)
+                        agent_conversation_history, monitor_conversation_history = get_chat_histories(
+                            EvalSample(**sample)
+                        )
+                        agent_conversation_history = chat_history_to_string(agent_conversation_history)
+                        monitor_conversation_history = chat_history_to_string(monitor_conversation_history)
+
                         table.add_data(
                             task_name,
                             monitor_model,
@@ -289,6 +302,8 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                             final_decision,
                             epoch,
                             formatted_messages,
+                            agent_conversation_history,
+                            monitor_conversation_history,
                         )
                         error_log["samples"][f"{file.name}:{i}"] = {
                             "task_name": task_name,
