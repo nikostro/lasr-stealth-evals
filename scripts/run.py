@@ -18,10 +18,27 @@ class Config:
     domain_policy: bool = field(default=False)
 
 
+@dataclass
+class GenerationConfig:
+    strategy: GenerationStrategy
+    hint: bool
+    justification: bool
+    cot_monitored: bool
+    epochs: int
+
+    @property
+    def description(self) -> str:
+        strategy_name = self.strategy.name.lower()
+        hint_str = "with hint" if self.hint else "without hint"
+        justification_str = "with justification" if self.justification else "without justification"
+        cot_str = "with cot monitored" if self.cot_monitored else "without cot monitored"
+        return f"{strategy_name}, {hint_str}, {justification_str}, {cot_str}, {self.epochs} epochs"
+
+
 # possible value
 models = [
+    "openrouter/google/gemini-2.5-pro-preview",
     "openrouter/openai/gpt-4.1",
-    "openrouter/google/gemini-2.5-flash-preview",
     "openrouter/meta-llama/llama-4-maverick",
 ]
 monitor_models = [
@@ -32,15 +49,36 @@ monitor_models = [
 ]
 BASE_EPOCHS = 5
 generation = [
-    (0, True, True, True, BASE_EPOCHS),  # match, with hint, with justification, with cot monitored, 5 epochs
-    (0, True, True, False, BASE_EPOCHS),  # match, with hint, with justification, without cot monitored, 5 epochs
-    (1, True, True, True, BASE_EPOCHS),  # mismatch, with hint, with justification, with cot monitored, 5 epochs
-    (1, True, True, False, BASE_EPOCHS),  # mismatch, with hint, with justification, without cot monitored, 5 epochs
-    (1, False, True, True, BASE_EPOCHS),  # mismatch, without hint, with justification, with cot monitored, 5 epochs
-    (1, False, True, False, BASE_EPOCHS),  # mismatch, without hint, with justification, without cot monitored, 5 epochs
-    (3, False, True, True, 2 * BASE_EPOCHS),  # none, without hint, with justification, with cot monitored, 10 epochs
-    (3, False, False, False, 2 * BASE_EPOCHS),  # none, without hint, without justification, without cot monitored, 10 epochs
-    (3, False, False, False, 2 * BASE_EPOCHS),  # none, with hint, without justification, with cot monitored, 10 epochs
+    GenerationConfig(
+        strategy=GenerationStrategy.MATCH, hint=True, justification=True, cot_monitored=True, epochs=BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.MATCH, hint=True, justification=True, cot_monitored=False, epochs=BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.MISMATCHED, hint=True, justification=True, cot_monitored=True, epochs=BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.MISMATCHED, hint=True, justification=True, cot_monitored=False, epochs=BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.MISMATCHED, hint=False, justification=True, cot_monitored=True, epochs=BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.MISMATCHED, hint=False, justification=True, cot_monitored=False, epochs=BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.NONE, hint=False, justification=True, cot_monitored=True, epochs=2 * BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.NONE, hint=False, justification=False, cot_monitored=False, epochs=2 * BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.NONE, hint=False, justification=True, cot_monitored=False, epochs=2 * BASE_EPOCHS
+    ),
+    GenerationConfig(
+        strategy=GenerationStrategy.NONE, hint=False, justification=False, cot_monitored=False, epochs=2 * BASE_EPOCHS
+    ),
 ]
 
 n_turns = [5]
@@ -74,20 +112,20 @@ def get_command(config: Config, log_dir: str) -> str:
 
 
 if __name__ == "__main__":
-    LOG_DIR = "/workspace/23-05-2025"
+    LOG_DIR = "/logs/FULL_RUN"
     config_list = list(itertools.product(models, monitor_models, n_turns, generation))
+    print(len(config_list))
     for config in config_list:
         agent, monitor, turns, generation_config = config
-        gen, hint, justification, cot, epochs = generation_config
         config = Config(
             agent=agent,
             monitor=monitor,
-            cot=cot,
+            cot=generation_config.cot_monitored,
             turns=turns,
-            strategy=GenerationStrategy(gen),
-            justification=justification,
-            hint=hint,
-            epochs=epochs,
+            strategy=generation_config.strategy,
+            justification=generation_config.justification,
+            hint=generation_config.hint,
+            epochs=generation_config.epochs,
         )
         os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
