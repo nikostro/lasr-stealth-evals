@@ -117,7 +117,7 @@ def get_command(config: Config, log_dir: str) -> str:
 
 
 if __name__ == "__main__":
-    # run_name = "FULL_RUN_27-05-2025"
+    run_name = "FULL_RUN_27-05-2025"
     run_name = "test"
 
     LOG_BASE_DIR = os.getenv("LOG_BASE_DIR")
