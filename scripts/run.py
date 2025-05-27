@@ -141,7 +141,6 @@ if __name__ == "__main__":
         os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
         os.system(get_command(config, log_dir))
-        break
     os.system(
         f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
         f"--eval-dir {log_dir} "
