@@ -142,8 +142,8 @@ if __name__ == "__main__":
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
         os.system(get_command(config, log_dir))
         break
-    # os.system(
-    #     f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
-    #     f"--eval-dir {log_dir} "
-    #     f"--run-name {log_dir.split('/')[-1]}"
-    # )
+    os.system(
+        f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
+        f"--eval-dir {log_dir} "
+        f"--run-name {log_dir.split('/')[-1]}"
+    )
