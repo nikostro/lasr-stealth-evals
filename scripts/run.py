@@ -2,7 +2,12 @@ import itertools
 import os
 from dataclasses import dataclass, field
 
+from dotenv import load_dotenv
+
 from lasr_stealth_evals.collusion.generate_samples import GenerationStrategy
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 @dataclass
@@ -112,9 +117,16 @@ def get_command(config: Config, log_dir: str) -> str:
 
 
 if __name__ == "__main__":
-    LOG_DIR = "/logs/FULL_RUN"
+    # run_name = "FULL_RUN_27-05-2025"
+    run_name = "test"
+
+    LOG_BASE_DIR = os.getenv("LOG_BASE_DIR")
+    assert LOG_BASE_DIR, "Please set the LOG_BASE_DIR environment variable"
+    log_dir = os.path.join(LOG_BASE_DIR, run_name)
+
     config_list = list(itertools.product(models, monitor_models, n_turns, generation))
     print(len(config_list))
+
     for config in config_list:
         agent, monitor, turns, generation_config = config
         config = Config(
@@ -129,9 +141,10 @@ if __name__ == "__main__":
         )
         os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
-        os.system(get_command(config, LOG_DIR))
-    os.system(
-        f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
-        f"--eval-dir {LOG_DIR} "
-        f"--run-name {LOG_DIR.split('/')[-1]}"
-    )
+        os.system(get_command(config, log_dir))
+        break
+    # os.system(
+    #     f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
+    #     f"--eval-dir {log_dir} "
+    #     f"--run-name {log_dir.split('/')[-1]}"
+    # )
