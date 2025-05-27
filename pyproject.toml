@@ -45,6 +45,7 @@ dev = [
 
 [tool.ruff]
 line-length = 120
+ignore = ["E712"]
 
 [tool.pyright]
 reportMissingParameterType = true

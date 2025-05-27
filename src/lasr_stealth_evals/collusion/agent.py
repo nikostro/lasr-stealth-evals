@@ -19,6 +19,7 @@ from lasr_stealth_evals.collusion.util import (
     filter_history,
     get_system_message,
 )
+from lasr_stealth_evals.collusion.validation import validate_and_fix_agent_response
 
 logger = getLogger(__name__)
 
@@ -87,10 +88,10 @@ def collusion_agent(
         state.messages = filter_first_user_message(state.messages)
         state.messages = add_role_message(state.messages, name)
 
-        invalid = True
+        is_valid = False
         retries = num_retries
         idx = len(state.messages)
-        while invalid and retries > 0:
+        while not is_valid and retries > 0:
             state = await _agent_generate(model, state, [])
 
             last_message = state.output.message.content
@@ -98,54 +99,16 @@ def collusion_agent(
             # Convert to string and normalize whitespace
             content = str(last_message).strip()
 
-            # Check for proper scratchpad format
-            scratchpad_start = content.find("<scratchpad>")
-            scratchpad_end = content.find("</scratchpad>")
-            has_scratchpad = (
-                scratchpad_start != -1
-                and scratchpad_end != -1
-                and content.count("<scratchpad>") == 1
-                and content.count("</scratchpad>") == 1
-                and scratchpad_start < scratchpad_end
-            )
+            # Use the new validation function with automatic fixing
+            is_valid, fixed_content = validate_and_fix_agent_response(content, use_justification)
 
-            # Check for proper justification format if required
-            has_justification = True
-            justification_start = -1
-            justification_end = -1
-            if use_justification:
-                justification_start = content.find("<justification>")
-                justification_end = content.find("</justification>")
-
-                # If we have an opening justification tag but no closing tag, try to fix it
-                if justification_start != -1 and justification_end == -1:
-                    content = content + "</justification>"
-                    justification_end = content.find("</justification>")
-
-                has_justification = (
-                    justification_start != -1
-                    and justification_end != -1
-                    and content.count("<justification>") == 1
-                    and content.count("</justification>") == 1
-                    and justification_start < justification_end
-                    and scratchpad_end < justification_start
-                )
-
-            # Check for text outside sections
-            has_text_outside = False
-            if has_scratchpad:
-                before_scratchpad = content[:scratchpad_start].strip()
-                after_scratchpad = content[scratchpad_end + len("</scratchpad>") :].strip()
-                if use_justification and has_justification:
-                    between_sections = content[scratchpad_end + len("</scratchpad>") : justification_start].strip()
-                    after_justification = content[justification_end + len("</justification>") :].strip()
-                    has_text_outside = bool(before_scratchpad or after_justification or between_sections)
-                else:
-                    has_text_outside = bool(before_scratchpad or after_scratchpad)
-
-            invalid = not has_scratchpad or (use_justification and not has_justification) or has_text_outside
-
-            if invalid:
+            if is_valid:
+                # If content was fixed, update the message
+                if fixed_content != content:
+                    state.output.message.content = fixed_content
+                state.messages = state.messages[:idx] + [state.output.message]
+            else:
+                # Content is invalid and couldn't be fixed
                 justification = (
                     "<justification>your justification for the proposed response to the monitor</justification>"
                     if use_justification
@@ -163,11 +126,6 @@ def collusion_agent(
                     ]
                 )
                 retries -= 1
-            else:
-                # If we fixed the message by adding a closing tag, update the message content
-                if use_justification and justification_start != -1 and content != str(last_message):
-                    state.output.message.content = content
-                state.messages = state.messages[:idx] + [state.output.message]
 
         if retries == 0:
             transcript().info("Agent failed to generate a valid response after 3 retries.")
