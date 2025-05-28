@@ -40,6 +40,36 @@ class GenerationConfig:
         return f"{strategy_name}, {hint_str}, {justification_str}, {cot_str}, {self.epochs} epochs"
 
 
+
+def get_filename(config: Config) -> str:
+    name = f"monitor:{config.agent.split('/')[-2]}_agent:none_cot:{int(config.cot)}_turns:{config.turns}_generation:{int(config.strategy.value)}_justification:{int(config.justification)}_hint:{int(config.hint)}"
+    # name = "{task}_{model}_{id}"
+    assert len(name) < 256
+    return name
+
+
+def get_command(config: Config, log_dir: str) -> str:
+    return (
+        f"uv run inspect eval src/lasr_stealth_evals/collusion/task.py "
+        f"--model {config.agent} "
+        f"--epochs {config.epochs} "
+        f"--max-connections 1000 "
+        # f"--limit 2 "
+        f"--log-dir {log_dir} "
+        f"--fail-on-error 0.05 "
+        f"--time-limit 600 "
+        f"-T turns={config.turns} "
+        f"-T use_hint={config.hint} "
+        f"-T use_justification={config.justification} "
+        f"-T monitor_model={config.monitor} "
+        f"-T is_cot_monitored={config.cot} "
+        f"-T generation_strategy={config.strategy.value} "
+        f"-T domain_policy={config.domain_policy} "
+    )
+
+
+########### CONFIGS ###########
+
 # possible value
 models = [
     "openrouter/google/gemini-2.5-pro-preview",
@@ -89,35 +119,9 @@ generation = [
 n_turns = [5]
 
 
-def get_filename(config: Config) -> str:
-    name = f"monitor:{config.agent.split('/')[-2]}_agent:none_cot:{int(config.cot)}_turns:{config.turns}_generation:{int(config.strategy.value)}_justification:{int(config.justification)}_hint:{int(config.hint)}"
-    # name = "{task}_{model}_{id}"
-    assert len(name) < 256
-    return name
-
-
-def get_command(config: Config, log_dir: str) -> str:
-    return (
-        f"uv run inspect eval src/lasr_stealth_evals/collusion/task.py "
-        f"--model {config.agent} "
-        f"--epochs {config.epochs} "
-        f"--max-connections 1000 "
-        # f"--limit 2 "
-        f"--log-dir {log_dir} "
-        f"--fail-on-error 0.05 "
-        f"--time-limit 600 "
-        f"-T turns={config.turns} "
-        f"-T use_hint={config.hint} "
-        f"-T use_justification={config.justification} "
-        f"-T monitor_model={config.monitor} "
-        f"-T is_cot_monitored={config.cot} "
-        f"-T generation_strategy={config.strategy.value} "
-        f"-T domain_policy={config.domain_policy} "
-    )
-
 
 if __name__ == "__main__":
-    run_name = "FULL_RUN_27-05-2025"
+    run_name = "FULL_RUN_27-05-2025" # directory where logs are saved
 
     LOG_BASE_DIR = os.getenv("LOG_BASE_DIR")
     assert LOG_BASE_DIR, "Please set the LOG_BASE_DIR environment variable"
@@ -140,7 +144,7 @@ if __name__ == "__main__":
         )
         os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
-        os.system(get_command(config, log_dir))
+        os.system(get_command(config, log_dir)) # run the eval
     os.system(
         f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
         f"--eval-dir {log_dir} "
