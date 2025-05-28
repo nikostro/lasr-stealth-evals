@@ -128,8 +128,9 @@ if __name__ == "__main__":
     log_dir = os.path.join(LOG_BASE_DIR, run_name)
 
     config_list = list(itertools.product(models, monitor_models, n_turns, generation))
-    print(len(config_list))
+    print(f"Number of configs: {len(config_list)}")
 
+    # Run all evals
     for config in config_list:
         agent, monitor, turns, generation_config = config
         config = Config(
@@ -145,6 +146,8 @@ if __name__ == "__main__":
         os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
         os.system(get_command(config, log_dir)) # run the eval
+    
+    # Process the logs and upload to wandb
     os.system(
         f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
         f"--eval-dir {log_dir} "
