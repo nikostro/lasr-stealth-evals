@@ -105,7 +105,7 @@ def get_command(config: Config, log_dir: str) -> str:
         # f"--limit 2 "
         f"--log-dir {log_dir} "
         f"--fail-on-error 0.05 "
-        f"--time-limit 300 "
+        f"--time-limit 600 "
         f"-T turns={config.turns} "
         f"-T use_hint={config.hint} "
         f"-T use_justification={config.justification} "

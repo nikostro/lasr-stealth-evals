@@ -277,8 +277,16 @@ def process_json_files(json_dir: Path, run_name: str, eval_dir: Path):
                         agent_conversation_history, monitor_conversation_history = get_chat_histories(
                             EvalSample(**sample)
                         )
-                        agent_conversation_history = chat_history_to_string(agent_conversation_history)
-                        monitor_conversation_history = chat_history_to_string(monitor_conversation_history)
+
+                        try:
+                            agent_conversation_history = chat_history_to_string(agent_conversation_history)
+                            monitor_conversation_history = chat_history_to_string(monitor_conversation_history)
+
+                            assert isinstance(agent_conversation_history, str)
+                            assert isinstance(monitor_conversation_history, str)
+                        except Exception as e:
+                            agent_conversation_history = "Error getting chat history"
+                            monitor_conversation_history = "Error getting chat history"
 
                         table.add_data(
                             task_name,
