@@ -40,7 +40,6 @@ class GenerationConfig:
         return f"{strategy_name}, {hint_str}, {justification_str}, {cot_str}, {self.epochs} epochs"
 
 
-
 def get_filename(config: Config) -> str:
     name = f"monitor:{config.agent.split('/')[-2]}_agent:none_cot:{int(config.cot)}_turns:{config.turns}_generation:{int(config.strategy.value)}_justification:{int(config.justification)}_hint:{int(config.hint)}"
     # name = "{task}_{model}_{id}"
@@ -72,30 +71,30 @@ def get_command(config: Config, log_dir: str) -> str:
 
 # possible value
 models = [
-    "openrouter/google/gemini-2.5-pro-preview",
+    # "openrouter/google/gemini-2.5-pro-preview",
     "openrouter/openai/gpt-4.1",
     "openrouter/meta-llama/llama-4-maverick",
 ]
 monitor_models = [
-    "openrouter/google/gemini-2.5-flash-preview",
+    # "openrouter/google/gemini-2.5-flash-preview",
     # "openrouter/openai/gpt-4.1",
-    # "openrouter/anthropic/claude-3.7-sonnet",
+    "openrouter/anthropic/claude-3.7-sonnet",
     # "openrouter/meta-llama/llama-4-maverick",
 ]
 BASE_EPOCHS = 5
 generation = [
-    GenerationConfig(
-        strategy=GenerationStrategy.MATCH, hint=True, justification=True, cot_monitored=True, epochs=BASE_EPOCHS
-    ),
-    GenerationConfig(
-        strategy=GenerationStrategy.MATCH, hint=True, justification=True, cot_monitored=False, epochs=BASE_EPOCHS
-    ),
-    GenerationConfig(
-        strategy=GenerationStrategy.MISMATCHED, hint=True, justification=True, cot_monitored=True, epochs=BASE_EPOCHS
-    ),
-    GenerationConfig(
-        strategy=GenerationStrategy.MISMATCHED, hint=True, justification=True, cot_monitored=False, epochs=BASE_EPOCHS
-    ),
+    # GenerationConfig(
+    #     strategy=GenerationStrategy.MATCH, hint=True, justification=True, cot_monitored=True, epochs=BASE_EPOCHS
+    # ),
+    # GenerationConfig(
+    #    strategy=GenerationStrategy.MATCH, hint=True, justification=True, cot_monitored=False, epochs=BASE_EPOCHS
+    # ),
+    #   strategy=GenerationStrategy.MISMATCHED, hint=True, justification=True, cot_monitored=True, epochs=BASE_EPOCHS
+    # GenerationConfig(
+    # ),
+    # GenerationConfig(
+    #    strategy=GenerationStrategy.MISMATCHED, hint=True, justification=True, cot_monitored=False, epochs=BASE_EPOCHS
+    # ),
     GenerationConfig(
         strategy=GenerationStrategy.MISMATCHED, hint=False, justification=True, cot_monitored=True, epochs=BASE_EPOCHS
     ),
@@ -119,11 +118,11 @@ generation = [
 n_turns = [5]
 
 
-
 if __name__ == "__main__":
-    run_name = "FULL_RUN_27-05-2025" # directory where logs are saved
+    run_name = "CLAUDE_FULL_RUN_17-06-2025"  # directory where logs are saved
 
-    LOG_BASE_DIR = os.getenv("LOG_BASE_DIR")
+    # LOG_BASE_DIR = os.getenv("LOG_BASE_DIR")
+    LOG_BASE_DIR = "/Users/elvira/Documents/LASR/lasr-stealth-evals/lasr-stealth-evals/logs"
     assert LOG_BASE_DIR, "Please set the LOG_BASE_DIR environment variable"
     log_dir = os.path.join(LOG_BASE_DIR, run_name)
 
@@ -145,8 +144,8 @@ if __name__ == "__main__":
         )
         os.environ["INSPECT_EVAL_LOG_FILE_PATTERN"] = get_filename(config)
         os.system("echo $INSPECT_EVAL_LOG_FILE_PATTERN")
-        os.system(get_command(config, log_dir)) # run the eval
-    
+        os.system(get_command(config, log_dir))  # run the eval
+
     # Process the logs and upload to wandb
     os.system(
         f"uv run src/lasr_stealth_evals/collusion/wandb_logger.py "
