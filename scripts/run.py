@@ -121,8 +121,7 @@ n_turns = [5]
 if __name__ == "__main__":
     run_name = "CLAUDE_FULL_RUN_17-06-2025"  # directory where logs are saved
 
-    # LOG_BASE_DIR = os.getenv("LOG_BASE_DIR")
-    LOG_BASE_DIR = "/Users/elvira/Documents/LASR/lasr-stealth-evals/lasr-stealth-evals/logs"
+    LOG_BASE_DIR = os.getenv("LOG_BASE_DIR")
     assert LOG_BASE_DIR, "Please set the LOG_BASE_DIR environment variable"
     log_dir = os.path.join(LOG_BASE_DIR, run_name)
 
